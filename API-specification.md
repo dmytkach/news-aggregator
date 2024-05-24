@@ -1,3 +1,5 @@
+- Project Name: News Aggregator.
+- Engineer name: Dmytro Tkach.
 # Summary
 
 The News Aggregator CLI is a command-line application designed to aggregate news articles from multiple sources
