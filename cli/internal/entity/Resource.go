@@ -1,8 +1,5 @@
 package entity
 
-// SourceType represents the type of news source.
-type SourceType string
-
 // ResourceName represents the name of a news resource.
 type ResourceName string
 
@@ -14,5 +11,4 @@ type PathToFile string
 type Resource struct {
 	Name       ResourceName
 	PathToFile PathToFile
-	SourceType SourceType
 }

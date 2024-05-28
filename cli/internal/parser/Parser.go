@@ -13,9 +13,9 @@ type Parser interface {
 // GetParser returns the appropriate parser implementation based on the type of source.
 func GetParser(typeOfSource entity.SourceType) Parser {
 	parserMap := map[entity.SourceType]Parser{
-		"RSS":  &RssParser{},
-		"JSON": &JsonParser{},
-		"Html": &HtmlParser{},
+		entity.RssType{}:  &RssParser{},
+		entity.JsonType{}: &JsonParser{},
+		entity.HtmlType{}: &HtmlParser{},
 	}
 	parser, exist := parserMap[typeOfSource]
 	if !exist {
