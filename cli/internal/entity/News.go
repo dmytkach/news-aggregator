@@ -29,6 +29,7 @@ func (news *News) ToString() string {
 		string("Description: " + news.Description),
 		string("Link: " + news.Link),
 		"Date: " + news.Date.String(),
+		"-----------------------",
 	}
-	return strings.Join(parts, "\n") + "\n-----------------------"
+	return strings.Join(parts, "\n")
 }

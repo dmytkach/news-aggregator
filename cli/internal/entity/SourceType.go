@@ -39,6 +39,5 @@ func AnalyzeResourceType(file PathToFile) SourceType {
 		fmt.Println("Wrong Source", ext)
 		return nil
 	}
-
 	return typeSource
 }

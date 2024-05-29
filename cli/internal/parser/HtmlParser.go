@@ -9,11 +9,12 @@ import (
 
 // HtmlParser - parser for HTML files.
 type HtmlParser struct {
+	filePath entity.PathToFile
 }
 
 // Parse - implementation of a parser for files in HTML format.
-func (htmlParser *HtmlParser) Parse(FileName string) ([]entity.News, error) {
-	file, err := os.Open(FileName)
+func (htmlParser *HtmlParser) Parse() ([]entity.News, error) {
+	file, err := os.Open(string(htmlParser.filePath))
 	if err != nil {
 		return nil, err
 	}

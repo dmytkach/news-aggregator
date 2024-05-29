@@ -43,12 +43,7 @@ func main() {
 		sourceName = strings.TrimSpace(sourceName)
 		for _, source := range resources {
 			if strings.EqualFold(string(source.Name), sourceName) {
-				resourceType := entity.AnalyzeResourceType(source.PathToFile)
-				if resourceType == nil {
-					fmt.Println("Not found format of resource")
-					return
-				}
-				news, err := parser.GetParser(resourceType).Parse(string(source.PathToFile))
+				news, err := parser.GetParser(source.PathToFile).Parse()
 				if err != nil {
 					fmt.Println(err)
 				} else {

@@ -8,7 +8,9 @@ import (
 )
 
 // JsonParser - parser for JSON files.
-type JsonParser struct{}
+type JsonParser struct {
+	filePath entity.PathToFile
+}
 
 // NewsResponse represents the structure of the JSON response containing news articles.
 type NewsResponse struct {
@@ -24,8 +26,8 @@ type NewsArticle struct {
 }
 
 // Parse - implementation of a parser for files in JSON format.
-func (jsonParser *JsonParser) Parse(FileName string) ([]entity.News, error) {
-	file, err := os.Open(FileName)
+func (jsonParser *JsonParser) Parse() ([]entity.News, error) {
+	file, err := os.Open(string(jsonParser.filePath))
 	if err != nil {
 		return nil, err
 	}

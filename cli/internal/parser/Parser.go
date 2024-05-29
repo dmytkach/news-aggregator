@@ -7,15 +7,16 @@ import (
 
 // Parser is an interface that defines the Parser method for assembling news from a given file.
 type Parser interface {
-	Parse(FileName string) ([]entity.News, error)
+	Parse() ([]entity.News, error)
 }
 
 // GetParser returns the appropriate parser implementation based on the type of source.
-func GetParser(typeOfSource entity.SourceType) Parser {
+func GetParser(path entity.PathToFile) Parser {
+	typeOfSource := entity.AnalyzeResourceType(path)
 	parserMap := map[entity.SourceType]Parser{
-		entity.RssType{}:  &RssParser{},
-		entity.JsonType{}: &JsonParser{},
-		entity.HtmlType{}: &HtmlParser{},
+		entity.RssType{}:  &RssParser{path},
+		entity.JsonType{}: &JsonParser{path},
+		entity.HtmlType{}: &HtmlParser{path},
 	}
 	parser, exist := parserMap[typeOfSource]
 	if !exist {
