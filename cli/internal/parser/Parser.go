@@ -10,8 +10,8 @@ type Parser interface {
 	Parse() ([]entity.News, error)
 }
 
-// GetParser returns the appropriate parser implementation based on the type of source.
-func GetParser(path entity.PathToFile) Parser {
+// New returns the appropriate parser implementation based on the type of source.
+func New(path entity.PathToFile) Parser {
 	typeOfSource := entity.AnalyzeResourceType(path)
 	parserMap := map[entity.SourceType]Parser{
 		entity.RssType{}:  &RssParser{path},
