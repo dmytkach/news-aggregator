@@ -3,37 +3,100 @@
 
 # Summary
 
-The News Aggregator CLI is a command-line application designed to aggregate news articles from multiple sources
-and provide filtering capabilities based on keywords and date ranges.
+The News Aggregator API is designed to combine news articles
+from multiple sources.
+The project uses parsers to extract information
+from news files in different formats ( Json, Rss, Html).
+In the processing process, all information is strictly structured and based
+on it is possible to filter by keywords and date ranges.
 
-### Supported **use-cases**:
+# Motivation
 
-1) Filtering news by one source or using a set of sources.
-2) Filtering news by keywords.
-3) Filtering news by date range.
+The news aggregator API meets growing demands for effective use and news analysis.
+It supports news monitoring by combining articles from different sources and offering flexible filtering options.
+News Aggregator provides a convenient and effective tool that lets users know about current events.
 
 # APIs design
 
-The client level works with the user entering parameters into the program - sources, keywords, dates.
-News sources are processed separately. For each source, the format of the file used is analyzed and the file
-is processed by the corresponding parser.
-Processed news is converted to the News type and stored in the program at runtime.
-If the process of processing and saving news is successful,
-the filtering process begins in accordance with the set of entered parameters.
-Filters use a single interface. For each parameter type,
-an implementation of this interface is created.
-After which the user receives a list of all news that satisfies the request.
+## Parser:
 
-* The `entity` package provides APIs for the `News` and `Resource` structures.
-  The `News` structure is a standardized format for presenting news articles in an application.
-  The `Resource` structure displays the name of the resource and the corresponding file path for that resource.
-* The `parser` package provides an API for processing different file formats,
-  including RSS, JSON and HTML.
-  Each parser implementation converts raw data into structured `entity.News` objects.
-* The `filter` package provides a API for filtering `entity.News` based on valid criteria.
-  Keywords and date ranges are supported.
+Parsers are used in the News Aggregator API to extract data from news site sources.
+Sites have unique source formats (JSON, RSS, HTML), so they are given their own parser,
+responsible for the source of a certain format.
+Each parser implementation converts the data into a set of strictly structured news.
+P.S.  Since the content of Html files in all resources is different, 
+it was decided to implement unique parsers for each resource using html
+### Supported Parsers
 
-## Examples
+#### 1. JSON Parser
+
+**Description**: Parser for _JSON_ data for news extraction.
+
+**Args**:`jsonParser.FilePath entity.PathToFile`: The path to the _JSON_ file to parse.
+
+**Returns**:
+
+* `[]entity.News`: A list of parsed news;
+* `error`: Error object in case of failure.
+
+**Errors**:
+
+* `os.Open error`: Error occurred while opening the _JSON_ file.
+* `json.NewDecoder error`: Error occurred while decoding _JSON_ data.
+
+**Usage**:
+
+```
+jsonParser := parser.JsonParser{<filepath>}
+news, err := jsonParser.Parse()
+```
+
+#### 2. RSS Parser
+
+**Description**: Parses _RSS_ data to extract news articles.
+
+**Args**:`rssParser.FilePath entity.PathToFile`: The path to the _RSS_ file to parse.
+
+**Returns**:
+
+* `[]entity.News`: A list of parsed news;
+* `error`: Error object in case of failure.
+
+**Errors**:
+
+* `os.Open error`: Error occurred while opening the _RSS_ file.
+* `gofeed.NewParser().Parse error`: Error occurred while parsing _RSS_ data.
+
+**Usage**:
+
+```
+rssParser := parser.RssParser{<filepath>}
+news, err := rssParser.Parse()
+```
+
+
+#### 3. UsaToday Parser
+
+**Description**: Parser for _HTML_ files from Usa Today news resource.
+
+**Args**:`rssParser.FilePath entity.PathToFile`: The path to the _HTML_ file to parse
+
+**Returns**:
+
+* `[]entity.News`: A list of parsed news;
+* `error`: Error object in case of failure.
+
+**Errors**:
+
+* `os.Open error`: Error occurred while opening the _HTML_ file.
+* `goquery.NewDocumentFromReader error`: Error occurred while creating a new document from the reader.
+
+**Usage**:
+
+```
+usaTodayParser := parser.UsaTodayParser{<filepath>}
+news, err := usaTodayParser.Parse()
+```
 
 ### Command line request:
 
