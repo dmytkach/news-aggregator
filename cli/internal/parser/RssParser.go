@@ -8,12 +8,12 @@ import (
 
 // RssParser - parser for RSS files.
 type RssParser struct {
-	filePath entity.PathToFile
+	FilePath entity.PathToFile
 }
 
 // Parse - implementation of a parser for files in RSS format.
 func (rssParser *RssParser) Parse() ([]entity.News, error) {
-	file, err := os.Open(string(rssParser.filePath))
+	file, err := os.Open(string(rssParser.FilePath))
 	if err != nil {
 		return nil, err
 	}

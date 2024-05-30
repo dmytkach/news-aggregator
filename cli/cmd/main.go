@@ -28,7 +28,7 @@ func main() {
 		fmt.Println("Please provide at least one source using the --sources flag.")
 		return
 	}
-	var filters []filter.NewsFilter
+	var filters []agregator.NewsFilter
 	if *keywords != "" {
 		keywordList := strings.Split(*keywords, ",")
 		filters = append(filters, &filter.KeywordFilter{Keywords: keywordList})

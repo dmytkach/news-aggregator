@@ -1,7 +1,8 @@
-package parser
+package agregator
 
 import (
 	"NewsAggregator/cli/internal/entity"
+	parser2 "NewsAggregator/cli/internal/parser"
 	"fmt"
 )
 
@@ -11,12 +12,12 @@ type Parser interface {
 }
 
 // New returns the appropriate parser implementation based on the type of source.
-func New(path entity.PathToFile) Parser {
-	typeOfSource := entity.AnalyzeResourceType(path)
+func New(Path entity.PathToFile) Parser {
+	typeOfSource := entity.AnalyzeResourceType(Path)
 	parserMap := map[entity.SourceType]Parser{
-		entity.RssType{}:  &RssParser{path},
-		entity.JsonType{}: &JsonParser{path},
-		entity.HtmlType{}: &HtmlParser{path},
+		entity.RssType{}:  &parser2.RssParser{FilePath: Path},
+		entity.JsonType{}: &parser2.JsonParser{FilePath: Path},
+		entity.HtmlType{}: &parser2.HtmlParser{FilePath: Path},
 	}
 	parser, exist := parserMap[typeOfSource]
 	if !exist {

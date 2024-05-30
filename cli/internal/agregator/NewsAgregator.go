@@ -2,15 +2,13 @@ package agregator
 
 import (
 	"NewsAggregator/cli/internal/entity"
-	"NewsAggregator/cli/internal/filter"
-	"NewsAggregator/cli/internal/parser"
 	"fmt"
 	"strings"
 )
 
 type NewsAggregator struct {
 	Sources []string
-	Filters []filter.NewsFilter
+	Filters []NewsFilter
 }
 
 var resources []entity.Resource
@@ -22,7 +20,7 @@ func (aggregator NewsAggregator) New() []entity.News {
 		sourceName = strings.TrimSpace(sourceName)
 		for _, source := range resources {
 			if strings.EqualFold(string(source.Name), sourceName) {
-				news, err := parser.New(source.PathToFile).Parse()
+				news, err := New(source.PathToFile).Parse()
 				if err != nil {
 					fmt.Println(err)
 				} else {

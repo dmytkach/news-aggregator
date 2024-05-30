@@ -9,7 +9,7 @@ import (
 
 // JsonParser - parser for JSON files.
 type JsonParser struct {
-	filePath entity.PathToFile
+	FilePath entity.PathToFile
 }
 
 // NewsResponse represents the structure of the JSON response containing news articles.
@@ -27,7 +27,7 @@ type NewsArticle struct {
 
 // Parse - implementation of a parser for files in JSON format.
 func (jsonParser *JsonParser) Parse() ([]entity.News, error) {
-	file, err := os.Open(string(jsonParser.filePath))
+	file, err := os.Open(string(jsonParser.FilePath))
 	if err != nil {
 		return nil, err
 	}
