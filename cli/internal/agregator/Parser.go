@@ -17,7 +17,7 @@ func New(Path entity.PathToFile) Parser {
 	parserMap := map[entity.SourceType]Parser{
 		entity.RssType{}:  &parser2.RssParser{FilePath: Path},
 		entity.JsonType{}: &parser2.JsonParser{FilePath: Path},
-		entity.HtmlType{}: &parser2.HtmlParser{FilePath: Path},
+		entity.HtmlType{}: &parser2.UsaTodayParser{FilePath: Path},
 	}
 	parser, exist := parserMap[typeOfSource]
 	if !exist {
