@@ -1,4 +1,4 @@
-package agregator
+package aggregator
 
 import (
 	"NewsAggregator/cli/internal/entity"

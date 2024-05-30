@@ -1,7 +1,7 @@
 package main
 
 import (
-	"NewsAggregator/cli/internal/agregator"
+	"NewsAggregator/cli/internal/aggregator"
 	"NewsAggregator/cli/internal/filter"
 	"flag"
 	"fmt"
@@ -28,7 +28,7 @@ func main() {
 		fmt.Println("Please provide at least one source using the --sources flag.")
 		return
 	}
-	var filters []agregator.NewsFilter
+	var filters []aggregator.NewsFilter
 	if *keywords != "" {
 		keywordList := strings.Split(*keywords, ",")
 		filters = append(filters, &filter.KeywordFilter{Keywords: keywordList})
@@ -51,8 +51,8 @@ func main() {
 		}
 		filters = append(filters, &filter.DateEndFilter{EndDate: endDate})
 	}
-	result := agregator.NewsAggregator{Sources: sourceList, Filters: filters}.New()
-	for _, newsItem := range result {
-		fmt.Println(newsItem.ToString())
+	res := aggregator.NewsAggregator{Sources: sourceList, Filters: filters}.New()
+	for _, news := range res {
+		fmt.Println(news.ToString())
 	}
 }
