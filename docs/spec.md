@@ -169,6 +169,27 @@ news []entity.news
 dateEndFilter := filter.DateEndFilter{EndDate: endDate}
 filteredNews := dateEndFilter.Filter(news)
 ```
+## Aggregator:
+
+The aggregator is the main component of the API designed to manage the collection and filtering of news from various sources.
+It processes news from certain sources and applies filters to them to provide a refined set of news articles.
+### Method
+**Name**: New()
+
+**Description**: Aggregates news from specified sources and applies certain 
+filters to return filtered set of news articles.
+
+**Returns**:
+* `[]entity.News`:A list of news articles aggregated from the specified sources and filtered 
+according to the defined criteria.
+* `error`: Error object in case of failure during the aggregation or filtering process.
+**Usage**:
+
+```
+aggregator := NewsAggregator{ Sources: <sources>, Filters: <filters>}
+news := aggregator.New()
+```
+
 ### Command line request:
 
 `go run cli/cmd/main.go --sources=BBC --keywords=president --date-start=2024-05-17`
