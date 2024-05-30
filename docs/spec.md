@@ -97,6 +97,31 @@ news, err := rssParser.Parse()
 usaTodayParser := parser.UsaTodayParser{<filepath>}
 news, err := usaTodayParser.Parse()
 ```
+## Factory method for parsers:
+
+The factory method is used to create parser objects depending on the file provided.
+It analyzes the format of the data source and selects the appropriate implementation of the parser.
+### Method
+**Name**: New()
+
+**Description**: Dynamically selects and instantiates a parser object based on the provided 
+data format and source.
+
+**Args**: `entity.PathToFile`: Path to the file containing news data.
+
+**Returns**:
+`Parser`: Parser object capable of parsing the specified format.
+If the specified source is not recognized returns nil.
+
+**Usage**:
+
+```
+parser := New(source.PathToFile)
+```
+
+## News Filter
+News filters are used in the news aggregator API to select news based on certain criteria.
+Each filter implementation targets specific parameters to refine the content of news.
 
 ### Command line request:
 
@@ -104,6 +129,7 @@ news, err := usaTodayParser.Parse()
 
 This query will return news articles from the BBC , filtered by the keyword "president"
 and published after May 17, 2024, to the command line.
+
 
 ### Request processing process:
 
