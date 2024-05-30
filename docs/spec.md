@@ -122,7 +122,53 @@ parser := New(source.PathToFile)
 ## News Filter
 News filters are used in the news aggregator API to select news based on certain criteria.
 Each filter implementation targets specific parameters to refine the content of news.
+### Supported Filters
 
+#### 1. Keyword Filter
+
+**Description**: Filters news by specified keywords.
+
+**Args**:`Keywords []string`: A list of keywords to filter news by.
+
+**Returns**:`[]entity.News`: A list of news items filtered by the specified keywords.
+
+**Usage**:
+
+```
+news []entity.news
+keywordFilter := filter.KeywordFilter{Keywords: []string{"keyword1", "keyword2"}}
+filteredNews := keywordFilter.Filter(news)
+```
+#### 2. Date Start Filter
+
+**Description**: Filters news starting from the specified date.
+
+**Args**:`StartDate time.Time`: The start date from which news should be filtered.
+
+**Returns**:`[]entity.News`: A list of news items starting from the specified date.
+
+**Usage**:
+
+```
+news []entity.news
+dateStartFilter := filter.DateStartFilter{StartDate: startDate}
+filteredNews := dateStartFilter.Filter(news)
+```
+#### 3. Date Start Filter
+
+**Description**: Filters news up to the specified date.
+
+**Args**:`EndDate time.Time`: The end date up to which news should be filtered.
+
+**Returns**:`[]entity.News`: A list of news items up to the specified date.
+
+**Usage**:
+
+```
+news []entity.news
+dateEndFilter := filter.DateEndFilter{EndDate: endDate}
+filteredNews := dateEndFilter.Filter(news)
+```
 ### Command line request:
 
 `go run cli/cmd/main.go --sources=BBC --keywords=president --date-start=2024-05-17`
