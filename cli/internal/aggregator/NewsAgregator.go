@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"NewsAggregator/cli/internal/entity"
-	"fmt"
 	"strings"
 )
 
@@ -14,29 +13,51 @@ type NewsAggregator struct {
 	Filters []NewsFilter
 }
 
-// New aggregated news from these sources Using these filters.
-// It initializes the list of resources, analyzes news from each source and applies
-// filters to return a filtered set of news articles.
+// New aggregates news from the specified sources and applies filters.
 func (aggregator NewsAggregator) New() []entity.News {
-	var result []entity.News
 	resources := initializeResource()
+	sourceNews := aggregator.collectNews(resources)
+	return aggregator.applyFilters(sourceNews)
+}
+
+// collectNews collects news from all specified resources.
+func (aggregator NewsAggregator) collectNews(resources []entity.Resource) []entity.News {
+	var result []entity.News
 	for _, sourceName := range aggregator.Sources {
 		sourceName = strings.TrimSpace(sourceName)
-		for _, source := range resources {
-			if strings.EqualFold(string(source.Name), sourceName) {
-				news, err := New(source.PathToFile).Parse()
-				if err != nil {
-					fmt.Println(err)
-				} else {
-					result = append(result, news...)
-				}
-			}
-		}
-	}
-	for _, news := range aggregator.Filters {
-		result = news.Filter(result)
+		newsFromSource := aggregator.getForSource(sourceName, resources)
+		result = append(result, newsFromSource...)
 	}
 	return result
+}
+
+// getForSource fetches news for a single source by comparing it with the list of resources.
+func (aggregator NewsAggregator) getForSource(sourceName string, resources []entity.Resource) []entity.News {
+	var result []entity.News
+	for _, resource := range resources {
+		if strings.EqualFold(string(resource.Name), sourceName) {
+			news := aggregator.getResourceNews(resource)
+			result = append(result, news...)
+		}
+	}
+	return result
+}
+
+// getResourceNews parses news from a single resource.
+func (aggregator NewsAggregator) getResourceNews(resource entity.Resource) []entity.News {
+	news, err := New(resource.PathToFile).Parse()
+	if err != nil {
+		print("Error fetching news from source: " + string(resource.Name))
+	}
+	return news
+}
+
+// applyFilters applies the configured filters to the aggregated news.
+func (aggregator NewsAggregator) applyFilters(news []entity.News) []entity.News {
+	for _, current := range aggregator.Filters {
+		news = current.Filter(news)
+	}
+	return news
 }
 func initializeResource() []entity.Resource {
 	return []entity.Resource{
