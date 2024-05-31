@@ -29,30 +29,48 @@ func main() {
 		return
 	}
 	var filters []aggregator.NewsFilter
-	if *keywords != "" {
-		keywordList := strings.Split(*keywords, ",")
-		filters = append(filters, &filter.KeywordFilter{Keywords: keywordList})
-	}
+	filters = append(filters, processKeywords(*keywords))
 
 	if *dateStart != "" {
-		startDate, err := time.Parse("2006-01-02", *dateStart)
+		start, err := processDateStart(*dateStart)
 		if err != nil {
-			fmt.Println("Invalid start date format. Please use YYYY-MM-DD.")
 			return
 		}
-		filters = append(filters, &filter.DateStartFilter{StartDate: startDate})
+		filters = append(filters, start)
 	}
 
 	if *dateEnd != "" {
-		endDate, err := time.Parse("2006-01-02", *dateEnd)
+		end, err := processDateEnd(*dateEnd)
 		if err != nil {
-			fmt.Println("Invalid end date format. Please use YYYY-MM-DD.")
 			return
 		}
-		filters = append(filters, &filter.DateEndFilter{EndDate: endDate})
+		filters = append(filters, end)
 	}
 	res := aggregator.NewsAggregator{Sources: sourceList, Filters: filters}.New()
 	for _, news := range res {
 		fmt.Println(news.ToString())
 	}
+}
+
+func processDateEnd(dateEnd string) (aggregator.NewsFilter, error) {
+	endDate, err := time.Parse("2006-01-02", dateEnd)
+	if err != nil {
+		fmt.Println("Invalid end date format. Please use YYYY-MM-DD.")
+		return nil, err
+	}
+	return &filter.DateEndFilter{EndDate: endDate}, err
+}
+
+func processDateStart(dateStart string) (aggregator.NewsFilter, error) {
+	startDate, err := time.Parse("2006-01-02", dateStart)
+	if err != nil {
+		fmt.Println("Invalid start date format. Please use YYYY-MM-DD.")
+		return nil, err
+	}
+	return &filter.DateStartFilter{StartDate: startDate}, err
+}
+
+func processKeywords(keywords string) aggregator.NewsFilter {
+	keywordList := strings.Split(keywords, ",")
+	return &filter.KeywordFilter{Keywords: keywordList}
 }
