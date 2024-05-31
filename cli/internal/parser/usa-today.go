@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
-// UsaTodayParser - parser for HTML files from Usa Today news resource.
-type UsaTodayParser struct {
+// UsaToday - parser for HTML files from Usa Today news resource.
+type UsaToday struct {
 	FilePath entity.PathToFile
 }
 
 // Parse - implementation of a parser for files in HTML format.
-func (usaTodayParser *UsaTodayParser) Parse() ([]entity.News, error) {
+func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(usaTodayParser.FilePath))
 	if err != nil {
 		log.Fatal(err)

@@ -1,4 +1,4 @@
-package aggregator
+package internal
 
 import (
 	"NewsAggregator/cli/internal/entity"
@@ -15,9 +15,9 @@ type Parser interface {
 func New(Path entity.PathToFile) Parser {
 	typeOfSource := entity.AnalyzeResourceType(Path)
 	parserMap := map[entity.SourceType]Parser{
-		entity.RssType{}:  &parser.RssParser{FilePath: Path},
-		entity.JsonType{}: &parser.JsonParser{FilePath: Path},
-		entity.HtmlType{}: &parser.UsaTodayParser{FilePath: Path},
+		entity.RssType{}:  &parser.Rss{FilePath: Path},
+		entity.JsonType{}: &parser.Json{FilePath: Path},
+		entity.HtmlType{}: &parser.UsaToday{FilePath: Path},
 	}
 	p, exist := parserMap[typeOfSource]
 	if !exist {

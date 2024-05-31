@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-// JsonParser - parser for JSON files.
-type JsonParser struct {
+// Json - parser for JSON files.
+type Json struct {
 	FilePath entity.PathToFile
 }
 
-// NewsResponse represents the structure of the JSON response containing news articles.
-type NewsResponse struct {
-	Articles []NewsArticle `json:"articles"`
+// newsResponse represents the structure of the JSON response containing news articles.
+type newsResponse struct {
+	Articles []newsArticle `json:"articles"`
 }
 
-// NewsArticle represents a single news article parsed from JSON.
-type NewsArticle struct {
+// newsArticle represents a single news article parsed from JSON.
+type newsArticle struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Link        string    `json:"url"`
@@ -26,7 +26,7 @@ type NewsArticle struct {
 }
 
 // Parse - implementation of a parser for files in JSON format.
-func (jsonParser *JsonParser) Parse() ([]entity.News, error) {
+func (jsonParser *Json) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(jsonParser.FilePath))
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (jsonParser *JsonParser) Parse() ([]entity.News, error) {
 		}
 	}(file)
 
-	var response NewsResponse
+	var response newsResponse
 	err = json.NewDecoder(file).Decode(&response)
 	if err != nil {
 		return nil, err

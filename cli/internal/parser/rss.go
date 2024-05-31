@@ -6,13 +6,13 @@ import (
 	"os"
 )
 
-// RssParser - parser for RSS files.
-type RssParser struct {
+// Rss - parser for RSS files.
+type Rss struct {
 	FilePath entity.PathToFile
 }
 
 // Parse - implementation of a parser for files in RSS format.
-func (rssParser *RssParser) Parse() ([]entity.News, error) {
+func (rssParser *Rss) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(rssParser.FilePath))
 	if err != nil {
 		return nil, err

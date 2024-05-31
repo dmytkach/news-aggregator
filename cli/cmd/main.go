@@ -1,8 +1,8 @@
 package main
 
 import (
-	"NewsAggregator/cli/internal/aggregator"
-	"NewsAggregator/cli/internal/filter"
+	"NewsAggregator/cli/internal"
+	"NewsAggregator/cli/internal/filters"
 	"flag"
 	"fmt"
 	"strings"
@@ -12,9 +12,9 @@ import (
 func main() {
 	help := flag.Bool("help", false, "Show all available arguments and their descriptions.")
 	sources := flag.String("sources", "", "Select the desired news sources to get the news from. Usage: --sources=bbc,usatoday")
-	keywords := flag.String("keywords", "", "Specify the keywords to filter the news by. Usage: --keywords=Ukraine,China")
-	dateStart := flag.String("date-start", "", "Specify the start date to filter the news by. Usage: --date-start=2024-05-18")
-	dateEnd := flag.String("date-end", "", "Specify the end date to filter the news by. Usage: --date-end=2024-05-19")
+	keywords := flag.String("keywords", "", "Specify the keywords to res_filter the news by. Usage: --keywords=Ukraine,China")
+	dateStart := flag.String("date-start", "", "Specify the start date to res_filter the news by. Usage: --date-start=2024-05-18")
+	dateEnd := flag.String("date-end", "", "Specify the end date to res_filter the news by. Usage: --date-end=2024-05-19")
 
 	flag.Parse()
 
@@ -28,15 +28,15 @@ func main() {
 		fmt.Println("Please provide at least one source using the --sources flag.")
 		return
 	}
-	var filters []aggregator.NewsFilter
-	filters = append(filters, processKeywords(*keywords))
+	var resFilter []internal.NewsFilter
+	resFilter = append(resFilter, processKeywords(*keywords))
 
 	if *dateStart != "" {
 		start, err := processDateStart(*dateStart)
 		if err != nil {
 			return
 		}
-		filters = append(filters, start)
+		resFilter = append(resFilter, start)
 	}
 
 	if *dateEnd != "" {
@@ -44,33 +44,33 @@ func main() {
 		if err != nil {
 			return
 		}
-		filters = append(filters, end)
+		resFilter = append(resFilter, end)
 	}
-	res := aggregator.NewsAggregator{Sources: sourceList, Filters: filters}.New()
+	res := internal.NewsAggregator{Sources: sourceList, Filters: resFilter}.New()
 	for _, news := range res {
 		fmt.Println(news.ToString())
 	}
 }
 
-func processDateEnd(dateEnd string) (aggregator.NewsFilter, error) {
+func processDateEnd(dateEnd string) (internal.NewsFilter, error) {
 	endDate, err := time.Parse("2006-01-02", dateEnd)
 	if err != nil {
 		fmt.Println("Invalid end date format. Please use YYYY-MM-DD.")
 		return nil, err
 	}
-	return &filter.DateEndFilter{EndDate: endDate}, err
+	return &filters.DateEnd{EndDate: endDate}, err
 }
 
-func processDateStart(dateStart string) (aggregator.NewsFilter, error) {
+func processDateStart(dateStart string) (internal.NewsFilter, error) {
 	startDate, err := time.Parse("2006-01-02", dateStart)
 	if err != nil {
 		fmt.Println("Invalid start date format. Please use YYYY-MM-DD.")
 		return nil, err
 	}
-	return &filter.DateStartFilter{StartDate: startDate}, err
+	return &filters.DateStart{StartDate: startDate}, err
 }
 
-func processKeywords(keywords string) aggregator.NewsFilter {
+func processKeywords(keywords string) internal.NewsFilter {
 	keywordList := strings.Split(keywords, ",")
-	return &filter.KeywordFilter{Keywords: keywordList}
+	return &filters.Keyword{Keywords: keywordList}
 }
