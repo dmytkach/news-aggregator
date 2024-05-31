@@ -12,9 +12,9 @@ import (
 func main() {
 	help := flag.Bool("help", false, "Show all available arguments and their descriptions.")
 	sources := flag.String("sources", "", "Select the desired news sources to get the news from. Usage: --sources=bbc,usatoday")
-	keywords := flag.String("keywords", "", "Specify the keywords to res_filter the news by. Usage: --keywords=Ukraine,China")
-	dateStart := flag.String("date-start", "", "Specify the start date to res_filter the news by. Usage: --date-start=2024-05-18")
-	dateEnd := flag.String("date-end", "", "Specify the end date to res_filter the news by. Usage: --date-end=2024-05-19")
+	keywords := flag.String("keywords", "", "Specify the keywords to filter the news by. Usage: --keywords=Ukraine,China")
+	dateStart := flag.String("date-start", "", "Specify the start date to filter the news by. Usage: --date-start=2024-05-18")
+	dateEnd := flag.String("date-end", "", "Specify the end date to filter the news by. Usage: --date-end=2024-05-19")
 
 	flag.Parse()
 
@@ -25,7 +25,7 @@ func main() {
 
 	sourceList := strings.Split(*sources, ",")
 	if len(sourceList) == 0 {
-		fmt.Println("Please provide at least one source using the --sources flag.")
+		println("Please provide at least one source using the --sources flag.")
 		return
 	}
 	var resFilter []internal.NewsFilter
