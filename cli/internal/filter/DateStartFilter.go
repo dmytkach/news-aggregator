@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// DateStartFilter filters news from the specified date.
 type DateStartFilter struct {
 	StartDate time.Time
 }
