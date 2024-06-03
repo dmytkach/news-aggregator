@@ -41,7 +41,11 @@ func (aggregator NewsAggregator) getForSource(sourceName string, resources []ent
 		}
 	}
 	if len(result) == 0 {
-		print("Error fetching news from source: " + sourceName)
+		print("Error news source: " + sourceName + ". Available news sources: ")
+		for _, resource := range resources {
+			print("  " + resource.Name)
+		}
+		print("\n")
 	}
 	return result
 }

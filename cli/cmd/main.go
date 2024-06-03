@@ -33,7 +33,7 @@ func main() {
 
 	if *dateStart != "" {
 		start, err := processDateStart(*dateStart)
-		if err != nil {
+		if err != nil || start == nil {
 			return
 		}
 		resFilter = append(resFilter, start)
@@ -66,6 +66,10 @@ func processDateStart(dateStart string) (internal.NewsFilter, error) {
 	if err != nil {
 		fmt.Println("Invalid start date format. Please use YYYY-MM-DD.")
 		return nil, err
+	}
+	if startDate.After(time.Now()) {
+		println("News for this period is not available.")
+		return nil, nil
 	}
 	return &filters.DateStart{StartDate: startDate}, err
 }
