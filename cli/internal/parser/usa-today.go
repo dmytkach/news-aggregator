@@ -2,9 +2,11 @@ package parser
 
 import (
 	"NewsAggregator/cli/internal/entity"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -33,7 +35,6 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 		return nil, err
 	}
 
-	const layout = "January 2, 2006"
 	const outputLayout = "2006-01-02"
 	baseURL := "https://www.usatoday.com"
 
@@ -46,26 +47,38 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 		if !strings.HasPrefix(link, "http") {
 			link = baseURL + link
 		}
-
+		if len(strings.TrimSpace(title)) == 0 {
+			return
+		}
 		dateStr, _ := s.Find("div.gnt_m_flm_sbt").Attr("data-c-dt")
-		parsedDate, err := time.Parse(layout, dateStr)
-		if err != nil {
-			log.Println("Error parsing date:", err)
-			parsedDate = time.Time{}
+		var parsedDate time.Time
+		var err error
+
+		if dateStr != "" {
+			re := regexp.MustCompile(`[A-Za-z]+\s+\d{1,2}`)
+			datePart := re.FindString(dateStr)
+			if datePart != "" {
+				datePart = fmt.Sprintf("%s %d", datePart, time.Now().Year())
+				parsedDate, err = time.Parse("January 2 2006", datePart)
+				if err != nil {
+					return
+				}
+			}
 		}
 
 		formattedDateStr := parsedDate.Format(outputLayout)
 		formattedDate, err := time.Parse(outputLayout, formattedDateStr)
-		if err != nil {
-			log.Println("Error formatting date:", err)
+		if formattedDate.Year() < 1000 {
+			formattedDateStr = time.Now().Format(outputLayout)
+			formattedDate, err = time.Parse(outputLayout, formattedDateStr)
 		}
-
 		news = append(news, entity.News{
 			Title:       entity.Title(strings.TrimSpace(title)),
 			Description: entity.Description(strings.TrimSpace(description)),
 			Link:        entity.Link(strings.TrimSpace(link)),
 			Date:        formattedDate,
 		})
+
 	})
 
 	return news, nil
