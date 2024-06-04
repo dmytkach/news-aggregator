@@ -46,7 +46,7 @@ func main() {
 		}
 		resFilter = append(resFilter, end)
 	}
-	res := internal.NewsAggregator{Sources: sourceList, Filters: resFilter}.New()
+	res := internal.Aggregate(sourceList, resFilter)
 	for _, news := range res {
 		fmt.Println(news.ToString())
 	}
