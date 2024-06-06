@@ -1,0 +1,43 @@
+{
+  "status": "ok",
+  "totalResults": 134,
+  "articles": [
+    {
+      "source": {
+        "id": "nbc-news",
+        "name": "NBC News"
+      },
+      "author": "Alexandra Marquez",
+      "title": "Container ship that struck Baltimore bridge will be removed from the site 'within days,' Maryland governor says",
+      "description": "Ship that struck Francis Scott Key Bridge in Baltimore will be removed \"within days,\" Maryland Gov. Wes Moore says",
+      "url": "https://www.nbcnews.com/politics/politics-news/francis-scott-key-bridge-ship-removal-wes-moore-baltimore-rcna152955",
+      "urlToImage": "https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1200-630,f_auto,q_auto:best/rockcms/2024-03/240329-Wes-Moore-ch-0911-bf51af.jpg",
+      "publishedAt": "2024-05-19T14:06:47Z",
+      "content": "Maryland Gov. Wes Moore on Sunday said that the Dali, a massive container ship that felled the Francis Scott Key Bridge in Baltimore in March, will be removed \"within days.\"\r\n\"I remember that first m… [+1400 chars]"
+    },  {
+      "source": {
+        "id": "nbc-news",
+        "name": "NBC News"
+      },
+      "author": "Sakshi Venkatraman",
+      "title": "Harris says more Indian American representation is needed in government",
+      "description": "Addressing a crowd of Indian Americans this week, Vice President Kamala Harris asserted the importance of voting and running. But Biden and Harris approval among the group has fallen.",
+      "url": "https://www.nbcnews.com/news/asian-america/kamala-harris-more-indian-american-representation-needed-government-rcna152761",
+      "urlToImage": "https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1200-630,f_auto,q_auto:best/rockcms/2024-05/240517-kamala-harris-se-1157a-649838.jpg",
+      "publishedAt": "2024-05-17T19:48:19Z",
+      "content": "Addressing a crowd of Indian Americans this week, Vice President Kamala Harris asserted the importance of South Asians running for office, saying theres not nearly enough compared to the groups size … [+3872 chars]"
+    }, {
+      "source": {
+        "id": "nbc-news",
+        "name": "NBC News"
+      },
+      "author": "The Associated Press",
+      "title": "Atlanta officer accused of killing Lyft driver allegedly said victim was ‘gay fraternity’ recruiter",
+      "description": "An Atlanta police officer accused of murdering a Lyft driver allegedly said the victim was in a gay fraternity trying to recruit him.",
+      "url": "https://www.nbcnews.com/nbc-out/out-news/atlanta-officer-accused-killing-lyft-driver-allegedly-said-victim-was-rcna152751",
+      "urlToImage": "https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1200-630,f_auto,q_auto:best/rockcms/2024-05/240517-lyft-se1023a-748202.jpg",
+      "publishedAt": "2024-05-17T14:29:43Z",
+      "content": "UNION CITY, Ga. An Atlanta police officer who shot and killed a Lyft driver who was driving him home was arrested and charged with murder, authorities said.\r\nKoby Minor, 34, was being held without bo… [+1513 chars]"
+    }
+  ]
+}

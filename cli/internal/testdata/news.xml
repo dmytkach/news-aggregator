@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+    <channel>
+        <title><![CDATA[BBC News]]></title>
+        <description><![CDATA[BBC News - News Front Page]]></description>
+        <link>https://www.bbc.co.uk/news</link>
+        <image>
+            <url>https://news.bbcimg.co.uk/nol/shared/img/bbc_news_120x60.gif</url>
+            <title>BBC News</title>
+            <link>https://www.bbc.co.uk/news</link>
+        </image>
+        <generator>RSS for Node</generator>
+        <lastBuildDate>Sun, 19 May 2024 13:05:34 GMT</lastBuildDate>
+        <atom:link href="https://feeds.bbci.co.uk/news/rss.xml" rel="self" type="application/rss+xml"/>
+        <copyright>
+            <![CDATA[Copyright: (C) British Broadcasting Corporation, see https://www.bbc.co.uk/usingthebbc/terms-of-use/#15metadataandrssfeeds for terms and conditions of reuse.]]></copyright>
+        <language><![CDATA[en-gb]]></language>
+        <ttl>15</ttl>
+        <item>
+            <title><![CDATA[Boy's body found in river as second teen 'critical']]></title>
+            <description><![CDATA[The 14-year-old's body was found in the River Tyne and the younger boy was rescued and taken to hospital.]]></description>
+            <link>https://www.bbc.com/news/articles/cnee7lp7mgdo</link>
+            <guid isPermaLink="false">https://www.bbc.com/news/articles/cnee7lp7mgdo#0</guid>
+            <pubDate>Sun, 19 May 2024 12:20:49 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/news/240/cpsprodpb/801d/live/33a07f10-15cd-11ef-9b12-1ba8f95c4917.jpg"/>
+        </item>
+        <item>
+            <title><![CDATA[Su and Steve fought for justice, but didn't live to see it]]></title>
+            <description><![CDATA[Su Gorman and Steve Dymond helped to expose an NHS scandal - but they died without seeing justice.]]></description>
+            <link>https://www.bbc.co.uk/news/health-69018125</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/health-69018125#0</guid>
+            <pubDate>Sat, 18 May 2024 23:05:19 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/485A/production/_133322581_susteve.jpg"/>
+        </item>
+        <item>
+            <title><![CDATA[Infected blood victims have waited too long - Shapps]]></title>
+            <description><![CDATA[Families have been let down over decades, says minister, ahead of a long-awaited inquiry report.]]></description>
+            <link>https://www.bbc.co.uk/news/uk-politics-69034451</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/uk-politics-69034451#0</guid>
+            <pubDate>Sun, 19 May 2024 11:33:38 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/811C/production/_133325033_bloodcampaignerspamedia.jpg"/>
+        </item>
+        <item>
+            <title><![CDATA[Israel war cabinet minister vows to quit if there is no post-war plan for Gaza]]></title>
+            <description><![CDATA[Recent weeks have seen an increasingly public rift over how Gaza should be governed after the war.]]></description>
+            <link>https://www.bbc.com/news/articles/cekkz82gnzgo</link>
+            <guid isPermaLink="false">https://www.bbc.com/news/articles/cekkz82gnzgo#0</guid>
+            <pubDate>Sat, 18 May 2024 23:22:26 GMT</pubDate>
+            <media:thumbnail width="240" height="160" url="https://ichef.bbci.co.uk/news/240/cpsprodpb/fb7a/live/8a9f3ae0-159b-11ef-a5f9-c9e97f2e93cf.jpg"/>
+        </item>
+        <item>
+            <title><![CDATA[Scam callers targeting parasite outbreak victims]]></title>
+            <description><![CDATA[South West Water customers impacted by the outbreak will automatically be paid £215 in compensation.]]></description>
+            <link>https://www.bbc.com/news/articles/cp448vp8k88o</link>
+            <guid isPermaLink="false">https://www.bbc.com/news/articles/cp448vp8k88o#0</guid>
+            <pubDate>Sun, 19 May 2024 09:56:27 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/news/240/cpsprodpb/f384/live/1cfdd290-15c2-11ef-9dec-0b62d9933342.jpg"/>
+        </item>
+        <item>
+            <title><![CDATA[Inside the museums averaging fewer than one visitor a day]]></title>
+            <description><![CDATA[What is it like for the volunteers who keep England's smallest attractions going?]]></description>
+            <link>https://www.bbc.co.uk/news/uk-england-68779540</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/uk-england-68779540#0</guid>
+            <pubDate>Sun, 19 May 2024 01:09:42 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/16695/production/_133279719_thebaymuseumupscaled-1-of-1.jpg"/>
+        </item>
+    </channel>
+</rss>

@@ -40,7 +40,7 @@ func TestAggregate(t *testing.T) {
 		args args
 		want []entity.News
 	}{{
-		name: "should work with bbc resource",
+		name: "should aggregate news on given sources applying filters.",
 		args: args{
 			sources: []string{"BBC"},
 			filters: []NewsFilter{
@@ -92,7 +92,7 @@ func Test_applyFilters(t *testing.T) {
 		args args
 		want []entity.News
 	}{{
-		name: "should work with nbc resource",
+		name: "should apply filters to selected news.",
 		args: args{
 			news: collectNews([]string{"NBC"}),
 			filters: []NewsFilter{
@@ -129,7 +129,7 @@ func Test_collectNews(t *testing.T) {
 		args args
 		want int
 	}{{
-		name: "should work with nbc resource",
+		name: "should collect news from the specified sources.",
 		args: args{
 			sources: []string{"usatoday"},
 		},
@@ -156,7 +156,7 @@ func Test_getForSource(t *testing.T) {
 		args args
 		want int
 	}{{
-		name: "should work with nbc resource",
+		name: "should collect news from the specified source.",
 		args: args{
 			sourceName: "abc",
 		},
@@ -183,7 +183,7 @@ func Test_getResourceNews(t *testing.T) {
 		args args
 		want int
 	}{{
-		name: "should work with nbc resource",
+		name: "should parses news from a single resource",
 		args: args{
 			resource: entity.Resource{Name: "washington", PathToFile: "resources/washingtontimes-world-category-19-05-24.xml"},
 		},
