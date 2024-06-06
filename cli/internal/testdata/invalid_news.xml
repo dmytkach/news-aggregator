@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+    <channel>
+        <tit><![CDATA[BBC News]]></tit>
+        <descr><![CDATA[BBC News - News Front Page]]></descr>
+        <l>https://www.bbc.co.uk/news</l>
+        <im>
+            <u>https://news.bbcimg.co.uk/nol/shared/img/bbc_news_120x60.gif</u>
+            <t>BBC News</t>
+            <l>https://www.bbc.co.uk/news</l>
+        </im>
+    </channel>
+</rss>

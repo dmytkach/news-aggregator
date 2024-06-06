@@ -3,6 +3,7 @@ package parser
 import (
 	"NewsAggregator/cli/internal/entity"
 	"encoding/json"
+	"errors"
 	"os"
 	"time"
 )
@@ -54,6 +55,9 @@ func (jsonParser *Json) Parse() ([]entity.News, error) {
 			Date:        article.Date,
 		}
 		allNews = append(allNews, news)
+	}
+	if len(allNews) == 0 {
+		return nil, errors.New("no news found")
 	}
 	return allNews, nil
 }

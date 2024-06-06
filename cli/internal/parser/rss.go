@@ -2,6 +2,7 @@ package parser
 
 import (
 	"NewsAggregator/cli/internal/entity"
+	"errors"
 	"github.com/mmcdole/gofeed"
 	"os"
 )
@@ -29,15 +30,17 @@ func (rssParser *Rss) Parse() ([]entity.News, error) {
 		return nil, err
 	}
 
-	var newsItems []entity.News
+	var allNews []entity.News
 	for _, item := range feed.Items {
-		newsItems = append(newsItems, entity.News{
+		allNews = append(allNews, entity.News{
 			Title:       entity.Title(item.Title),
 			Description: entity.Description(item.Description),
 			Link:        entity.Link(item.Link),
 			Date:        *item.PublishedParsed,
 		})
 	}
-
-	return newsItems, nil
+	if len(allNews) == 0 {
+		return nil, errors.New("no news found")
+	}
+	return allNews, nil
 }

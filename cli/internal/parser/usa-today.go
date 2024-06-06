@@ -2,6 +2,7 @@ package parser
 
 import (
 	"NewsAggregator/cli/internal/entity"
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
@@ -20,7 +21,7 @@ type UsaToday struct {
 func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(usaTodayParser.FilePath))
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
@@ -38,7 +39,7 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 	const outputLayout = "2006-01-02"
 	baseURL := "https://www.usatoday.com"
 
-	var news []entity.News
+	var allNews []entity.News
 	doc.Find("main.gnt_cw div.gnt_m_flm a.gnt_m_flm_a").Each(func(i int, s *goquery.Selection) {
 		title := s.Text()
 		description, _ := s.Attr("data-c-br")
@@ -72,7 +73,7 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 			formattedDateStr = time.Now().Format(outputLayout)
 			formattedDate, err = time.Parse(outputLayout, formattedDateStr)
 		}
-		news = append(news, entity.News{
+		allNews = append(allNews, entity.News{
 			Title:       entity.Title(strings.TrimSpace(title)),
 			Description: entity.Description(strings.TrimSpace(description)),
 			Link:        entity.Link(strings.TrimSpace(link)),
@@ -80,6 +81,8 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 		})
 
 	})
-
-	return news, nil
+	if len(allNews) == 0 {
+		return nil, errors.New("no news found")
+	}
+	return allNews, nil
 }

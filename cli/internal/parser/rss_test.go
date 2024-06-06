@@ -36,13 +36,13 @@ func TestRss_Parse(t *testing.T) {
 		},
 		{
 			name:    "Test parsing invalid RSS file",
-			file:    "testdata/invalid_news.xml",
+			file:    "../testdata/invalid_news.xml",
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "Test parsing missing RSS file",
-			file:    "testdata/nonexistent_file.xml",
+			file:    "../testdata/nonexistent_file.xml",
 			want:    nil,
 			wantErr: true,
 		},
