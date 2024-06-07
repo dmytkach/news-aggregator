@@ -2,6 +2,7 @@ package main
 
 import (
 	"NewsAggregator/cli/internal"
+	"NewsAggregator/cli/internal/entity"
 	"NewsAggregator/cli/internal/filters"
 	"flag"
 	"fmt"
@@ -47,9 +48,7 @@ func main() {
 		resFilter = append(resFilter, end)
 	}
 	res := internal.Aggregate(sourceList, resFilter)
-	for _, news := range res {
-		fmt.Println(news.ToString())
-	}
+	entity.ToString(res)
 }
 
 func processDateEnd(dateEnd string) (internal.NewsFilter, error) {

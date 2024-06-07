@@ -1,7 +1,8 @@
 package entity
 
 import (
-	"strings"
+	"os"
+	"text/template"
 	"time"
 )
 
@@ -23,13 +24,14 @@ type News struct {
 }
 
 // ToString formats the news article into a human-readable string.
-func (news *News) ToString() string {
-	parts := []string{
-		string("Title: " + news.Title),
-		string("Description: " + news.Description),
-		string("Link: " + news.Link),
-		"Date: " + news.Date.String(),
-		"-----------------------",
+func ToString(news []News) {
+	var tmplFile = "cli/internal/entity/news.tmpl"
+	tmpl, err := template.ParseFiles(tmplFile)
+	if err != nil {
+		panic(err)
 	}
-	return strings.Join(parts, "\n")
+	err = tmpl.Execute(os.Stdout, news)
+	if err != nil {
+		panic(err)
+	}
 }
