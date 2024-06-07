@@ -1,7 +1,16 @@
-{{ range . }}
+{{ define "news" }}
+Filters applied: {{ .Filters }}
+Total news items: {{ .Count }}
+
+{{ if eq .Count 0 }}
+No news items found.
+{{ else }}
+{{ range .News }}
 ---
-Title: {{ .Title }}
-Description: {{ .Description }}
+Title: {{ .Title}}
+Description: {{ .Description}}
 Link: {{ .Link }}
-Date: {{ .Date }}
+Date: {{ .Date.Format "2006-01-02 15:04:05 MST" }}
+{{ end }}
+{{ end }}
 {{ end }}

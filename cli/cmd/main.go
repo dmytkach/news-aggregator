@@ -6,7 +6,9 @@ import (
 	"NewsAggregator/cli/internal/filters"
 	"flag"
 	"fmt"
+	"os"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -16,6 +18,8 @@ func main() {
 	keywords := flag.String("keywords", "", "Specify the keywords to filter the news by. Usage: --keywords=Ukraine,China")
 	dateStart := flag.String("date-start", "", "Specify the start date to filter the news by. Usage: --date-start=2024-05-18")
 	dateEnd := flag.String("date-end", "", "Specify the end date to filter the news by. Usage: --date-end=2024-05-19")
+	sortOrder := flag.String("sort-order", "DESC", "Specify the sort order for the news items (ASC or DESC). Usage: --sort-order=ASC")
+	sortBy := flag.String("sort-by", "date", "Specify the sort criteria for the news items (date or source). Usage: --sort-by=source")
 
 	flag.Parse()
 
@@ -29,6 +33,7 @@ func main() {
 		println("Please provide at least one source using the --sources flag.")
 		return
 	}
+
 	var resFilter []internal.NewsFilter
 	resFilter = append(resFilter, processKeywords(*keywords))
 
@@ -47,8 +52,13 @@ func main() {
 		}
 		resFilter = append(resFilter, end)
 	}
+
 	res := internal.Aggregate(sourceList, resFilter)
-	entity.ToString(res)
+
+	// Sort news based on provided criteria
+	internal.SortNews(res, *sortBy, *sortOrder)
+
+	printNews(res, *sortBy, *keywords, sourceList)
 }
 
 func processDateEnd(dateEnd string) (internal.NewsFilter, error) {
@@ -76,4 +86,39 @@ func processDateStart(dateStart string) (internal.NewsFilter, error) {
 func processKeywords(keywords string) internal.NewsFilter {
 	keywordList := strings.Split(keywords, ",")
 	return &filters.Keyword{Keywords: keywordList}
+}
+
+func printNews(news []entity.News, sortBy, keywords string, sourceList []string) {
+	var tmplFile = "cli/internal/entity/news.tmpl"
+	funcMap := template.FuncMap{
+		"highlight": func(text, keywords string) string {
+			for _, keyword := range strings.Split(keywords, ",") {
+				text = strings.ReplaceAll(text, keyword, "~~"+keyword+"~~")
+			}
+			return text
+		},
+	}
+	tmpl, err := template.New("news").Funcs(funcMap).ParseFiles(tmplFile)
+	if err != nil {
+		panic(err)
+	}
+
+	data := struct {
+		Filters  string
+		Count    int
+		News     []entity.News
+		Keywords string
+		SortBy   string
+	}{
+		Filters:  fmt.Sprintf("sources=%s, keywords=%s, sort-by=%s", strings.Join(sourceList, ","), keywords, sortBy),
+		Count:    len(news),
+		News:     news,
+		Keywords: fmt.Sprintf("%s", keywords),
+		SortBy:   sortBy,
+	}
+
+	err = tmpl.ExecuteTemplate(os.Stdout, "news", data)
+	if err != nil {
+		panic(err)
+	}
 }
