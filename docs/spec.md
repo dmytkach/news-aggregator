@@ -18,6 +18,26 @@ News Aggregator provides a convenient and effective tool that lets users know ab
 
 # APIs design
 
+## Aggregator:
+
+The aggregator is the main component of the API designed to manage the collection and filtering of news from various sources.
+It processes news from certain sources with the help of the parsers and applies filters to them to provide a refined set of news articles.
+
+### Method
+**Name**: Aggregate()
+
+**Description**: Aggregates news from specified sources and applies certain
+filters to return filtered set of news articles.
+
+**Returns**:
+* `[]entity.News`:A list of news articles aggregated from the specified sources and filtered
+  according to the defined criteria.
+  **Usage**:
+
+```
+aggregator := Aggregate(<sources>, <filters>)
+```
+
 ## Parser:
 
 Parsers are used in the News Aggregator API to extract data from news site sources.
@@ -26,6 +46,7 @@ responsible for the source of a certain format.
 Each parser implementation converts the data into a set of strictly structured news.
 P.S.  Since the content of Html files in all resources is different, 
 it was decided to implement unique parsers for each resource using html
+
 ### Supported Parsers
 
 #### 1. JSON Parser
@@ -169,26 +190,6 @@ news []entity.news
 dateEndFilter := filter.DateEndFilter{EndDate: endDate}
 filteredNews := dateEndFilter.Filter(news)
 ```
-## Aggregator:
-
-The aggregator is the main component of the API designed to manage the collection and filtering of news from various sources.
-It processes news from certain sources and applies filters to them to provide a refined set of news articles.
-### Method
-**Name**: New()
-
-**Description**: Aggregates news from specified sources and applies certain 
-filters to return filtered set of news articles.
-
-**Returns**:
-* `[]entity.News`:A list of news articles aggregated from the specified sources and filtered 
-according to the defined criteria.
-* `error`: Error object in case of failure during the aggregation or filtering process.
-**Usage**:
-
-```
-aggregator := NewsAggregator{ Sources: <sources>, Filters: <filters>}
-news := aggregator.New()
-```
 
 ### Command line request:
 
@@ -211,7 +212,3 @@ and published after May 17, 2024, to the command line.
 `filters = append(filters, &filter.DateStartFilter{StartDate: startDate})` - add a date filter.
 
 `result = newsFilter.Filter(result)` - use the general interface for filtering news and save for output.
-
-# Unresolved questions
-
-1. What is the best way to work with HTML, given the unnormalized data?
