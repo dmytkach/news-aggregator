@@ -1,4 +1,4 @@
-// Package aggregator provides API for aggregating and filtering news articles from various sources.
+// Package internal provides API for aggregating and filtering news articles from various sources.
 //
 // API includes the NewsAggregator,
 // which is responsible for aggregating news articles,

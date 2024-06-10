@@ -49,6 +49,9 @@ func getResourceNews(resource entity.Resource) []entity.News {
 	if err != nil {
 		print("Error fetching news from source: " + string(resource.Name))
 	}
+	for i := range news {
+		news[i].Source = string(resource.Name)
+	}
 	return news
 }
 

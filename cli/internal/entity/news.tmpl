@@ -1,16 +1,27 @@
-{{ define "news" }}
-Filters applied: {{ .Filters }}
-Total news items: {{ .Count }}
-
-{{ if eq .Count 0 }}
-No news items found.
-{{ else }}
-{{ range .News }}
----
-Title: {{ .Title}}
-Description: {{ .Description}}
-Link: {{ .Link }}
-Date: {{ .Date.Format "2006-01-02 15:04:05 MST" }}
-{{ end }}
-{{ end }}
-{{ end }}
+{{define "news"}}
+Filters applied: {{.Filters}}
+{{if eq .Count 0}}News not found.{{else}}
+Number of selected news: {{.Count}}
+{{if eq .Criterion "source"}}
+{{range $source, $newsList := groupBySource .News}}
+Source: {{$source}} ({{len $newsList}} items)
+{{range $newsList}}
+Title: {{highlight (toString .Title) $.Keywords}}
+Description: {{highlight (toString .Description) $.Keywords}}
+Link: {{toString .Link}}
+Date: {{.Date.Format "2006-01-02 15:04:05"}}
+--------------------------------------------
+{{end}}
+{{end}}
+{{else}}
+{{range .News}}
+Source: {{.Source}}
+Title: {{highlight (toString .Title) $.Keywords}}
+Description: {{highlight (toString .Description) $.Keywords}}
+Link: {{toString .Link}}
+Date: {{.Date.Format "2006-01-02 15:04:05"}}
+--------------------------------------------
+{{end}}
+{{end}}
+{{end}}
+{{end}}
