@@ -5,6 +5,7 @@ import (
 	"sort"
 )
 
+// Sort news according to the specified criteria and order.
 func Sort(news []entity.News, criterion, order string) []entity.News {
 	sort.Slice(news, func(i, j int) bool {
 		if criterion == "date" {
