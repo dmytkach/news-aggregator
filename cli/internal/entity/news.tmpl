@@ -1,11 +1,13 @@
 {{define "news"}}
 Filters applied: {{.Filters}}
-{{if eq .Count 0}}News not found.{{else}}
+{{if eq .Count 0}}
+News not found.
+{{else}}
 Number of selected news: {{.Count}}
 {{if eq .Criterion "source"}}
-{{range $source, $newsList := groupBySource .News}}
-Source: {{$source}} ({{len $newsList}} items)
-{{range $newsList}}
+{{range .Grouped}}
+Source: {{.Source}} ({{len .NewsList}} items)
+{{range .NewsList}}
 Title: {{highlight (toString .Title) $.Keywords}}
 Description: {{highlight (toString .Description) $.Keywords}}
 Link: {{toString .Link}}
