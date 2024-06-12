@@ -10,7 +10,7 @@ type DateEnd struct {
 	EndDate time.Time
 }
 
-// Filter filters news up to a specified date.
+// Filter news up to a specified date.
 func (de *DateEnd) Filter(news []entity.News) []entity.News {
 	var filtered []entity.News
 	for _, item := range news {

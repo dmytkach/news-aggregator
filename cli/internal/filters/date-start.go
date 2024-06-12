@@ -10,7 +10,7 @@ type DateStart struct {
 	StartDate time.Time
 }
 
-// Filter filters news starting from the specified date.
+// Filter news starting from the specified date.
 func (ds *DateStart) Filter(news []entity.News) []entity.News {
 	var filtered []entity.News
 	for _, item := range news {

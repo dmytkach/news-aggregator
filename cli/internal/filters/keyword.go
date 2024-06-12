@@ -10,7 +10,7 @@ type Keyword struct {
 	Keywords []string
 }
 
-// Filter filters news by keywords in the title and description.
+// Filter news by keywords in the title and description.
 func (k *Keyword) Filter(news []entity.News) []entity.News {
 	var filtered []entity.News
 	for _, item := range news {
