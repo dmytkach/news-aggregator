@@ -11,12 +11,15 @@ type DateEnd struct {
 }
 
 // Filter filters news up to a specified date.
-func (def *DateEnd) Filter(news []entity.News) []entity.News {
+func (de *DateEnd) Filter(news []entity.News) []entity.News {
 	var filtered []entity.News
 	for _, item := range news {
-		if item.Date.Before(def.EndDate) || item.Date.Equal(def.EndDate) {
+		if item.Date.Before(de.EndDate) || item.Date.Equal(de.EndDate) {
 			filtered = append(filtered, item)
 		}
 	}
 	return filtered
+}
+func (de *DateEnd) String() string {
+	return "date-end=" + de.EndDate.Format("2006-01-02")
 }

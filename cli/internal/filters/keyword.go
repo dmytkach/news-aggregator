@@ -11,10 +11,10 @@ type Keyword struct {
 }
 
 // Filter filters news by keywords in the title and description.
-func (kf *Keyword) Filter(news []entity.News) []entity.News {
+func (k *Keyword) Filter(news []entity.News) []entity.News {
 	var filtered []entity.News
 	for _, item := range news {
-		for _, keyword := range kf.Keywords {
+		for _, keyword := range k.Keywords {
 			if strings.Contains(strings.ToLower(string(item.Title)), strings.ToLower(keyword)) ||
 				strings.Contains(strings.ToLower(string(item.Description)), strings.ToLower(keyword)) {
 				filtered = append(filtered, item)
@@ -23,4 +23,7 @@ func (kf *Keyword) Filter(news []entity.News) []entity.News {
 		}
 	}
 	return filtered
+}
+func (k *Keyword) String() string {
+	return "keywords=" + strings.Join(k.Keywords, ",")
 }

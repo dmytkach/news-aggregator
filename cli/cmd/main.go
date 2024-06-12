@@ -55,7 +55,7 @@ func main() {
 	}
 	res := internal.Aggregate(sourceList, resFilter)
 	res = internal.Sort(res, *sortBy, *sortOrder)
-	Template{News: res, Criterion: *sortBy, Order: *sortOrder, Keywords: *keywords}.apply(sourceList)
+	Template{News: res, Criterion: *sortBy}.apply(resFilter, *sortOrder, *keywords)
 }
 
 func processDateEnd(dateEnd string) (internal.NewsFilter, error) {

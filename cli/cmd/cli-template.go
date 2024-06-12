@@ -1,6 +1,7 @@
 package main
 
 import (
+	"NewsAggregator/cli/internal"
 	"NewsAggregator/cli/internal/entity"
 	"fmt"
 	"github.com/wk8/go-ordered-map"
@@ -13,11 +14,8 @@ import (
 // Template represents the data structure for the news template.
 type Template struct {
 	Filters   string
-	Count     int
 	News      []entity.News
-	Keywords  string
 	Criterion string
-	Order     string
 	Grouped   []*groupedNews
 }
 
@@ -28,14 +26,12 @@ type groupedNews struct {
 }
 
 // apply the template to the news and prints the results.
-func (t Template) apply(sourceList []string) {
+func (t Template) apply(filter []internal.NewsFilter, order, keywords string) {
 
 	funcMap := template.FuncMap{
-		"highlight": func(text, keywords string) string {
-			if keywords != "" {
-				for _, keyword := range strings.Split(keywords, ",") {
-					text = strings.ReplaceAll(text, keyword, "~~"+keyword+"~~")
-				}
+		"highlight": func(text string) string {
+			for _, keyword := range strings.Split(keywords, ",") {
+				text = strings.ReplaceAll(text, keyword, "~~"+keyword+"~~")
 			}
 			return text
 		},
@@ -49,34 +45,33 @@ func (t Template) apply(sourceList []string) {
 		log.Fatal(err)
 		return
 	}
-
-	fil := fmt.Sprintf("sources=%s, keywords=%s, sort-by=%s, order=%s", strings.Join(sourceList, ","), t.Keywords, t.Criterion, t.Order)
-	data := t.prepare(fil)
-
+	result := fmt.Sprintf("sort-by=%s order=%s ", t.Criterion, order)
+	for i := range filter {
+		result = filter[i].String() + " " + result
+	}
+	data := t.prepare()
+	data.Filters += result
 	err = tmpl.ExecuteTemplate(os.Stdout, "news", data)
 	if err != nil {
 		panic(err)
 	}
 }
 
-// prepare  the template data for rendering.
-func (t Template) prepare(filters string) Template {
+// prepare the template data for rendering.
+func (t Template) prepare() Template {
 	groupedMap := group(t.News)
 	var groupedList []*groupedNews
-
+	sourceList := make([]string, 0)
 	for el := groupedMap.Oldest(); el != nil; el = el.Next() {
 		source := el.Key.(string)
+		sourceList = append(sourceList, source)
 		newsList := el.Value.([]entity.News)
 		groupedList = append(groupedList, &groupedNews{Source: source, NewsList: newsList})
 	}
-
 	return Template{
-		Filters:   filters,
-		Count:     len(t.News),
+		Filters:   "sources=" + strings.Join(sourceList, ",") + " ",
 		News:      t.News,
-		Keywords:  t.Keywords,
 		Criterion: t.Criterion,
-		Order:     t.Order,
 		Grouped:   groupedList,
 	}
 }
