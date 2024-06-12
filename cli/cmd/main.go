@@ -2,7 +2,9 @@ package main
 
 import (
 	"NewsAggregator/cli/internal"
+	"NewsAggregator/cli/internal/entity"
 	"NewsAggregator/cli/internal/filters"
+	"NewsAggregator/cli/internal/validator"
 	"flag"
 	"strings"
 	"time"
@@ -17,74 +19,48 @@ func main() {
 	dateEnd := flag.String("date-end", "", "Specify the end date to filter the news by. Usage: --date-end=2024-05-19")
 	sortOrder := flag.String("sort-order", "ASC", "Specify the sort order for the news items (ASC or DESC). Usage: --sort-order=ASC")
 	sortBy := flag.String("sort-by", "source", "Specify the sort criteria for the news items (date or source). Usage: --sort-by=source")
-
 	flag.Parse()
 
 	if *help {
 		flag.Usage()
 		return
 	}
-
-	sourceList := strings.Split(*sources, ",")
-	if len(sourceList) == 0 {
-		println("Please provide at least one source using the --sources flag.")
+	resources := initializeResource()
+	v := validator.Validator{
+		Sources:          *sources,
+		AvailableSources: entity.GetResourceNames(resources),
+		DateStart:        *dateStart,
+		DateEnd:          *dateEnd,
+	}
+	if !v.Validate() {
 		return
 	}
-
-	var resFilter []internal.NewsFilter
-	keyFilter := processKeywords(*keywords)
-	if keyFilter == nil {
-		return
+	sourceList := strings.Split(v.Sources, ",")
+	var newsFilters []internal.NewsFilter
+	if len(*keywords) > 0 {
+		keywordList := strings.Split(*keywords, ",")
+		newsFilters = append(newsFilters, &filters.Keyword{Keywords: keywordList})
 	}
-	resFilter = append(resFilter, keyFilter)
-
-	if *dateStart != "" {
-		start, err := processDateStart(*dateStart)
-		if err != nil || start == nil {
-			return
-		}
-		resFilter = append(resFilter, start)
+	if len(*dateStart) > 0 {
+		startDate, _ := time.Parse("2006-01-02", *dateStart)
+		newsFilters = append(newsFilters, &filters.DateStart{StartDate: startDate})
 	}
-
-	if *dateEnd != "" {
-		end, err := processDateEnd(*dateEnd)
-		if err != nil {
-			return
-		}
-		resFilter = append(resFilter, end)
+	if len(*dateEnd) > 0 {
+		endDate, _ := time.Parse("2006-01-02", *dateEnd)
+		newsFilters = append(newsFilters, &filters.DateEnd{EndDate: endDate})
 	}
-	res := internal.Aggregate(sourceList, resFilter)
-	res = internal.Sort(res, *sortBy, *sortOrder)
-	Template{News: res, Criterion: *sortBy}.apply(resFilter, *sortOrder, *keywords)
+	aggregator := internal.Aggregator{Resources: resources, Sources: sourceList, NewsFilters: newsFilters}
+	news := aggregator.Aggregate()
+	news = internal.Sort(news, *sortBy, *sortOrder)
+	Template{News: news, Criterion: *sortBy}.apply(newsFilters, *sortOrder, *keywords)
 }
 
-func processDateEnd(dateEnd string) (internal.NewsFilter, error) {
-	endDate, err := time.Parse("2006-01-02", dateEnd)
-	if err != nil {
-		println("Invalid end date format. Please use YYYY-MM-DD.")
-		return nil, err
+func initializeResource() []entity.Resource {
+	return []entity.Resource{
+		{Name: "BBC", PathToFile: "resources/bbc-world-category-19-05-24.xml"},
+		{Name: "NBC", PathToFile: "resources/nbc-news.json"},
+		{Name: "ABC", PathToFile: "resources/abcnews-international-category-19-05-24.xml"},
+		{Name: "Washington", PathToFile: "resources/washingtontimes-world-category-19-05-24.xml"},
+		{Name: "USAToday", PathToFile: "resources/usatoday-world-news.html"},
 	}
-	return &filters.DateEnd{EndDate: endDate}, err
-}
-
-func processDateStart(dateStart string) (internal.NewsFilter, error) {
-	startDate, err := time.Parse("2006-01-02", dateStart)
-	if err != nil {
-		println("Invalid start date format. Please use YYYY-MM-DD.")
-		return nil, err
-	}
-	if startDate.After(time.Now()) {
-		println("News for this period is not available.")
-		return nil, nil
-	}
-	return &filters.DateStart{StartDate: startDate}, err
-}
-
-func processKeywords(keywords string) internal.NewsFilter {
-	if strings.TrimSpace(keywords) == "" {
-		println("Keyword is empty")
-		return nil
-	}
-	keywordList := strings.Split(keywords, ",")
-	return &filters.Keyword{Keywords: keywordList}
 }

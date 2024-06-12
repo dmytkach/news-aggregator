@@ -30,6 +30,9 @@ func (t Template) apply(filter []internal.NewsFilter, order, keywords string) {
 
 	funcMap := template.FuncMap{
 		"highlight": func(text string) string {
+			if len(keywords) == 0 {
+				return text
+			}
 			for _, keyword := range strings.Split(keywords, ",") {
 				text = strings.ReplaceAll(text, keyword, "~~"+keyword+"~~")
 			}

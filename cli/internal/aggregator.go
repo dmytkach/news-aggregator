@@ -5,69 +5,68 @@ import (
 	"strings"
 )
 
-var resources = initializeResource()
+type Aggregator struct {
+	Resources   []entity.Resource
+	Sources     []string
+	NewsFilters []NewsFilter
+}
 
-// Aggregate aggregates news from the specified sources and applies filters.
-func Aggregate(sources []string, filters []NewsFilter) []entity.News {
-	sourceNews := collectNews(sources)
-	return applyFilters(sourceNews, filters)
+// Aggregate aggregates news from the specified Sources and applies NewsFilters.
+func (a *Aggregator) Aggregate() []entity.News {
+	news := a.collectNews(a.Sources)
+	return a.applyFilters(news)
 }
 
 // collectNews collects news from all specified resources.
-func collectNews(sources []string) []entity.News {
-	var result []entity.News
+func (a *Aggregator) collectNews(sources []string) []entity.News {
+	var news []entity.News
 	for _, sourceName := range sources {
 		sourceName = strings.TrimSpace(sourceName)
-		newsFromSource := getForSource(sourceName)
-		result = append(result, newsFromSource...)
+		newsFromSource := a.getNewsForSource(sourceName)
+		news = append(news, newsFromSource...)
 	}
-	return result
+	return news
 }
 
-// getForSource fetches news for a single source by comparing it with the list of resources.
-func getForSource(sourceName string) []entity.News {
-	var result []entity.News
-	for _, resource := range resources {
+// getNewsForSource fetches news for a single source by comparing it with the list of resources.
+func (a *Aggregator) getNewsForSource(sourceName string) []entity.News {
+	var news []entity.News
+	for _, resource := range a.Resources {
 		if strings.EqualFold(string(resource.Name), sourceName) {
-			news := getResourceNews(resource)
-			result = append(result, news...)
+			resourceNews := a.getResourceNews(resource.PathToFile)
+			if resourceNews != nil {
+				news = append(news, resourceNews...)
+			}
 		}
 	}
-	if len(result) == 0 {
-		print("Error news source: " + sourceName + ". Available news sources: ")
-		for _, resource := range resources {
-			print("  " + resource.Name)
-		}
-		print("\n")
+	if len(news) == 0 {
+		return nil
 	}
-	return result
+	for i := range news {
+		news[i].Source = sourceName
+	}
+	return news
 }
 
 // getResourceNews parses news from a single resource.
-func getResourceNews(resource entity.Resource) []entity.News {
-	news, err := New(resource.PathToFile).Parse()
-	if err != nil {
-		print("Error fetching news from source: " + string(resource.Name))
+func (a *Aggregator) getResourceNews(path entity.PathToFile) []entity.News {
+	p := New(path)
+	if p == nil {
+		print("Error news source format: ")
+		return nil
 	}
-	for i := range news {
-		news[i].Source = string(resource.Name)
+	news, err := p.Parse()
+	if err != nil {
+		print("Error parse news from source")
+		return nil
 	}
 	return news
 }
 
-// applyFilters applies the configured filters to the aggregated news.
-func applyFilters(news []entity.News, filters []NewsFilter) []entity.News {
-	for _, current := range filters {
+// applyFilters applies the configured NewsFilters to the aggregated news.
+func (a *Aggregator) applyFilters(news []entity.News) []entity.News {
+	for _, current := range a.NewsFilters {
 		news = current.Filter(news)
 	}
 	return news
-}
-func initializeResource() []entity.Resource {
-	return []entity.Resource{
-		{Name: "BBC", PathToFile: "resources/bbc-world-category-19-05-24.xml"},
-		{Name: "NBC", PathToFile: "resources/nbc-news.json"},
-		{Name: "ABC", PathToFile: "resources/abcnews-international-category-19-05-24.xml"},
-		{Name: "Washington", PathToFile: "resources/washingtontimes-world-category-19-05-24.xml"},
-		{Name: "USAToday", PathToFile: "resources/usatoday-world-news.html"},
-	}
 }

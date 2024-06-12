@@ -12,3 +12,11 @@ type Resource struct {
 	Name       ResourceName
 	PathToFile PathToFile
 }
+
+func GetResourceNames(resources []Resource) []string {
+	var names []string
+	for _, resource := range resources {
+		names = append(names, string(resource.Name))
+	}
+	return names
+}
