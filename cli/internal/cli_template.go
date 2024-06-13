@@ -1,11 +1,10 @@
-package main
+package internal
 
 import (
 	"fmt"
 	"github.com/wk8/go-ordered-map"
 	"log"
-	"news-aggregator/cli/internal"
-	"news-aggregator/cli/internal/entity"
+	"news-aggregator/internal/entity"
 	"os"
 	"strings"
 	"text/template"
@@ -25,8 +24,8 @@ type groupedNews struct {
 	NewsList []entity.News
 }
 
-// apply the template to the news and prints the results.
-func (t Template) apply(filter []internal.NewsFilter, order, keywords string) {
+// Apply the template to the news and prints the results.
+func (t Template) Apply(filter []NewsFilter, order, keywords string) {
 
 	funcMap := template.FuncMap{
 		"highlight": func(text string) string {
@@ -43,7 +42,7 @@ func (t Template) apply(filter []internal.NewsFilter, order, keywords string) {
 		},
 	}
 
-	tmpl, err := template.New("news").Funcs(funcMap).ParseFiles("cli/internal/entity/news.tmpl")
+	tmpl, err := template.New("news").Funcs(funcMap).ParseFiles("C:\\Users\\dmitr\\GolandProjects\\news-aggregator\\cli\\internal\\entity\\news.tmpl")
 	if err != nil {
 		log.Fatal(err)
 		return

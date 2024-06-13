@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"news-aggregator/cli/internal"
-	"news-aggregator/cli/internal/entity"
-	"news-aggregator/cli/internal/filters"
-	"news-aggregator/cli/internal/validator"
+	"news-aggregator/internal"
+	"news-aggregator/internal/entity"
+	"news-aggregator/internal/filters"
+	"news-aggregator/internal/validator"
 	"strings"
 	"time"
 )
@@ -52,7 +52,7 @@ func main() {
 	aggregator := internal.Aggregator{Resources: resources, Sources: sourceList, NewsFilters: newsFilters}
 	news := aggregator.Aggregate()
 	news = internal.Sort(news, *sortBy, *sortOrder)
-	Template{News: news, Criterion: *sortBy}.apply(newsFilters, *sortOrder, *keywords)
+	internal.Template{News: news, Criterion: *sortBy}.Apply(newsFilters, *sortOrder, *keywords)
 }
 
 func initializeResource() []entity.Resource {

@@ -3,7 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"errors"
-	"news-aggregator/cli/internal/entity"
+	"news-aggregator/internal/entity"
 	"os"
 	"time"
 )

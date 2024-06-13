@@ -3,7 +3,7 @@ package parser
 import (
 	"errors"
 	"github.com/mmcdole/gofeed"
-	"news-aggregator/cli/internal/entity"
+	"news-aggregator/internal/entity"
 	"os"
 )
 

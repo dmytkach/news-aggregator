@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
-	"news-aggregator/cli/internal/entity"
+	"news-aggregator/internal/entity"
 	"os"
 	"regexp"
 	"strings"

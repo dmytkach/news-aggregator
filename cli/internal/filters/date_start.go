@@ -1,7 +1,7 @@
 package filters
 
 import (
-	"news-aggregator/cli/internal/entity"
+	"news-aggregator/internal/entity"
 	"time"
 )
 

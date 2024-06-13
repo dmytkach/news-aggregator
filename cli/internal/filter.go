@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"news-aggregator/cli/internal/entity"
+	"news-aggregator/internal/entity"
 )
 
 // NewsFilter is a filtering of news according to specified parameters.
