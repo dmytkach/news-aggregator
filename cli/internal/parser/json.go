@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"news-aggregator/internal/entity"
 	"os"
 	"time"
@@ -30,12 +31,13 @@ type newsArticle struct {
 func (jsonParser *Json) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(jsonParser.FilePath))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			print(err)
+		closeErr := file.Close()
+		if closeErr != nil && err == nil {
+			err = fmt.Errorf("error closing file: %w", closeErr)
+			return
 		}
 	}(file)
 

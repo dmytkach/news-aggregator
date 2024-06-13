@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+const OutputLayout = "2006-01-02"
+
+// selector to extract News titles in Usa today.
+var selector = "main.gnt_cw div.gnt_m_flm a.gnt_m_flm_a"
+
 // UsaToday - parser for HTML files from Usa Today news resource.
 type UsaToday struct {
 	FilePath entity.PathToFile
@@ -24,9 +29,10 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 		return nil, err
 	}
 	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			print(err)
+		closeErr := file.Close()
+		if closeErr != nil && err == nil {
+			err = fmt.Errorf("error closing file: %w", closeErr)
+			return
 		}
 	}(file)
 
@@ -36,11 +42,10 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 		return nil, err
 	}
 
-	const outputLayout = "2006-01-02"
 	baseURL := "https://www.usatoday.com"
 
 	var allNews []entity.News
-	doc.Find("main.gnt_cw div.gnt_m_flm a.gnt_m_flm_a").Each(func(i int, s *goquery.Selection) {
+	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
 		title := s.Text()
 		description, _ := s.Attr("data-c-br")
 		link, _ := s.Attr("href")
@@ -67,11 +72,11 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 			}
 		}
 
-		formattedDateStr := parsedDate.Format(outputLayout)
-		formattedDate, err := time.Parse(outputLayout, formattedDateStr)
+		formattedDateStr := parsedDate.Format(OutputLayout)
+		formattedDate, err := time.Parse(OutputLayout, formattedDateStr)
 		if formattedDate.Year() < 1000 {
-			formattedDateStr = time.Now().Format(outputLayout)
-			formattedDate, err = time.Parse(outputLayout, formattedDateStr)
+			formattedDateStr = time.Now().Format(OutputLayout)
+			formattedDate, err = time.Parse(OutputLayout, formattedDateStr)
 		}
 		allNews = append(allNews, entity.News{
 			Title:       entity.Title(strings.TrimSpace(title)),

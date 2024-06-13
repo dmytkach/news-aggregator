@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"github.com/mmcdole/gofeed"
 	"news-aggregator/internal/entity"
 	"os"
@@ -19,8 +20,10 @@ func (rssParser *Rss) Parse() ([]entity.News, error) {
 		return nil, err
 	}
 	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
+		closeErr := file.Close()
+		if closeErr != nil && err == nil {
+			err = fmt.Errorf("error closing file: %w", closeErr)
+			return
 		}
 	}(file)
 
