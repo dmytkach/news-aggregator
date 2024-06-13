@@ -14,8 +14,14 @@ import (
 
 const OutputLayout = "2006-01-02"
 
-// selector to extract News titles in Usa today.
-var selector = "main.gnt_cw div.gnt_m_flm a.gnt_m_flm_a"
+// titleSelector to extract News titles in Usa today.
+var titleSelector = "main.gnt_cw div.gnt_m_flm a.gnt_m_flm_a"
+
+// descriptionSelector to extract News description in Usa today.
+var descriptionSelector = "data-c-br"
+
+// dateSelector to extract News date in Usa today.
+var dateSelector = "div.gnt_m_flm_sbt"
 
 // UsaToday - parser for HTML files from Usa Today news resource.
 type UsaToday struct {
@@ -45,9 +51,9 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 	baseURL := "https://www.usatoday.com"
 
 	var allNews []entity.News
-	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
+	doc.Find(titleSelector).Each(func(i int, s *goquery.Selection) {
 		title := s.Text()
-		description, _ := s.Attr("data-c-br")
+		description, _ := s.Attr(descriptionSelector)
 		link, _ := s.Attr("href")
 
 		if !strings.HasPrefix(link, "http") {
@@ -56,7 +62,7 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 		if len(strings.TrimSpace(title)) == 0 {
 			return
 		}
-		dateStr, _ := s.Find("div.gnt_m_flm_sbt").Attr("data-c-dt")
+		dateStr, _ := s.Find(dateSelector).Attr("data-c-dt")
 		var parsedDate time.Time
 		var err error
 
