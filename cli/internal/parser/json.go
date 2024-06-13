@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"NewsAggregator/cli/internal/entity"
 	"encoding/json"
 	"errors"
+	"news-aggregator/cli/internal/entity"
 	"os"
 	"time"
 )

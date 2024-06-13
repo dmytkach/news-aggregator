@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"NewsAggregator/cli/internal/entity"
+	"news-aggregator/cli/internal/entity"
 	"sort"
 )
 

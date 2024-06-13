@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"NewsAggregator/cli/internal/entity"
-	"NewsAggregator/cli/internal/parser"
+	"news-aggregator/cli/internal/entity"
+	"news-aggregator/cli/internal/parser"
 	"reflect"
 	"testing"
 )

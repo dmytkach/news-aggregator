@@ -1,11 +1,11 @@
 package main
 
 import (
-	"NewsAggregator/cli/internal"
-	"NewsAggregator/cli/internal/entity"
 	"fmt"
 	"github.com/wk8/go-ordered-map"
 	"log"
+	"news-aggregator/cli/internal"
+	"news-aggregator/cli/internal/entity"
 	"os"
 	"strings"
 	"text/template"

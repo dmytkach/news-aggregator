@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"NewsAggregator/cli/internal/entity"
-	"NewsAggregator/cli/internal/filters"
+	"news-aggregator/cli/internal/entity"
+	"news-aggregator/cli/internal/filters"
 	"reflect"
 	"testing"
 	"time"

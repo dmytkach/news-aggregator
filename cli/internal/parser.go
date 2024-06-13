@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"NewsAggregator/cli/internal/entity"
-	"NewsAggregator/cli/internal/parser"
 	"fmt"
+	"news-aggregator/cli/internal/entity"
+	"news-aggregator/cli/internal/parser"
 )
 
 // Parser is an interface that defines the Parse method for assembling news from a given file.

@@ -1,7 +1,7 @@
 package filters
 
 import (
-	"NewsAggregator/cli/internal/entity"
+	"news-aggregator/cli/internal/entity"
 	"strings"
 )
 

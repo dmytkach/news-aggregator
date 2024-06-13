@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"NewsAggregator/cli/internal/entity"
+	"news-aggregator/cli/internal/entity"
 	"reflect"
 	"testing"
 	"time"

@@ -1,11 +1,11 @@
 package parser
 
 import (
-	"NewsAggregator/cli/internal/entity"
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
+	"news-aggregator/cli/internal/entity"
 	"os"
 	"regexp"
 	"strings"

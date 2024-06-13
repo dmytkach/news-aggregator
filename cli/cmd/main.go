@@ -1,16 +1,16 @@
 package main
 
 import (
-	"NewsAggregator/cli/internal"
-	"NewsAggregator/cli/internal/entity"
-	"NewsAggregator/cli/internal/filters"
-	"NewsAggregator/cli/internal/validator"
 	"flag"
+	"news-aggregator/cli/internal"
+	"news-aggregator/cli/internal/entity"
+	"news-aggregator/cli/internal/filters"
+	"news-aggregator/cli/internal/validator"
 	"strings"
 	"time"
 )
 
-// main is the entry point of the NewsAggregator CLI application.
+// main is the entry point of the news-aggregator CLI application.
 func main() {
 	help := flag.Bool("help", false, "Show all available arguments and their descriptions.")
 	sources := flag.String("sources", "", "Select the desired news sources to get the news from. Usage: --sources=bbc,usatoday")

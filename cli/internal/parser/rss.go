@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"NewsAggregator/cli/internal/entity"
 	"errors"
 	"github.com/mmcdole/gofeed"
+	"news-aggregator/cli/internal/entity"
 	"os"
 )
 
