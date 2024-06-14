@@ -52,7 +52,7 @@ func TestAggregate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := Aggregator{
+			a := &aggregator{
 				Resources:   tt.args.Resources,
 				Sources:     tt.args.Sources,
 				NewsFilters: tt.args.NewsFilters,
@@ -65,6 +65,8 @@ func TestAggregate(t *testing.T) {
 }
 func TestAggregator_applyFilters(t *testing.T) {
 	type fields struct {
+		Resources   []entity.Resource
+		Sources     []string
 		NewsFilters []NewsFilter
 	}
 	type args struct {
@@ -115,7 +117,9 @@ func TestAggregator_applyFilters(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := Aggregator{
+			a := &aggregator{
+				Resources:   tt.fields.Resources,
+				Sources:     tt.fields.Sources,
 				NewsFilters: tt.fields.NewsFilters,
 			}
 			if got := a.applyFilters(tt.args.news); !reflect.DeepEqual(got, tt.want) {
@@ -177,7 +181,7 @@ func TestAggregator_collectNews(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := Aggregator{
+			a := &aggregator{
 				Resources: tt.fields.Resources,
 			}
 			if got := a.collectNews(tt.args.sources); !reflect.DeepEqual(got, tt.want) {
@@ -238,7 +242,7 @@ func TestAggregator_getNewsForSource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := Aggregator{
+			a := &aggregator{
 				Resources: tt.fields.Resources,
 			}
 			if got := a.getNewsForSource(tt.args.sourceName); !reflect.DeepEqual(got, tt.want) {
@@ -281,8 +285,8 @@ func TestAggregator_getResourceNews(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := &Aggregator{}
-			if got := a.getResourceNews(tt.args.path); !reflect.DeepEqual(got, tt.want) {
+			a := &aggregator{}
+			if got, _ := a.getResourceNews(tt.args.path); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getResourceNews() = %v, want %v", got, tt.want)
 			}
 		})

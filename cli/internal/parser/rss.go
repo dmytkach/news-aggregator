@@ -13,6 +13,10 @@ type Rss struct {
 	FilePath entity.PathToFile
 }
 
+func (rssParser *Rss) CanParseFileType(ext string) bool {
+	return ext == ".xml" || ext == ".rss"
+}
+
 // Parse - implementation of a parser for files in RSS format.
 func (rssParser *Rss) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(rssParser.FilePath))

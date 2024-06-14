@@ -4,26 +4,30 @@ import (
 	"fmt"
 	"news-aggregator/internal/entity"
 	"news-aggregator/internal/parser"
+	"path/filepath"
+	"strings"
 )
 
-// Parser is an interface that defines the Parse method for assembling news from a given file.
+// Parser provides an API for a news parser capable of processing a specific file type.
 type Parser interface {
+	CanParseFileType(ext string) bool
 	Parse() ([]entity.News, error)
 }
 
-// New returns the appropriate parser implementation based on the type of source.
-func New(Path entity.PathToFile) Parser {
-	typeOfSource := entity.AnalyzeResourceType(Path)
-	parserMap := map[entity.SourceType]Parser{
-		entity.RssType{}:  &parser.Rss{FilePath: Path},
-		entity.JsonType{}: &parser.Json{FilePath: Path},
-		entity.HtmlType{}: &parser.UsaToday{FilePath: Path},
-	}
-	p, exist := parserMap[typeOfSource]
-	if !exist {
-		fmt.Println("Wrong Source", typeOfSource)
-		return nil
+// GetFileParser returns the appropriate parser implementation based on the path to file.
+func GetFileParser(path entity.PathToFile) (Parser, error) {
+	ext := strings.ToLower(filepath.Ext(string(path)))
+
+	parsers := []Parser{
+		&parser.Rss{FilePath: path},
+		&parser.Json{FilePath: path},
+		&parser.UsaToday{FilePath: path},
 	}
 
-	return p
+	for p := range parsers {
+		if parsers[p].CanParseFileType(ext) {
+			return parsers[p], nil
+		}
+	}
+	return nil, fmt.Errorf("unsupported file type: %s", ext)
 }

@@ -17,15 +17,15 @@ func main() {
 	keywords := flag.String("keywords", "", "Specify the keywords to filter the news by. Usage: --keywords=Ukraine,China")
 	dateStart := flag.String("date-start", "", "Specify the start date to filter the news by. Usage: --date-start=2024-05-18")
 	dateEnd := flag.String("date-end", "", "Specify the end date to filter the news by. Usage: --date-end=2024-05-19")
-	sortOrder := flag.String("sort-order", "ASC", "Specify the sort order for the news items (ASC or DESC). Usage: --sort-order=ASC")
-	sortBy := flag.String("sort-by", "source", "Specify the sort criteria for the news items (date or source). Usage: --sort-by=source")
+	sortOrder := flag.String("sort-order", "ASC", "Specify the sort order for the news items (ASC or DESC). The default is ASC. Usage: --sort-order=ASC")
+	sortBy := flag.String("sort-by", "source", "Specify the sort criteria for the news items (date or source). The default is source. Usage: --sort-by=source")
 	flag.Parse()
 
 	if *help {
 		flag.Usage()
 		return
 	}
-	resources := initializeResource()
+	resources := initializeDefaultResource()
 	v := validator.Validator{
 		Sources:          *sources,
 		AvailableSources: entity.GetResourceNames(resources),
@@ -49,13 +49,13 @@ func main() {
 		endDate, _ := time.Parse("2006-01-02", *dateEnd)
 		newsFilters = append(newsFilters, &filters.DateEnd{EndDate: endDate})
 	}
-	aggregator := internal.Aggregator{Resources: resources, Sources: sourceList, NewsFilters: newsFilters}
-	news := aggregator.Aggregate()
+	a := internal.NewAggregator(resources, sourceList, newsFilters)
+	news := a.Aggregate()
 	news = internal.Sort(news, *sortBy, *sortOrder)
 	internal.Template{News: news, Criterion: *sortBy}.Apply(newsFilters, *sortOrder, *keywords)
 }
 
-func initializeResource() []entity.Resource {
+func initializeDefaultResource() []entity.Resource {
 	return []entity.Resource{
 		{Name: "BBC", PathToFile: "resources/bbc-world-category-19-05-24.xml"},
 		{Name: "NBC", PathToFile: "resources/nbc-news.json"},

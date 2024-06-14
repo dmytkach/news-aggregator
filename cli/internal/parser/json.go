@@ -27,6 +27,10 @@ type newsArticle struct {
 	Date        time.Time `json:"publishedAt"`
 }
 
+func (jsonParser *Json) CanParseFileType(ext string) bool {
+	return ext == ".json"
+}
+
 // Parse - implementation of a parser for files in JSON format.
 func (jsonParser *Json) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(jsonParser.FilePath))

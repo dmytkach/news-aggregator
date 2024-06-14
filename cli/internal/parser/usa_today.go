@@ -28,6 +28,10 @@ type UsaToday struct {
 	FilePath entity.PathToFile
 }
 
+func (usaTodayParser *UsaToday) CanParseFileType(ext string) bool {
+	return ext == ".html"
+}
+
 // Parse - implementation of a parser for files in HTML format.
 func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(usaTodayParser.FilePath))

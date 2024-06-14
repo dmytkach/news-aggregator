@@ -2,5 +2,5 @@
 // Includes structures like News, which represent a single news article with attributes like
 // Title, Description, Link and Date. Additionally, it includes the Resource structure,
 // which encapsulates information about the news resource, including its ResourceName,
-// PathToFile, and SourceType.
+// PathToFile.
 package entity
