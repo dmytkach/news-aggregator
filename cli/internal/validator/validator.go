@@ -7,7 +7,8 @@ type Validator struct {
 	DateEnd          string
 }
 
-type Validatable interface {
+// ValidatingComponent defines the contract for components responsible for performing validation.
+type ValidatingComponent interface {
 	Validate() bool
 }
 

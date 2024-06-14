@@ -1,13 +1,13 @@
 package validator
 
-// baseValidator provides a basic implementation of Validatable,
+// baseValidator provides a basic implementation of ValidatingComponent,
 // supporting Chain of Responsibility.
 type baseValidator struct {
-	next Validatable
+	next ValidatingComponent
 }
 
 // SetNext Validator in Chain.
-func (b *baseValidator) SetNext(next Validatable) {
+func (b *baseValidator) SetNext(next ValidatingComponent) {
 	b.next = next
 }
 
