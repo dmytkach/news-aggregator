@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"news-aggregator/internal"
-	"news-aggregator/internal/entity"
 	"news-aggregator/internal/filters"
 	"news-aggregator/internal/validator"
 	"strings"
@@ -28,7 +27,7 @@ func main() {
 	resources := initializeDefaultResource()
 	v := validator.Validator{
 		Sources:          *sources,
-		AvailableSources: entity.GetResourceNames(resources),
+		AvailableSources: resources,
 		DateStart:        *dateStart,
 		DateEnd:          *dateEnd,
 	}
@@ -56,12 +55,19 @@ func main() {
 	internal.Template{News: news, Criterion: *sortBy}.Apply(newsFilters, *sortOrder, *keywords)
 }
 
-func initializeDefaultResource() []entity.Resource {
-	return []entity.Resource{
-		{Name: "BBC", PathToFile: "resources/bbc-world-category-19-05-24.xml"},
-		{Name: "NBC", PathToFile: "resources/nbc-news.json"},
-		{Name: "ABC", PathToFile: "resources/abcnews-international-category-19-05-24.xml"},
-		{Name: "Washington", PathToFile: "resources/washingtontimes-world-category-19-05-24.xml"},
-		{Name: "USAToday", PathToFile: "resources/usatoday-world-news.html"},
+func initializeDefaultResource() map[string]string {
+	return map[string]string{
+		"bbc":        "resources/bbc-world-category-19-05-24.xml",
+		"nbc":        "resources/nbc-news.json",
+		"abc":        "resources/abcnews-international-category-19-05-24.xml",
+		"washington": "resources/washingtontimes-world-category-19-05-24.xml",
+		"usatoday":   "resources/usatoday-world-news.html",
 	}
+	//return []entity.Resource{
+	//	{Name: "BBC", PathToFile: "resources/bbc-world-category-19-05-24.xml"},
+	//	{Name: "NBC", PathToFile: "resources/nbc-news.json"},
+	//	{Name: "ABC", PathToFile: "resources/abcnews-international-category-19-05-24.xml"},
+	//	{Name: "Washington", PathToFile: "resources/washingtontimes-world-category-19-05-24.xml"},
+	//	{Name: "USAToday", PathToFile: "resources/usatoday-world-news.html"},
+	//}
 }

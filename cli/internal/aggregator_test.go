@@ -10,7 +10,7 @@ import (
 
 func TestAggregate(t *testing.T) {
 	type args struct {
-		Resources   []entity.Resource
+		Resources   map[string]string
 		Sources     []string
 		NewsFilters []NewsFilter
 	}
@@ -21,16 +21,10 @@ func TestAggregate(t *testing.T) {
 	}{{
 		name: "should aggregate news on given Sources applying NewsFilters.",
 		args: args{
-			Resources: []entity.Resource{
-				{
-					"RSS", "testdata/news.xml",
-				},
-				{
-					"HTML", "testdata/news.html",
-				},
-				{
-					"JSON", "testdata/news.json",
-				},
+			Resources: map[string]string{
+				"rss":  "testdata/news.xml",
+				"html": "testdata/news.html",
+				"json": "testdata/news.json",
 			},
 			Sources: []string{"RSS"},
 			NewsFilters: []NewsFilter{
@@ -65,7 +59,7 @@ func TestAggregate(t *testing.T) {
 }
 func TestAggregator_applyFilters(t *testing.T) {
 	type fields struct {
-		Resources   []entity.Resource
+		Resources   map[string]string
 		Sources     []string
 		NewsFilters []NewsFilter
 	}
@@ -131,7 +125,7 @@ func TestAggregator_applyFilters(t *testing.T) {
 
 func TestAggregator_collectNews(t *testing.T) {
 	type fields struct {
-		Resources []entity.Resource
+		Resources map[string]string
 	}
 	type args struct {
 		sources []string
@@ -145,16 +139,10 @@ func TestAggregator_collectNews(t *testing.T) {
 		{
 			name: "should aggregate news on given Sources applying NewsFilters.",
 			fields: fields{
-				Resources: []entity.Resource{
-					{
-						"RSS", "testdata/news.xml",
-					},
-					{
-						"HTML", "testdata/news.html",
-					},
-					{
-						"JSON", "testdata/news.json",
-					},
+				Resources: map[string]string{
+					"rss":  "testdata/news.xml",
+					"html": "testdata/news.html",
+					"json": "testdata/news.json",
 				},
 			},
 			args: args{
@@ -193,7 +181,7 @@ func TestAggregator_collectNews(t *testing.T) {
 
 func TestAggregator_getNewsForSource(t *testing.T) {
 	type fields struct {
-		Resources []entity.Resource
+		Resources map[string]string
 	}
 	type args struct {
 		sourceName string
@@ -207,16 +195,10 @@ func TestAggregator_getNewsForSource(t *testing.T) {
 		{
 			name: "should aggregate news on given Sources applying NewsFilters.",
 			fields: fields{
-				Resources: []entity.Resource{
-					{
-						"RSS", "testdata/news.xml",
-					},
-					{
-						"HTML", "testdata/news.html",
-					},
-					{
-						"JSON", "testdata/news.json",
-					},
+				Resources: map[string]string{
+					"rss":  "testdata/news.xml",
+					"html": "testdata/news.html",
+					"json": "testdata/news.json",
 				},
 			},
 			args: args{

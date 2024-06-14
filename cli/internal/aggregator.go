@@ -6,12 +6,12 @@ import (
 )
 
 type aggregator struct {
-	Resources   []entity.Resource
+	Resources   map[string]string
 	Sources     []string
 	NewsFilters []NewsFilter
 }
 
-func NewAggregator(resources []entity.Resource, sources []string, newsFilters []NewsFilter) Aggregate {
+func NewAggregator(resources map[string]string, sources []string, newsFilters []NewsFilter) Aggregate {
 	return &aggregator{
 		Resources:   resources,
 		Sources:     sources,
@@ -43,16 +43,12 @@ func (a *aggregator) collectNews(sources []string) []entity.News {
 // getNewsForSource fetches news for a single source by comparing it with the list of resources.
 func (a *aggregator) getNewsForSource(sourceName string) []entity.News {
 	var news []entity.News
-	for _, resource := range a.Resources {
-		if strings.EqualFold(string(resource.Name), sourceName) {
-			resourceNews, err := a.getResourceNews(resource.PathToFile)
-			if err != nil && resourceNews != nil {
-				print(err)
-			}
-			news = append(news, resourceNews...)
-
-		}
+	value, _ := a.Resources[strings.ToLower(sourceName)]
+	resourceNews, err := a.getResourceNews(entity.PathToFile(value))
+	if err != nil && resourceNews != nil {
+		print(err)
 	}
+	news = append(news, resourceNews...)
 	if len(news) == 0 {
 		return nil
 	}

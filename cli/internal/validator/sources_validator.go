@@ -7,7 +7,7 @@ import (
 // sourceValidator checks the sources field
 type sourceValidator struct {
 	baseValidator
-	availableSources []string
+	availableSources map[string]string
 	sources          string
 }
 
@@ -18,14 +18,7 @@ func (v sourceValidator) Validate() bool {
 		return false
 	}
 	for _, source := range sourcesList {
-		found := false
-		for i := range v.availableSources {
-			if strings.EqualFold(source, v.availableSources[i]) {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if _, ok := v.availableSources[strings.ToLower(source)]; !ok {
 			println("Error - Source does not exist:", source)
 			return false
 		}
