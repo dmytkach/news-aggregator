@@ -5,14 +5,12 @@ import (
 	"strings"
 )
 
-// Aggregator - структура, скрытая от внешнего использования.
 type aggregator struct {
 	Resources   []entity.Resource
 	Sources     []string
 	NewsFilters []NewsFilter
 }
 
-// NewAggregator создает новый экземпляр агрегатора.
 func NewAggregator(resources []entity.Resource, sources []string, newsFilters []NewsFilter) Aggregate {
 	return &aggregator{
 		Resources:   resources,
@@ -21,7 +19,6 @@ func NewAggregator(resources []entity.Resource, sources []string, newsFilters []
 	}
 }
 
-// Aggregate - интерфейс для агрегатора.
 type Aggregate interface {
 	Aggregate() []entity.News
 }

@@ -51,7 +51,8 @@ func main() {
 	}
 	a := internal.NewAggregator(resources, sourceList, newsFilters)
 	news := a.Aggregate()
-	news = internal.Sort(news, *sortBy, *sortOrder)
+	sort := internal.NewSort(*sortBy, *sortOrder)
+	news = sort.Apply(news)
 	internal.Template{News: news, Criterion: *sortBy}.Apply(newsFilters, *sortOrder, *keywords)
 }
 
