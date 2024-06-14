@@ -11,20 +11,20 @@ const Desc = "DESC"
 type Sorter interface {
 	Apply(news []entity.News) []entity.News
 }
-type newsSort struct {
+type sortOptions struct {
 	Criterion string
 	Order     string
 }
 
 func NewSort(Criterion, Order string) Sorter {
-	return &newsSort{
+	return &sortOptions{
 		Criterion: Criterion,
 		Order:     Order,
 	}
 }
 
 // Apply news according to the specified criteria and order.
-func (s *newsSort) Apply(news []entity.News) []entity.News {
+func (s *sortOptions) Apply(news []entity.News) []entity.News {
 	sort.Slice(news, func(i, j int) bool {
 		if s.Criterion == "date" {
 			if s.Order == Desc {
