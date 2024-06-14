@@ -4,14 +4,16 @@ import (
 	"time"
 )
 
-type DateStartValidator struct {
-	BaseValidator
-	DateStart string
+// dateStartValidator checks the start date format.
+type dateStartValidator struct {
+	baseValidator
+	dateStart string
 }
 
-func (d DateStartValidator) Validate() bool {
-	if d.DateStart != "" {
-		startDate, err := time.Parse("2006-01-02", d.DateStart)
+// Validate checks that the start date is in the correct format and no later than today.
+func (d dateStartValidator) Validate() bool {
+	if d.dateStart != "" {
+		startDate, err := time.Parse(DateFormat, d.dateStart)
 		if err != nil {
 			println("Invalid start date format. Please use YYYY-MM-DD.")
 			return false
@@ -21,5 +23,5 @@ func (d DateStartValidator) Validate() bool {
 			return false
 		}
 	}
-	return d.BaseValidator.Validate()
+	return d.baseValidator.Validate()
 }

@@ -42,11 +42,11 @@ func main() {
 		newsFilters = append(newsFilters, &filters.Keyword{Keywords: keywordList})
 	}
 	if len(*dateStart) > 0 {
-		startDate, _ := time.Parse("2006-01-02", *dateStart)
+		startDate, _ := time.Parse(validator.DateFormat, *dateStart)
 		newsFilters = append(newsFilters, &filters.DateStart{StartDate: startDate})
 	}
 	if len(*dateEnd) > 0 {
-		endDate, _ := time.Parse("2006-01-02", *dateEnd)
+		endDate, _ := time.Parse(validator.DateFormat, *dateEnd)
 		newsFilters = append(newsFilters, &filters.DateEnd{EndDate: endDate})
 	}
 	a := internal.NewAggregator(resources, sourceList, newsFilters)

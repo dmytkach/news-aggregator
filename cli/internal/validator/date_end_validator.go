@@ -2,19 +2,22 @@ package validator
 
 import "time"
 
-// DateEndValidator checks the dateEnd field
-type DateEndValidator struct {
-	BaseValidator
-	DateEnd string
+// dateEndValidator checks the end date format.
+type dateEndValidator struct {
+	baseValidator
+	dateEnd string
 }
 
-func (d DateEndValidator) Validate() bool {
-	if d.DateEnd != "" {
-		_, err := time.Parse("2006-01-02", d.DateEnd)
+const DateFormat = "2006-01-02"
+
+// Validate checks that the end date is in the correct format.
+func (d dateEndValidator) Validate() bool {
+	if d.dateEnd != "" {
+		_, err := time.Parse(DateFormat, d.dateEnd)
 		if err != nil {
 			println("Invalid end date format. Please use YYYY-MM-DD.")
 			return false
 		}
 	}
-	return d.BaseValidator.Validate()
+	return d.baseValidator.Validate()
 }
