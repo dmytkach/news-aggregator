@@ -5,7 +5,6 @@ import (
 	"github.com/wk8/go-ordered-map"
 	"log"
 	"news-aggregator/internal/entity"
-	"os"
 	"strings"
 	"text/template"
 )
@@ -24,15 +23,17 @@ type groupedNews struct {
 	NewsList []entity.News
 }
 
-// Apply the template to the news and prints the results.
-func (t Template) Apply(filter []NewsFilter, order, keywords string) {
+const pathToTemplate = "cli/internal/template/news.tmpl"
 
+// Apply the template to the news and prints the results.
+
+func (t Template) CreateTemplate(keywords string) *template.Template {
 	funcMap := template.FuncMap{
 		"highlight": func(text string) string {
 			if len(keywords) == 0 {
 				return text
 			}
-			for _, keyword := range strings.Split(keywords, ",") {
+			for _, keyword := range strings.Split(strings.ToLower(keywords), ",") {
 				text = strings.ReplaceAll(text, keyword, "~~"+keyword+"~~")
 			}
 			return text
@@ -42,25 +43,16 @@ func (t Template) Apply(filter []NewsFilter, order, keywords string) {
 		},
 	}
 
-	tmpl, err := template.New("news").Funcs(funcMap).ParseFiles("C:\\Users\\dmitr\\GolandProjects\\news-aggregator\\cli\\internal\\entity\\news.tmpl")
+	tmpl, err := template.New("news").Funcs(funcMap).ParseFiles(pathToTemplate) // Update with the actual path
 	if err != nil {
 		log.Fatal(err)
-		return
+		return nil
 	}
-	result := fmt.Sprintf("sort-by=%s order=%s ", t.Criterion, order)
-	for i := range filter {
-		result = filter[i].String() + " " + result
-	}
-	data := t.prepare()
-	data.Filters += result
-	err = tmpl.ExecuteTemplate(os.Stdout, "news", data)
-	if err != nil {
-		panic(err)
-	}
+	return tmpl
 }
 
-// prepare the template data for rendering.
-func (t Template) prepare() Template {
+// Prepare the template data for rendering.
+func (t Template) Prepare() Template {
 	groupedMap := group(t.News)
 	var groupedList []*groupedNews
 	sourceList := make([]string, 0)

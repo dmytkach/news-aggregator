@@ -154,7 +154,7 @@ func TestSort(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := sortOptions{test.criterion, test.order}
+			result := SortOptions{test.criterion, test.order}
 			if !reflect.DeepEqual(result.Apply(news), test.expected) {
 				t.Errorf("unexpected result - got: %+v, want: %+v", result, test.expected)
 			}

@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"fmt"
 	"news-aggregator/internal/entity"
+	"os"
 	"strings"
 )
 
@@ -9,24 +11,28 @@ type aggregator struct {
 	Resources   map[string]string
 	Sources     []string
 	NewsFilters []NewsFilter
+	SortOptions SortOptions
 }
 
-func NewAggregator(resources map[string]string, sources []string, newsFilters []NewsFilter) Aggregate {
+func NewAggregator(resources map[string]string, sources []string, newsFilters []NewsFilter, sortParams SortOptions) Aggregate {
 	return &aggregator{
 		Resources:   resources,
 		Sources:     sources,
 		NewsFilters: newsFilters,
+		SortOptions: sortParams,
 	}
 }
 
 type Aggregate interface {
 	Aggregate() []entity.News
+	Print(news []entity.News, keywords string)
 }
 
 // Aggregate aggregates news from the specified Sources and applies NewsFilters.
 func (a *aggregator) Aggregate() []entity.News {
 	news := a.collectNews(a.Sources)
-	return a.applyFilters(news)
+	news = a.applyFilters(news)
+	return a.SortOptions.Apply(news)
 }
 
 // collectNews collects news from all specified resources.
@@ -38,6 +44,22 @@ func (a *aggregator) collectNews(sources []string) []entity.News {
 		news = append(news, newsFromSource...)
 	}
 	return news
+}
+
+// Print the results.
+func (a *aggregator) Print(news []entity.News, keywords string) {
+	t := Template{News: news, Criterion: a.SortOptions.Criterion}
+	tmpl := t.CreateTemplate(keywords)
+	result := fmt.Sprintf("sort-by=%s order=%s ", a.SortOptions.Criterion, a.SortOptions.Order)
+	for i := range a.NewsFilters {
+		result = a.NewsFilters[i].String() + " " + result
+	}
+	data := t.Prepare()
+	data.Filters += result
+	err := tmpl.ExecuteTemplate(os.Stdout, "news", data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // getNewsForSource fetches news for a single source by comparing it with the list of resources.

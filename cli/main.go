@@ -36,11 +36,13 @@ func main() {
 	}
 	sourceList := strings.Split(v.Sources, ",")
 	newsFilters := initializeFilters(keywords, dateStart, dateEnd)
-	a := internal.NewAggregator(resources, sourceList, newsFilters)
+	sortOptions := internal.SortOptions{
+		Criterion: *sortBy,
+		Order:     *sortOrder,
+	}
+	a := internal.NewAggregator(resources, sourceList, newsFilters, sortOptions)
 	news := a.Aggregate()
-	sort := internal.NewSort(*sortBy, *sortOrder)
-	news = sort.Apply(news)
-	internal.Template{News: news, Criterion: *sortBy}.Apply(newsFilters, *sortOrder, *keywords)
+	a.Print(news, *keywords)
 }
 
 // initializeFilters based on provided parameters.
