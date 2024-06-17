@@ -11,10 +11,14 @@ import (
 
 // Template represents the data structure for the news template.
 type Template struct {
-	Filters   string
-	News      []entity.News
-	Criterion string
-	Grouped   []*groupedNews
+	Info    TemplateInfo
+	News    []entity.News
+	Grouped []*groupedNews
+}
+type TemplateInfo struct {
+	Sources     string
+	Filters     string
+	SortOptions SortOptions
 }
 
 // groupedNews represents a group of news items.
@@ -52,7 +56,7 @@ func (t Template) CreateTemplate(keywords string) *template.Template {
 }
 
 // Prepare the template data for rendering.
-func (t Template) Prepare() Template {
+func (t Template) Prepare(newsFilters []NewsFilter) Template {
 	groupedMap := group(t.News)
 	var groupedList []*groupedNews
 	sourceList := make([]string, 0)
@@ -62,12 +66,17 @@ func (t Template) Prepare() Template {
 		newsList := el.Value.([]entity.News)
 		groupedList = append(groupedList, &groupedNews{Source: source, NewsList: newsList})
 	}
-	return Template{
-		Filters:   "sources=" + strings.Join(sourceList, ",") + " ",
-		News:      t.News,
-		Criterion: t.Criterion,
-		Grouped:   groupedList,
+	if len(newsFilters) != 0 {
+		var filtersInfo string
+		for i := range newsFilters {
+			filtersInfo += newsFilters[i].String() + " "
+		}
+		filtersInfo = " filters:" + filtersInfo + ";"
+		t.Info.Filters = filtersInfo
+
 	}
+	t.Grouped = groupedList
+	return t
 }
 
 // group the news items by their source.

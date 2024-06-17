@@ -19,7 +19,6 @@ func main() {
 	sortOrder := flag.String("sort-order", "ASC", "Specify the sort order for the news items (ASC or DESC). The default is ASC. Usage: --sort-order=ASC")
 	sortBy := flag.String("sort-by", "source", "Specify the sort criteria for the news items (date or source). The default is source. Usage: --sort-by=source")
 	flag.Parse()
-
 	if *help {
 		flag.Usage()
 		return
@@ -34,13 +33,14 @@ func main() {
 	if !v.Validate() {
 		return
 	}
-	sourceList := strings.Split(v.Sources, ",")
-	newsFilters := initializeFilters(keywords, dateStart, dateEnd)
-	sortOptions := internal.SortOptions{
-		Criterion: *sortBy,
-		Order:     *sortOrder,
-	}
-	a := internal.NewAggregator(resources, sourceList, newsFilters, sortOptions)
+	a := internal.NewAggregator(
+		resources,
+		*sources,
+		initializeFilters(keywords, dateStart, dateEnd),
+		internal.SortOptions{
+			Criterion: *sortBy,
+			Order:     *sortOrder,
+		})
 	news := a.Aggregate()
 	a.Print(news, *keywords)
 }

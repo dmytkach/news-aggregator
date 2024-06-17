@@ -11,7 +11,7 @@ import (
 func TestAggregate(t *testing.T) {
 	type args struct {
 		Resources   map[string]string
-		Sources     []string
+		Sources     string
 		NewsFilters []NewsFilter
 	}
 	tests := []struct {
@@ -26,7 +26,7 @@ func TestAggregate(t *testing.T) {
 				"html": "testdata/news.html",
 				"json": "testdata/news.json",
 			},
-			Sources: []string{"RSS"},
+			Sources: "RSS",
 			NewsFilters: []NewsFilter{
 				&filters.Keyword{Keywords: []string{"Dymond"}},
 				&filters.DateStart{StartDate: time.Date(2024, time.May, 17, 10, 10, 10, 0, time.UTC)},
@@ -60,7 +60,7 @@ func TestAggregate(t *testing.T) {
 func TestAggregator_applyFilters(t *testing.T) {
 	type fields struct {
 		Resources   map[string]string
-		Sources     []string
+		Sources     string
 		NewsFilters []NewsFilter
 	}
 	type args struct {
