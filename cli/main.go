@@ -35,19 +35,7 @@ func main() {
 		return
 	}
 	sourceList := strings.Split(v.Sources, ",")
-	var newsFilters []internal.NewsFilter
-	if len(*keywords) > 0 {
-		keywordList := strings.Split(*keywords, ",")
-		newsFilters = append(newsFilters, &filters.Keyword{Keywords: keywordList})
-	}
-	if len(*dateStart) > 0 {
-		startDate, _ := time.Parse(validator.DateFormat, *dateStart)
-		newsFilters = append(newsFilters, &filters.DateStart{StartDate: startDate})
-	}
-	if len(*dateEnd) > 0 {
-		endDate, _ := time.Parse(validator.DateFormat, *dateEnd)
-		newsFilters = append(newsFilters, &filters.DateEnd{EndDate: endDate})
-	}
+	newsFilters := initializeFilters(keywords, dateStart, dateEnd)
 	a := internal.NewAggregator(resources, sourceList, newsFilters)
 	news := a.Aggregate()
 	sort := internal.NewSort(*sortBy, *sortOrder)
@@ -55,6 +43,49 @@ func main() {
 	internal.Template{News: news, Criterion: *sortBy}.Apply(newsFilters, *sortOrder, *keywords)
 }
 
+// initializeFilters based on provided parameters.
+func initializeFilters(keywords, dateStart, dateEnd *string) []internal.NewsFilter {
+	var newsFilters []internal.NewsFilter
+
+	if keywordFilter := convertKeywords(keywords); keywordFilter != nil {
+		newsFilters = append(newsFilters, keywordFilter)
+	}
+	if dateStartFilter := convertDateStart(dateStart); dateStartFilter != nil {
+		newsFilters = append(newsFilters, dateStartFilter)
+	}
+	if dateEndFilter := convertDateEnd(dateEnd); dateEndFilter != nil {
+		newsFilters = append(newsFilters, dateEndFilter)
+	}
+
+	return newsFilters
+}
+
+// convertKeywords a comma-separated keyword string into a filter.
+func convertKeywords(keywords *string) *filters.Keyword {
+	if len(*keywords) > 0 {
+		keywordList := strings.Split(*keywords, ",")
+		return &filters.Keyword{Keywords: keywordList}
+	}
+	return nil
+}
+
+// convertDateStart string into a DateStart filter.
+func convertDateStart(dateStart *string) *filters.DateStart {
+	if len(*dateStart) > 0 {
+		startDate, _ := time.Parse(validator.DateFormat, *dateStart)
+		return &filters.DateStart{StartDate: startDate}
+	}
+	return nil
+}
+
+// convertDateEnd string into a DateEnd filter.
+func convertDateEnd(dateEnd *string) *filters.DateEnd {
+	if len(*dateEnd) > 0 {
+		endDate, _ := time.Parse(validator.DateFormat, *dateEnd)
+		return &filters.DateEnd{EndDate: endDate}
+	}
+	return nil
+}
 func initializeDefaultResource() map[string]string {
 	return map[string]string{
 		"bbc":        "resources/bbc-world-category-19-05-24.xml",
@@ -63,11 +94,4 @@ func initializeDefaultResource() map[string]string {
 		"washington": "resources/washingtontimes-world-category-19-05-24.xml",
 		"usatoday":   "resources/usatoday-world-news.html",
 	}
-	//return []entity.Resource{
-	//	{Name: "BBC", PathToFile: "resources/bbc-world-category-19-05-24.xml"},
-	//	{Name: "NBC", PathToFile: "resources/nbc-news.json"},
-	//	{Name: "ABC", PathToFile: "resources/abcnews-international-category-19-05-24.xml"},
-	//	{Name: "Washington", PathToFile: "resources/washingtontimes-world-category-19-05-24.xml"},
-	//	{Name: "USAToday", PathToFile: "resources/usatoday-world-news.html"},
-	//}
 }
