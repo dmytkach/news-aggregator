@@ -13,9 +13,9 @@ type ValidatingComponent interface {
 }
 
 func (v Validator) Validate() bool {
-	sourceValidator := sourceValidator{sources: v.Sources, availableSources: v.AvailableSources}
-	dateStartValidator := dateStartValidator{dateStart: v.DateStart}
-	dateEndValidator := dateEndValidator{dateEnd: v.DateEnd}
+	sourceValidator := &sourceValidator{sources: v.Sources, availableSources: v.AvailableSources}
+	dateStartValidator := &dateStartValidator{dateStart: v.DateStart}
+	dateEndValidator := &dateEndValidator{dateEnd: v.DateEnd}
 
 	sourceValidator.SetNext(dateStartValidator)
 	dateStartValidator.SetNext(dateEndValidator)
