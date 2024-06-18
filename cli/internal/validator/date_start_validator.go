@@ -1,8 +1,6 @@
 package validator
 
-import (
-	"time"
-)
+import "time"
 
 // dateStartValidator checks the start date format.
 type dateStartValidator struct {

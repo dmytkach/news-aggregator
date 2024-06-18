@@ -12,6 +12,7 @@ type ValidatingComponent interface {
 	Validate() bool
 }
 
+// Validate all implementations with the chain of responsibility pattern.
 func (v Validator) Validate() bool {
 	sourceValidator := &sourceValidator{sources: v.Sources, availableSources: v.AvailableSources}
 	dateStartValidator := &dateStartValidator{dateStart: v.DateStart}
