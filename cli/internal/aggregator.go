@@ -37,7 +37,7 @@ func (a *aggregator) Aggregate() []entity.News {
 	return a.SortOptions.Apply(news)
 }
 
-// Print the results.
+// Print news according to the created template
 func (a *aggregator) Print(news []entity.News, keywords string) error {
 	template := t.Data{
 		News: news,
@@ -71,28 +71,28 @@ func (a *aggregator) collectNews(sources []string) []entity.News {
 	var news []entity.News
 	for _, sourceName := range sources {
 		sourceName = strings.TrimSpace(sourceName)
-		newsFromSource := a.getNewsForSource(sourceName)
-		news = append(news, newsFromSource...)
+		newsFromSource, err := a.getNewsForSource(sourceName)
+		if err == nil {
+			news = append(news, newsFromSource...)
+		}
 	}
 	return news
 }
 
 // getNewsForSource fetches news for a single source by comparing it with the list of resources.
-func (a *aggregator) getNewsForSource(sourceName string) []entity.News {
+func (a *aggregator) getNewsForSource(sourceName string) ([]entity.News, error) {
 	var news []entity.News
 	value, _ := a.Resources[strings.ToLower(sourceName)]
 	resourceNews, err := a.getResourceNews(entity.PathToFile(value))
-	if err != nil && resourceNews != nil {
-		print(err)
+	if err != nil {
+		println("File path specified incorrectly for source " + sourceName)
+		return nil, err
 	}
 	news = append(news, resourceNews...)
-	if len(news) == 0 {
-		return nil
-	}
 	for i := range news {
 		news[i].Source = sourceName
 	}
-	return news
+	return news, nil
 }
 
 // getResourceNews parses news from a single resource.
