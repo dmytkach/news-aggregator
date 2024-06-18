@@ -2,6 +2,8 @@ package internal
 
 import (
 	"news-aggregator/internal/entity"
+	"news-aggregator/internal/sort"
+	t "news-aggregator/internal/template"
 	"os"
 	"strings"
 )
@@ -10,10 +12,10 @@ type aggregator struct {
 	Resources   map[string]string
 	Sources     string
 	NewsFilters []NewsFilter
-	SortOptions SortOptions
+	SortOptions sort.Options
 }
 
-func NewAggregator(resources map[string]string, sources string, newsFilters []NewsFilter, sortParams SortOptions) Aggregate {
+func NewAggregator(resources map[string]string, sources string, newsFilters []NewsFilter, sortParams sort.Options) Aggregate {
 	return &aggregator{
 		Resources:   resources,
 		Sources:     sources,
@@ -24,7 +26,7 @@ func NewAggregator(resources map[string]string, sources string, newsFilters []Ne
 
 type Aggregate interface {
 	Aggregate() []entity.News
-	Print(news []entity.News, keywords string)
+	Print(news []entity.News, keywords string) error
 }
 
 // Aggregate aggregates news from the specified Sources and applies NewsFilters.
@@ -33,6 +35,35 @@ func (a *aggregator) Aggregate() []entity.News {
 	news := a.collectNews(sources)
 	news = a.applyFilters(news)
 	return a.SortOptions.Apply(news)
+}
+
+// Print the results.
+func (a *aggregator) Print(news []entity.News, keywords string) error {
+	template := t.TemplateData{
+		News: news,
+		Header: t.Header{
+			Sources:     a.Sources,
+			SortOptions: a.SortOptions,
+		},
+	}
+	if len(a.NewsFilters) != 0 {
+		var filtersInfo string
+		for i := range a.NewsFilters {
+			filtersInfo += a.NewsFilters[i].String()
+		}
+		filtersInfo = " filters:" + filtersInfo
+		template.Header.Filters = filtersInfo
+	}
+	tmpl, err := template.Create(keywords)
+	if err != nil {
+		return err
+	}
+	data := template.Prepare()
+	err = tmpl.ExecuteTemplate(os.Stdout, "news", data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // collectNews collects news from all specified resources.
@@ -44,23 +75,6 @@ func (a *aggregator) collectNews(sources []string) []entity.News {
 		news = append(news, newsFromSource...)
 	}
 	return news
-}
-
-// Print the results.
-func (a *aggregator) Print(news []entity.News, keywords string) {
-	t := Template{
-		News: news,
-		Info: TemplateInfo{
-			Sources:     a.Sources,
-			SortOptions: a.SortOptions,
-		},
-	}
-	tmpl := t.CreateTemplate(keywords)
-	tmpl1 := t.Prepare(a.NewsFilters)
-	err := tmpl.ExecuteTemplate(os.Stdout, "news", tmpl1)
-	if err != nil {
-		panic(err)
-	}
 }
 
 // getNewsForSource fetches news for a single source by comparing it with the list of resources.

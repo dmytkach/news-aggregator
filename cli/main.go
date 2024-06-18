@@ -4,6 +4,7 @@ import (
 	"flag"
 	"news-aggregator/internal"
 	"news-aggregator/internal/filters"
+	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
 	"strings"
 	"time"
@@ -37,12 +38,15 @@ func main() {
 		resources,
 		*sources,
 		initializeFilters(keywords, dateStart, dateEnd),
-		internal.SortOptions{
+		sort.Options{
 			Criterion: *sortBy,
 			Order:     *sortOrder,
 		})
 	news := a.Aggregate()
-	a.Print(news, *keywords)
+	err := a.Print(news, *keywords)
+	if err != nil {
+		print(err)
+	}
 }
 
 // initializeFilters based on provided parameters.

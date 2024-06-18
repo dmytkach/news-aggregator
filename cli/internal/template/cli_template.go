@@ -1,24 +1,25 @@
-package internal
+package template
 
 import (
 	"fmt"
 	"github.com/wk8/go-ordered-map"
 	"log"
 	"news-aggregator/internal/entity"
+	"news-aggregator/internal/sort"
 	"strings"
 	"text/template"
 )
 
-// Template represents the data structure for the news template.
-type Template struct {
-	Info    TemplateInfo
+// TemplateData represents the data structure for the news template.
+type TemplateData struct {
+	Header  Header
 	News    []entity.News
 	Grouped []*groupedNews
 }
-type TemplateInfo struct {
+type Header struct {
 	Sources     string
 	Filters     string
-	SortOptions SortOptions
+	SortOptions sort.Options
 }
 
 // groupedNews represents a group of news items.
@@ -29,9 +30,7 @@ type groupedNews struct {
 
 const pathToTemplate = "cli/internal/template/news.tmpl"
 
-// Apply the template to the news and prints the results.
-
-func (t Template) CreateTemplate(keywords string) *template.Template {
+func (t TemplateData) Create(keywords string) (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"highlight": func(text string) string {
 			if len(keywords) == 0 {
@@ -47,33 +46,22 @@ func (t Template) CreateTemplate(keywords string) *template.Template {
 		},
 	}
 
-	tmpl, err := template.New("news").Funcs(funcMap).ParseFiles(pathToTemplate) // Update with the actual path
+	tmpl, err := template.New("news").Funcs(funcMap).ParseFiles(pathToTemplate)
 	if err != nil {
 		log.Fatal(err)
-		return nil
+		return nil, err
 	}
-	return tmpl
+	return tmpl, err
 }
 
 // Prepare the template data for rendering.
-func (t Template) Prepare(newsFilters []NewsFilter) Template {
+func (t TemplateData) Prepare() TemplateData {
 	groupedMap := group(t.News)
 	var groupedList []*groupedNews
-	sourceList := make([]string, 0)
 	for el := groupedMap.Oldest(); el != nil; el = el.Next() {
 		source := el.Key.(string)
-		sourceList = append(sourceList, source)
 		newsList := el.Value.([]entity.News)
 		groupedList = append(groupedList, &groupedNews{Source: source, NewsList: newsList})
-	}
-	if len(newsFilters) != 0 {
-		var filtersInfo string
-		for i := range newsFilters {
-			filtersInfo += newsFilters[i].String() + " "
-		}
-		filtersInfo = " filters:" + filtersInfo + ";"
-		t.Info.Filters = filtersInfo
-
 	}
 	t.Grouped = groupedList
 	return t

@@ -1,10 +1,10 @@
 {{define "news"}}
-Filters applied: sources:{{.Info.Sources}}{{.Info.Filters}} sort-by:{{.Info.SortOptions.Criterion}} sort-order:{{.Info.SortOptions.Order}}
+Filters applied: sources:{{.Header.Sources }};{{.Header.Filters}}; sort-by:{{.Header.SortOptions.Criterion}}; sort-order:{{.Header.SortOptions.Order}};
 {{- if eq (len .News) 0 }}
     News not found.
 {{- else }}
     Number of selected news: {{ len .News }}
-    {{- if eq .Info.SortOptions.Criterion "source" -}}
+    {{- if eq .Header.SortOptions.Criterion "source" -}}
         {{- range .Grouped}}
             Source: {{.Source}} ({{len .NewsList}} items)
             {{- range .NewsList}}
