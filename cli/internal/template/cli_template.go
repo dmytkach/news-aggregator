@@ -10,8 +10,8 @@ import (
 	"text/template"
 )
 
-// TemplateData represents the data structure for the news template.
-type TemplateData struct {
+// Data represents the data structure for the news template.
+type Data struct {
 	Header  Header
 	News    []entity.News
 	Grouped []*groupedNews
@@ -30,7 +30,7 @@ type groupedNews struct {
 
 const pathToTemplate = "cli/internal/template/news.tmpl"
 
-func (t TemplateData) Create(keywords string) (*template.Template, error) {
+func (t Data) Create(keywords string) (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"highlight": func(text string) string {
 			if len(keywords) == 0 {
@@ -55,7 +55,7 @@ func (t TemplateData) Create(keywords string) (*template.Template, error) {
 }
 
 // Prepare the template data for rendering.
-func (t TemplateData) Prepare() TemplateData {
+func (t Data) Prepare() Data {
 	groupedMap := group(t.News)
 	var groupedList []*groupedNews
 	for el := groupedMap.Oldest(); el != nil; el = el.Next() {

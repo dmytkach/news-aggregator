@@ -39,7 +39,7 @@ func (a *aggregator) Aggregate() []entity.News {
 
 // Print the results.
 func (a *aggregator) Print(news []entity.News, keywords string) error {
-	template := t.TemplateData{
+	template := t.Data{
 		News: news,
 		Header: t.Header{
 			Sources:     a.Sources,
