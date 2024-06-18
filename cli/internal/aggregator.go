@@ -49,7 +49,7 @@ func (a *aggregator) Print(news []entity.News, keywords string) error {
 	if len(a.NewsFilters) != 0 {
 		var filtersInfo string
 		for i := range a.NewsFilters {
-			filtersInfo += a.NewsFilters[i].String()
+			filtersInfo += a.NewsFilters[i].String() + " "
 		}
 		filtersInfo = " filters:" + filtersInfo
 		template.Header.Filters = filtersInfo
