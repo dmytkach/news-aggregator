@@ -10,7 +10,6 @@ import (
 	"news-aggregator/internal/template"
 )
 
-// Mock data and functions
 var testNews = []entity.News{
 	{Title: "President speaks", Description: "The president gave a speech", Source: "BBC"},
 	{Title: "New law signed", Description: "The president signed a new law", Source: "NBC"},
