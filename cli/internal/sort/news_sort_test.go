@@ -1,4 +1,4 @@
-package internal
+package sort
 
 import (
 	"news-aggregator/internal/entity"
@@ -154,7 +154,7 @@ func TestSort(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := SortOptions{test.criterion, test.order}
+			result := Options{test.criterion, test.order}
 			if !reflect.DeepEqual(result.Apply(news), test.expected) {
 				t.Errorf("unexpected result - got: %+v, want: %+v", result, test.expected)
 			}
