@@ -6,6 +6,7 @@ import (
 	"log"
 	"news-aggregator/internal/entity"
 	"news-aggregator/internal/sort"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -22,7 +23,6 @@ type Header struct {
 	SortOptions sort.Options
 }
 
-// groupedNews represents a group of news items.
 type groupedNews struct {
 	Source   string
 	NewsList []entity.News
@@ -30,14 +30,18 @@ type groupedNews struct {
 
 const pathToTemplate = "cli/internal/template/news.tmpl"
 
+// Create generates a template for rendering news.
 func (t Data) Create(keywords string) (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"highlight": func(text string) string {
 			if len(keywords) == 0 {
 				return text
 			}
-			for _, keyword := range strings.Split(strings.ToLower(keywords), ",") {
-				text = strings.ReplaceAll(text, keyword, "~~"+keyword+"~~")
+			for _, keyword := range strings.Split(keywords, ",") {
+				re := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(keyword))
+				text = re.ReplaceAllStringFunc(text, func(matched string) string {
+					return "~~" + matched + "~~"
+				})
 			}
 			return text
 		},
@@ -67,7 +71,7 @@ func (t Data) Prepare() Data {
 	return t
 }
 
-// group the news items by their source.
+// group categorizes news items by their source.
 func group(news []entity.News) *orderedmap.OrderedMap {
 	grouped := orderedmap.New()
 	for _, item := range news {
