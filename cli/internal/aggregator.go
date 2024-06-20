@@ -34,7 +34,7 @@ func (a *aggregator) Aggregate() []entity.News {
 	sources := strings.Split(a.Sources, ",")
 	news := a.collectNews(sources)
 	news = a.applyFilters(news)
-	return a.SortOptions.Apply(news)
+	return a.SortOptions.Sort(news)
 }
 
 // Print news according to the created template

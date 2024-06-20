@@ -4,6 +4,7 @@ import (
 	"news-aggregator/internal/entity"
 )
 
+// Sort provides the ability to sort news articles.
 type Sort interface {
-	Apply(news []entity.News) []entity.News
+	Sort(news []entity.News) []entity.News
 }
