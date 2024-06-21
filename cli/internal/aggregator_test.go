@@ -227,7 +227,7 @@ func TestAggregator_getNewsForSource(t *testing.T) {
 			a := &aggregator{
 				Resources: tt.fields.Resources,
 			}
-			if got := a.getNewsForSource(tt.args.sourceName); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := a.getNewsForSource(tt.args.sourceName); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getNewsForSource() = %v, want %v", got, tt.want)
 			}
 		})
