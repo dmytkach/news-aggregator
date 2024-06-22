@@ -5,6 +5,7 @@ import (
 	"news-aggregator/internal"
 	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
+	"news-aggregator/storage"
 )
 
 // main is the entry point of the news-aggregator CLI application.
@@ -21,10 +22,11 @@ func main() {
 		flag.Usage()
 		return
 	}
-	resources := initializeDefaultResource()
+	s := storage.NewMemoryStorage()
+	initializeDefaultResource(s)
 	v := validator.Validator{
 		Sources:          *sources,
-		AvailableSources: resources,
+		AvailableSources: s.AvailableSources(),
 		DateStart:        *dateStart,
 		DateEnd:          *dateEnd,
 	}
@@ -32,7 +34,7 @@ func main() {
 		return
 	}
 	a := internal.NewAggregator(
-		resources,
+		s.GetAll(),
 		*sources,
 		internal.InitializeFilters(keywords, dateStart, dateEnd),
 		sort.Options{
@@ -45,12 +47,11 @@ func main() {
 		print(err)
 	}
 }
-func initializeDefaultResource() map[string]string {
-	return map[string]string{
-		"bbc":        "resources/bbc-world-category-19-05-24.xml",
-		"nbc":        "resources/nbc-news.json",
-		"abc":        "resources/abcnews-international-category-19-05-24.xml",
-		"washington": "resources/washingtontimes-world-category-19-05-24.xml",
-		"usatoday":   "resources/usatoday-world-news.html",
-	}
+func initializeDefaultResource(s storage.Storage) {
+	s.Set("bbc", "resources/bbc-world-category-19-05-24.xml")
+	s.Set("nbc", "resources/nbc-news.json")
+	s.Set("abc", "resources/abcnews-international-category-19-05-24.xml")
+	s.Set("washington", "resources/washingtontimes-world-category-19-05-24.xml")
+	s.Set("usatoday", "resources/usatoday-world-news.html")
+
 }

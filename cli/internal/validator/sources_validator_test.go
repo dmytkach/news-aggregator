@@ -6,13 +6,13 @@ func TestSourceValidator_Validate(t *testing.T) {
 	tests := []struct {
 		name             string
 		sources          string
-		availableSources map[string]string
+		availableSources []string
 		expected         bool
 	}{
-		{"No sources", "", map[string]string{}, false},
-		{"Valid source", "source1", map[string]string{"source1": "Source 1"}, true},
-		{"Invalid source", "source2", map[string]string{"source1": "Source 1"}, false},
-		{"Mixed sources", "source1.source2", map[string]string{"source1": "Source 1"}, false},
+		{"No sources", "", []string{}, false},
+		{"Valid source", "source1", []string{"source1"}, true},
+		{"Invalid source", "source2", []string{"source1"}, false},
+		{"Mixed sources", "source1.source2", []string{"source1"}, false},
 	}
 
 	for _, tt := range tests {

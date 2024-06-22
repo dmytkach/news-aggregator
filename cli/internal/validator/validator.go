@@ -2,7 +2,7 @@ package validator
 
 type Validator struct {
 	Sources          string
-	AvailableSources map[string]string
+	AvailableSources []string
 	DateStart        string
 	DateEnd          string
 }

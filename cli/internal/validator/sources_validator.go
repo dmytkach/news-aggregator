@@ -1,13 +1,14 @@
 package validator
 
 import (
+	"fmt"
 	"strings"
 )
 
 // sourceValidator checks the sources field
 type sourceValidator struct {
 	baseValidator
-	availableSources map[string]string
+	availableSources []string
 	sources          string
 }
 
@@ -18,10 +19,20 @@ func (v sourceValidator) Validate() bool {
 		return false
 	}
 	for _, source := range sourcesList {
-		if _, ok := v.availableSources[strings.ToLower(source)]; !ok {
-			println("Error - Source does not exist:", source)
+		if !contains(v.availableSources, source) {
+			fmt.Println("Source not available:", source)
 			return false
 		}
 	}
 	return v.baseValidator.Validate()
+}
+
+// contains check elements existing in slice.
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
