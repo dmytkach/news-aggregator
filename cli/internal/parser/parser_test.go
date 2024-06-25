@@ -1,8 +1,7 @@
-package internal
+package parser
 
 import (
 	"news-aggregator/internal/entity"
-	"news-aggregator/internal/parser"
 	"reflect"
 	"testing"
 )
@@ -19,17 +18,17 @@ func TestNew(t *testing.T) {
 		{
 			name: "RSS file",
 			args: args{Path: "testdata/news.xml"},
-			want: &parser.Rss{FilePath: "testdata/news.xml"},
+			want: &Rss{FilePath: "testdata/news.xml"},
 		},
 		{
 			name: "JSON file",
 			args: args{Path: "testdata/news.json"},
-			want: &parser.Json{FilePath: "testdata/news.json"},
+			want: &Json{FilePath: "testdata/news.json"},
 		},
 		{
 			name: "HTML file",
 			args: args{Path: "testdata/news.html"},
-			want: &parser.UsaToday{FilePath: "testdata/news.html"},
+			want: &UsaToday{FilePath: "testdata/news.html"},
 		},
 		{
 			name: "Unsupported file type",
