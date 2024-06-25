@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"news-aggregator/internal/entity"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -25,6 +26,9 @@ type newsArticle struct {
 	Description string    `json:"description"`
 	Link        string    `json:"url"`
 	Date        time.Time `json:"publishedAt"`
+	Source      struct {
+		Name string `json:"name"`
+	} `json:"source"`
 }
 
 func (jsonParser *Json) CanParseFileType(ext string) bool {
@@ -59,6 +63,7 @@ func (jsonParser *Json) Parse() ([]entity.News, error) {
 			Description: entity.Description(article.Description),
 			Link:        entity.Link(article.Link),
 			Date:        article.Date,
+			Source:      strings.ToLower(article.Source.Name),
 		}
 		allNews = append(allNews, news)
 	}

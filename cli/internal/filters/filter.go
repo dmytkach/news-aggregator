@@ -1,4 +1,4 @@
-package internal
+package filters
 
 import (
 	"news-aggregator/internal/entity"

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"news-aggregator/internal/entity"
+	"news-aggregator/internal/filters"
 	"news-aggregator/internal/sort"
 	t "news-aggregator/internal/template"
 	"os"
@@ -9,15 +10,15 @@ import (
 )
 
 type aggregator struct {
-	Resources   map[string]string
+	News        map[string][]entity.News
 	Sources     string
-	NewsFilters []NewsFilter
+	NewsFilters []filters.NewsFilter
 	SortOptions sort.Options
 }
 
-func NewAggregator(resources map[string]string, sources string, newsFilters []NewsFilter, sortParams sort.Options) Aggregate {
+func NewAggregator(news map[string][]entity.News, sources string, newsFilters []filters.NewsFilter, sortParams sort.Options) Aggregate {
 	return &aggregator{
-		Resources:   resources,
+		News:        news,
 		Sources:     sources,
 		NewsFilters: newsFilters,
 		SortOptions: sortParams,
@@ -71,41 +72,20 @@ func (a *aggregator) collectNews(sources []string) []entity.News {
 	var news []entity.News
 	for _, sourceName := range sources {
 		sourceName = strings.TrimSpace(sourceName)
-		newsFromSource, err := a.getNewsForSource(sourceName)
-		if err == nil {
-			news = append(news, newsFromSource...)
-		}
+		newsFromSource := a.getNewsForSource(sourceName)
+		news = append(news, newsFromSource...)
 	}
 	return news
 }
 
 // getNewsForSource fetches news for a single source by comparing it with the list of resources.
-func (a *aggregator) getNewsForSource(sourceName string) ([]entity.News, error) {
-	var news []entity.News
-	value, _ := a.Resources[strings.ToLower(sourceName)]
-	resourceNews, err := a.getResourceNews(entity.PathToFile(value))
-	if err != nil {
-		println("File path specified incorrectly for source " + sourceName)
-		return nil, err
+func (a *aggregator) getNewsForSource(sourceName string) []entity.News {
+	for source, news := range a.News {
+		if strings.Contains(source, sourceName) {
+			return news
+		}
 	}
-	news = append(news, resourceNews...)
-	for i := range news {
-		news[i].Source = sourceName
-	}
-	return news, nil
-}
-
-// getResourceNews parses news from a single resource.
-func (a *aggregator) getResourceNews(path entity.PathToFile) ([]entity.News, error) {
-	p, err := GetFileParser(path)
-	if err != nil {
-		return nil, err
-	}
-	news, err := p.Parse()
-	if err != nil {
-		return nil, err
-	}
-	return news, nil
+	return nil
 }
 
 // applyFilters applies the configured NewsFilters to the aggregated news.

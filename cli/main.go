@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"news-aggregator/internal"
+	"news-aggregator/internal/initializers"
 	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
 	"news-aggregator/storage"
@@ -23,7 +24,11 @@ func main() {
 		return
 	}
 	s := storage.NewMemoryStorage()
-	initializeDefaultResource(s)
+	newsFromStaticResources, err := initializers.LoadResourcesFromFolder("resources/")
+	if err != nil {
+		return
+	}
+	s.SaveMapToCache(newsFromStaticResources)
 	v := validator.Validator{
 		Sources:          *sources,
 		AvailableSources: s.AvailableSources(),
@@ -36,22 +41,14 @@ func main() {
 	a := internal.NewAggregator(
 		s.GetAll(),
 		*sources,
-		internal.InitializeFilters(keywords, dateStart, dateEnd),
+		initializers.InitializeFilters(keywords, dateStart, dateEnd),
 		sort.Options{
 			Criterion: *sortBy,
 			Order:     *sortOrder,
 		})
 	news := a.Aggregate()
-	err := a.Print(news, *keywords)
+	err = a.Print(news, *keywords)
 	if err != nil {
-		print(err)
+		return
 	}
-}
-func initializeDefaultResource(s storage.Storage) {
-	s.Set("bbc", "resources/bbc-world-category-19-05-24.xml")
-	s.Set("nbc", "resources/nbc-news.json")
-	s.Set("abc", "resources/abcnews-international-category-19-05-24.xml")
-	s.Set("washington", "resources/washingtontimes-world-category-19-05-24.xml")
-	s.Set("usatoday", "resources/usatoday-world-news.html")
-
 }

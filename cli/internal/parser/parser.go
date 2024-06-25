@@ -1,9 +1,8 @@
-package internal
+package parser
 
 import (
 	"fmt"
 	"news-aggregator/internal/entity"
-	"news-aggregator/internal/parser"
 	"path/filepath"
 	"strings"
 )
@@ -19,9 +18,9 @@ func GetFileParser(path entity.PathToFile) (Parser, error) {
 	ext := strings.ToLower(filepath.Ext(string(path)))
 
 	parsers := []Parser{
-		&parser.Rss{FilePath: path},
-		&parser.Json{FilePath: path},
-		&parser.UsaToday{FilePath: path},
+		&Rss{FilePath: path},
+		&Json{FilePath: path},
+		&UsaToday{FilePath: path},
 	}
 
 	for p := range parsers {

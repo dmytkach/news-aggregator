@@ -1,4 +1,4 @@
-package internal
+package initializers
 
 import (
 	"news-aggregator/internal/filters"
@@ -8,8 +8,8 @@ import (
 )
 
 // InitializeFilters based on provided parameters.
-func InitializeFilters(keywords, dateStart, dateEnd *string) []NewsFilter {
-	var newsFilters []NewsFilter
+func InitializeFilters(keywords, dateStart, dateEnd *string) []filters.NewsFilter {
+	var newsFilters []filters.NewsFilter
 
 	if keywordFilter := convertKeywords(keywords); keywordFilter != nil {
 		newsFilters = append(newsFilters, keywordFilter)

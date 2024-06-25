@@ -6,6 +6,7 @@ import (
 	"github.com/mmcdole/gofeed"
 	"news-aggregator/internal/entity"
 	"os"
+	"strings"
 )
 
 // Rss - parser for RSS files.
@@ -44,6 +45,7 @@ func (rssParser *Rss) Parse() ([]entity.News, error) {
 			Description: entity.Description(item.Description),
 			Link:        entity.Link(item.Link),
 			Date:        *item.PublishedParsed,
+			Source:      strings.ToLower(feed.Title),
 		})
 	}
 	if len(allNews) == 0 {

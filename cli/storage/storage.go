@@ -2,28 +2,31 @@ package storage
 
 import (
 	"errors"
+	"news-aggregator/internal/entity"
 	"sync"
 )
 
 type Storage interface {
 	Set(key, value string)
 	Get(key string) (string, error)
-	GetAll() map[string]string
+	GetAll() map[string][]entity.News
 	Delete(key string) error
-	SetCachedNews(key string, news interface{}) error
-	GetCachedNews(key string) (interface{}, error)
+	AddNewsToCache(key string, news []entity.News)
+	GetCachedNews(key string) (news []entity.News, err error)
+	SaveMapToCache(newsMap map[string][]entity.News)
+	AvailableSources() []string
 }
 
 type memoryStorage struct {
 	data       map[string]string
-	newsCache  map[string]interface{}
+	newsCache  map[string][]entity.News
 	cacheMutex sync.RWMutex
 }
 
 func NewMemoryStorage() *memoryStorage {
 	return &memoryStorage{
 		data:      make(map[string]string),
-		newsCache: make(map[string]interface{}),
+		newsCache: make(map[string][]entity.News),
 	}
 }
 
@@ -39,8 +42,15 @@ func (s *memoryStorage) Get(key string) (string, error) {
 	return value, nil
 }
 
-func (s *memoryStorage) GetAll() map[string]string {
-	return s.data
+func (s *memoryStorage) GetAll() map[string][]entity.News {
+	s.cacheMutex.Lock()
+	defer s.cacheMutex.Unlock()
+
+	c := make(map[string][]entity.News)
+	for key, news := range s.newsCache {
+		c[key] = append([]entity.News{}, news...)
+	}
+	return c
 }
 
 func (s *memoryStorage) Delete(key string) error {
@@ -48,14 +58,32 @@ func (s *memoryStorage) Delete(key string) error {
 	return nil
 }
 
-func (s *memoryStorage) SetCachedNews(key string, news interface{}) error {
+func (s *memoryStorage) AddNewsToCache(key string, news []entity.News) {
 	s.cacheMutex.Lock()
 	defer s.cacheMutex.Unlock()
-	s.newsCache[key] = news
-	return nil
+
+	for _, newArticle := range news {
+		if !s.newsExistsInCache(key, newArticle) {
+			s.newsCache[key] = append(s.newsCache[key], newArticle)
+		}
+	}
+}
+func (s *memoryStorage) SaveMapToCache(newsMap map[string][]entity.News) {
+	for source, news := range newsMap {
+		s.AddNewsToCache(source, news)
+	}
 }
 
-func (s *memoryStorage) GetCachedNews(key string) (interface{}, error) {
+func (s *memoryStorage) newsExistsInCache(key string, newsItem entity.News) bool {
+	for _, item := range s.newsCache[key] {
+		if item.Link == newsItem.Link {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *memoryStorage) GetCachedNews(key string) ([]entity.News, error) {
 	s.cacheMutex.RLock()
 	defer s.cacheMutex.RUnlock()
 	news, ok := s.newsCache[key]
@@ -68,107 +96,8 @@ func (s *memoryStorage) GetCachedNews(key string) (interface{}, error) {
 // AvailableSources returns all the available registered is storage sources.
 func (s *memoryStorage) AvailableSources() []string {
 	sources := make([]string, 0, len(s.data))
-	for source := range s.data {
+	for source := range s.newsCache {
 		sources = append(sources, source)
 	}
 	return sources
 }
-
-//
-//type fileStorage struct {
-//	data       map[string]string
-//	filePath   string
-//	newsCache  map[string]interface{}
-//	cacheMutex sync.RWMutex
-//}
-//
-//func NewFileStorage(filePath string) (*fileStorage, error) {
-//	s := &fileStorage{
-//		data:      make(map[string]string),
-//		filePath:  filePath,
-//		newsCache: make(map[string]interface{}),
-//	}
-//	if err := s.load(); err != nil {
-//		return nil, err
-//	}
-//	return s, nil
-//}
-//
-//func (s *fileStorage) load() error {
-//	file, err := os.Open(s.filePath)
-//	if err != nil {
-//		if os.IsNotExist(err) {
-//			return nil // File does not exist, initialize with empty data
-//		}
-//		return err
-//	}
-//	defer file.Close()
-//	return json.NewDecoder(file).Decode(&s.data)
-//}
-//
-//func (s *fileStorage) save() error {
-//	file, err := os.Create(s.filePath)
-//	if err != nil {
-//		return err
-//	}
-//	defer file.Close()
-//	return json.NewEncoder(file).Encode(s.data)
-//}
-//
-//func (s *fileStorage) Set(key, value string) error {
-//	s.data[key] = value
-//	return s.save()
-//}
-//
-//func (s *fileStorage) Get(key string) (string, error) {
-//	value, ok := s.data[key]
-//	if !ok {
-//		return "", errors.New("key not found")
-//	}
-//	return value, nil
-//}
-//
-
-//
-//func (s *fileStorage) Delete(key string) error {
-//	delete(s.data, key)
-//	return s.save()
-//}
-//
-//func (s *fileStorage) SetCachedNews(key string, news interface{}) error {
-//	s.cacheMutex.Lock()
-//	defer s.cacheMutex.Unlock()
-//	s.newsCache[key] = news
-//	return s.saveCache()
-//}
-//
-//func (s *fileStorage) GetCachedNews(key string) (interface{}, error) {
-//	s.cacheMutex.RLock()
-//	defer s.cacheMutex.RUnlock()
-//	news, ok := s.newsCache[key]
-//	if !ok {
-//		return nil, errors.New("cached news not found")
-//	}
-//	return news, nil
-//}
-//
-//func (s *fileStorage) saveCache() error {
-//	cacheFile, err := os.Create(s.filePath + ".cache")
-//	if err != nil {
-//		return err
-//	}
-//	defer cacheFile.Close()
-//	return json.NewEncoder(cacheFile).Encode(s.newsCache)
-//}
-//
-//func (s *fileStorage) loadCache() error {
-//	cacheFile, err := os.Open(s.filePath + ".cache")
-//	if err != nil {
-//		if os.IsNotExist(err) {
-//			return nil // Cache file does not exist, initialize with empty data
-//		}
-//		return err
-//	}
-//	defer cacheFile.Close()
-//	return json.NewDecoder(cacheFile).Decode(&s.newsCache)
-//}

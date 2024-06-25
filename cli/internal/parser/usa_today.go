@@ -93,6 +93,7 @@ func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 			Description: entity.Description(strings.TrimSpace(description)),
 			Link:        entity.Link(strings.TrimSpace(link)),
 			Date:        formattedDate,
+			Source:      "usa today",
 		})
 
 	})
