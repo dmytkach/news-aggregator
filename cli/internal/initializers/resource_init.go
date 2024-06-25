@@ -17,7 +17,7 @@ func LoadResourcesFromFolder(resourceFolder string) (map[string][]entity.News, e
 	newsMap := make(map[string][]entity.News)
 	for _, dirEntry := range dirEntries {
 		if !dirEntry.IsDir() {
-			news, err := loadResourceFromFile(resourceFolder, dirEntry.Name())
+			news, err := LoadResourceFromFile(resourceFolder, dirEntry.Name())
 			if err != nil {
 				continue
 			}
@@ -27,7 +27,7 @@ func LoadResourcesFromFolder(resourceFolder string) (map[string][]entity.News, e
 	}
 	return newsMap, nil
 }
-func loadResourceFromFile(resourceFolder, fileName string) ([]entity.News, error) {
+func LoadResourceFromFile(resourceFolder, fileName string) ([]entity.News, error) {
 	filePath := filepath.Join(resourceFolder, fileName)
 	news, err := getResourceNews(entity.PathToFile(filePath))
 	if err != nil {
