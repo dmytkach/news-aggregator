@@ -7,9 +7,10 @@ import (
 )
 
 type Storage interface {
-	Set(key, value string)
-	Get(key string) (string, error)
-	GetAll() map[string][]entity.News
+	InitializeData(resources map[string][]string)
+	Add(key, value string)
+	Get(key string) ([]string, error)
+	GetAll() map[string][]string
 	Delete(key string) error
 	AddNewsToCache(key string, news []entity.News)
 	GetCachedNews(key string) (news []entity.News, err error)
@@ -18,39 +19,48 @@ type Storage interface {
 }
 
 type memoryStorage struct {
-	data       map[string]string
+	data       map[string][]string
 	newsCache  map[string][]entity.News
 	cacheMutex sync.RWMutex
 }
 
 func NewMemoryStorage() *memoryStorage {
 	return &memoryStorage{
-		data:      make(map[string]string),
+		data:      make(map[string][]string),
 		newsCache: make(map[string][]entity.News),
 	}
 }
-
-func (s *memoryStorage) Set(key, value string) {
-	s.data[key] = value
+func (s *memoryStorage) InitializeData(resources map[string][]string) {
+	s.data = resources
 }
-
-func (s *memoryStorage) Get(key string) (string, error) {
+func (s *memoryStorage) Add(key, value string) {
+	if _, ok := s.data[key]; !ok {
+		s.data[key] = make([]string, 0)
+	}
+	if !s.valueExists(key, value) {
+		s.data[key] = append(s.data[key], value)
+	}
+}
+func (s *memoryStorage) valueExists(key, value string) bool {
+	for _, existingValue := range s.data[key] {
+		println(existingValue)
+		println(value)
+		if existingValue == value {
+			return true
+		}
+	}
+	return false
+}
+func (s *memoryStorage) Get(key string) ([]string, error) {
 	value, ok := s.data[key]
 	if !ok {
-		return "", errors.New("key not found")
+		return nil, errors.New("key not found")
 	}
 	return value, nil
 }
 
-func (s *memoryStorage) GetAll() map[string][]entity.News {
-	s.cacheMutex.Lock()
-	defer s.cacheMutex.Unlock()
-
-	c := make(map[string][]entity.News)
-	for key, news := range s.newsCache {
-		c[key] = append([]entity.News{}, news...)
-	}
-	return c
+func (s *memoryStorage) GetAll() map[string][]string {
+	return s.data
 }
 
 func (s *memoryStorage) Delete(key string) error {
@@ -96,7 +106,7 @@ func (s *memoryStorage) GetCachedNews(key string) ([]entity.News, error) {
 // AvailableSources returns all the available registered is storage sources.
 func (s *memoryStorage) AvailableSources() []string {
 	sources := make([]string, 0, len(s.data))
-	for source := range s.newsCache {
+	for source := range s.data {
 		sources = append(sources, source)
 	}
 	return sources
