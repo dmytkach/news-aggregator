@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Json - parser for JSON files.
+// Json represents a JSON parser for news articles.
 type Json struct {
 	FilePath entity.PathToFile
 }
@@ -31,11 +31,16 @@ type newsArticle struct {
 	} `json:"source"`
 }
 
-func (jsonParser *Json) CanParseFileType(ext string) bool {
-	return ext == ".json"
+// readyNews represents a simplified structure for news articles when parsing alternate JSON format.
+type readyNews struct {
+	Title       string    `json:"Title"`
+	Description string    `json:"Description"`
+	Link        string    `json:"Link"`
+	Date        time.Time `json:"Date"`
+	Source      string    `json:"Source"`
 }
 
-// Parse - implementation of a parser for files in JSON format.
+// Parse implements a parser for JSON files, attempting to parse into different structures.
 func (jsonParser *Json) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(jsonParser.FilePath))
 	if err != nil {
@@ -45,18 +50,36 @@ func (jsonParser *Json) Parse() ([]entity.News, error) {
 		closeErr := file.Close()
 		if closeErr != nil && err == nil {
 			err = fmt.Errorf("error closing file: %w", closeErr)
-			return
 		}
 	}(file)
 
+	var allNews []entity.News
+
+	if news, err := jsonParser.decodeNewsResponse(file); err == nil {
+		allNews = append(allNews, news...)
+	} else {
+		if news, err := jsonParser.decodeReadyNews(file); err == nil {
+			allNews = append(allNews, news...)
+		} else {
+			return nil, fmt.Errorf("failed to decode JSON: %w", err)
+		}
+	}
+
+	if len(allNews) == 0 {
+		return nil, errors.New("no news found")
+	}
+
+	return allNews, nil
+}
+
+// decodeNewsResponse attempts to decode the file into the newsResponse structure.
+func (jsonParser *Json) decodeNewsResponse(file *os.File) ([]entity.News, error) {
 	var response newsResponse
-	err = json.NewDecoder(file).Decode(&response)
-	if err != nil {
+	if err := json.NewDecoder(file).Decode(&response); err != nil {
 		return nil, err
 	}
 
 	var allNews []entity.News
-
 	for _, article := range response.Articles {
 		news := entity.News{
 			Title:       entity.Title(article.Title),
@@ -67,8 +90,38 @@ func (jsonParser *Json) Parse() ([]entity.News, error) {
 		}
 		allNews = append(allNews, news)
 	}
-	if len(allNews) == 0 {
-		return nil, errors.New("no news found")
-	}
+
 	return allNews, nil
+}
+
+// decodeReadyNews attempts to decode the file into the readyNews structure.
+func (jsonParser *Json) decodeReadyNews(file *os.File) ([]entity.News, error) {
+	_, err := file.Seek(0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var articles []readyNews
+	if err := json.NewDecoder(file).Decode(&articles); err != nil {
+		return nil, err
+	}
+
+	var allNews []entity.News
+	for _, article := range articles {
+		news := entity.News{
+			Title:       entity.Title(article.Title),
+			Description: entity.Description(article.Description),
+			Link:        entity.Link(article.Link),
+			Date:        article.Date,
+			Source:      strings.ToLower(article.Source),
+		}
+		allNews = append(allNews, news)
+	}
+
+	return allNews, nil
+}
+
+// CanParseFileType checks if the file extension is .json
+func (jsonParser *Json) CanParseFileType(ext string) bool {
+	return ext == ".json"
 }
