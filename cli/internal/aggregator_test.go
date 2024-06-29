@@ -11,11 +11,11 @@ import (
 
 func TestAggregate(t *testing.T) {
 	type args struct {
-		News        map[string][]entity.News
+		News        map[string][]string
 		Sources     string
 		NewsFilters []filters.NewsFilter
 	}
-	news, err := initializers.LoadResourcesFromFolder("../../resources/")
+	resources, err := initializers.LoadStaticResourcesFromFolder("../../resources/")
 	if err != nil {
 		t.Errorf("error with load resource from Folder")
 	}
@@ -26,7 +26,7 @@ func TestAggregate(t *testing.T) {
 	}{{
 		name: "should aggregate news on given Sources applying NewsFilters.",
 		args: args{
-			News:    news,
+			News:    resources,
 			Sources: "bbc",
 			NewsFilters: []filters.NewsFilter{
 				&filters.Keyword{Keywords: []string{"Dymond"}},
@@ -48,7 +48,7 @@ func TestAggregate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &aggregator{
-				News:        tt.args.News,
+				Resources:   tt.args.News,
 				Sources:     tt.args.Sources,
 				NewsFilters: tt.args.NewsFilters,
 			}

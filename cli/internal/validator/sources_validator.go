@@ -18,6 +18,10 @@ func (v sourceValidator) Validate() bool {
 		println("Please provide at least one source using the --sources flag.")
 		return false
 	}
+	if len(v.availableSources) == 0 {
+		println("Not found available sources.")
+		return false
+	}
 	for _, source := range sourcesList {
 		if !contains(v.availableSources, source) {
 			fmt.Println("Source not available:", source)

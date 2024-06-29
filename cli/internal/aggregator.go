@@ -3,6 +3,7 @@ package internal
 import (
 	"news-aggregator/internal/entity"
 	"news-aggregator/internal/filters"
+	"news-aggregator/internal/parser"
 	"news-aggregator/internal/sort"
 	t "news-aggregator/internal/template"
 	"os"
@@ -10,15 +11,15 @@ import (
 )
 
 type aggregator struct {
-	News        map[string][]entity.News
+	Resources   map[string][]string
 	Sources     string
 	NewsFilters []filters.NewsFilter
 	SortOptions sort.Options
 }
 
-func NewAggregator(news map[string][]entity.News, sources string, newsFilters []filters.NewsFilter, sortParams sort.Options) Aggregate {
+func NewAggregator(news map[string][]string, sources string, newsFilters []filters.NewsFilter, sortParams sort.Options) Aggregate {
 	return &aggregator{
-		News:        news,
+		Resources:   news,
 		Sources:     sources,
 		NewsFilters: newsFilters,
 		SortOptions: sortParams,
@@ -80,12 +81,35 @@ func (a *aggregator) collectNews(sources []string) []entity.News {
 
 // getNewsForSource fetches news for a single source by comparing it with the list of resources.
 func (a *aggregator) getNewsForSource(sourceName string) []entity.News {
-	for source, news := range a.News {
+	var news []entity.News
+	for source, path := range a.Resources {
 		if strings.Contains(source, sourceName) {
-			return news
+			for _, b := range path {
+				newsFromResource, err := a.getResourceNews(entity.PathToFile(b))
+				if err != nil {
+					return nil
+				}
+				news = append(news, newsFromResource...)
+			}
 		}
 	}
-	return nil
+	return news
+}
+
+// getResourceNews parses news from a single resource.
+func (a *aggregator) getResourceNews(path entity.PathToFile) ([]entity.News, error) {
+	parsers, err := parser.GetFileParser(path)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range parsers {
+		news, err := p.Parse()
+		if err != nil {
+			continue
+		}
+		return news, nil
+	}
+	return nil, err
 }
 
 // applyFilters applies the configured NewsFilters to the aggregated news.

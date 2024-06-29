@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"encoding/json"
@@ -7,14 +7,10 @@ import (
 	"news-aggregator/internal/initializers"
 	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
-	"news-aggregator/storage"
+	"news-aggregator/server/handlers/admin/managers"
 )
 
-type UserHandler struct {
-	s storage.Storage
-}
-
-func (h UserHandler) newsHandler(w http.ResponseWriter, r *http.Request) {
+func NewsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -29,7 +25,7 @@ func (h UserHandler) newsHandler(w http.ResponseWriter, r *http.Request) {
 
 	v := validator.Validator{
 		Sources:          sources,
-		AvailableSources: h.s.AvailableSources(),
+		AvailableSources: managers.GetSourcesNameFromFile(),
 		DateStart:        dateStart,
 		DateEnd:          dateEnd,
 	}
@@ -37,9 +33,12 @@ func (h UserHandler) newsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid query parameters", http.StatusBadRequest)
 		return
 	}
-
+	resources, err := initializers.LoadStaticResourcesFromFolder("server-news/")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	a := internal.NewAggregator(
-		h.s.GetAll(),
+		resources,
 		sources,
 		initializers.InitializeFilters(&keywords, &dateStart, &dateEnd),
 		sort.Options{
