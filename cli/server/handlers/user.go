@@ -22,10 +22,13 @@ func NewsHandler(w http.ResponseWriter, r *http.Request) {
 	dateEnd := r.URL.Query().Get("date-end")
 	sortOrder := r.URL.Query().Get("sort-order")
 	sortBy := r.URL.Query().Get("sort-by")
-
+	availableSources, err := managers.GetAllSourcesNames()
+	if err != nil {
+		return
+	}
 	v := validator.Validator{
 		Sources:          sources,
-		AvailableSources: managers.GetSourcesNameFromFile(),
+		AvailableSources: availableSources,
 		DateStart:        dateStart,
 		DateEnd:          dateEnd,
 	}

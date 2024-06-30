@@ -1,10 +1,9 @@
-package admin
+package handlers
 
 import (
 	"encoding/json"
 	"net/http"
-	"news-aggregator/server/handlers/admin/feed"
-	"news-aggregator/server/handlers/admin/service"
+	"news-aggregator/server/handlers/admin"
 )
 
 func SourcesHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,16 +26,12 @@ func downloadFeed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	resource, err := feed.NewsFeed{}.Add(urlStr)
+	_, err := admin.NewsFeed{}.Add(urlStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = service.UpdateSingleResource(resource)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	err = admin.FetchNews()
 }
 func getSourcesHandler(w http.ResponseWriter, r *http.Request) {
 	sourceName := r.URL.Query().Get("name")
@@ -45,9 +40,9 @@ func getSourcesHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if sourceName == "" {
-		feeds, err = feed.NewsFeed{}.GetAll()
+		feeds, err = admin.NewsFeed{}.GetAll()
 	} else {
-		feeds, err = feed.NewsFeed{}.Get(sourceName)
+		feeds, err = admin.NewsFeed{}.Get(sourceName)
 	}
 
 	if err != nil {
@@ -66,7 +61,7 @@ func updateFeed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	err := feed.NewsFeed{}.Update(oldUrl, newUrl)
+	err := admin.NewsFeed{}.Update(oldUrl, newUrl)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -78,7 +73,7 @@ func removeFeed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "source name is missing", http.StatusBadRequest)
 		return
 	}
-	err := feed.NewsFeed{}.Remove(sourceName)
+	err := admin.NewsFeed{}.Remove(sourceName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
