@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
+	"log"
 	"news-aggregator/internal"
 	"news-aggregator/internal/initializers"
 	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
-	"news-aggregator/storage"
 )
 
 // main is the entry point of the news-aggregator CLI application.
@@ -23,23 +23,23 @@ func main() {
 		flag.Usage()
 		return
 	}
-	s := storage.NewMemoryStorage()
-	newsFromStaticResources, err := initializers.LoadResourcesFromFolder("resources/")
+	newsFromStaticResources, err := initializers.LoadStaticResourcesFromFolder("resources/")
 	if err != nil {
+		log.Print("Error loading static resources: ", err)
 		return
 	}
-	s.SaveMapToCache(newsFromStaticResources)
 	v := validator.Validator{
 		Sources:          *sources,
-		AvailableSources: s.AvailableSources(),
+		AvailableSources: availableSources(newsFromStaticResources),
 		DateStart:        *dateStart,
 		DateEnd:          *dateEnd,
 	}
 	if !v.Validate() {
+		log.Println("Invalid parameters")
 		return
 	}
 	a := internal.NewAggregator(
-		s.GetAll(),
+		newsFromStaticResources,
 		*sources,
 		initializers.InitializeFilters(keywords, dateStart, dateEnd),
 		sort.Options{
@@ -51,4 +51,11 @@ func main() {
 	if err != nil {
 		return
 	}
+}
+func availableSources(resources map[string][]string) []string {
+	sources := make([]string, 0, len(resources))
+	for source := range resources {
+		sources = append(sources, source)
+	}
+	return sources
 }
