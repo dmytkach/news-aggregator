@@ -17,7 +17,7 @@ func GetAllSourcesNames() ([]string, error) {
 	sources, _ := readSourcesFromFile()
 	resourceNames := make([]string, 0)
 	for _, s := range sources {
-		resourceNames = append(resourceNames, string(s.ResourceName))
+		resourceNames = append(resourceNames, string(s.Name))
 	}
 	if len(resourceNames) == 0 {
 		return nil, errors.New("no resources found")
@@ -30,7 +30,7 @@ func GetSourcesFeeds(name string) ([]string, error) {
 	sources, _ := readSourcesFromFile()
 	resourceFeeds := make([]string, 0)
 	for _, s := range sources {
-		if strings.Contains(string(s.ResourceName), name) {
+		if strings.Contains(string(s.Name), name) {
 			resourceFeeds = append(resourceFeeds, string(s.PathToFile))
 		}
 	}
@@ -42,13 +42,13 @@ func GetSourcesFeeds(name string) ([]string, error) {
 func CreateSource(name, url string) (entity.Resource, error) {
 	sources, _ := readSourcesFromFile()
 	for _, s := range sources {
-		if string(s.PathToFile) == url && strings.Contains(string(s.ResourceName), name) {
+		if string(s.PathToFile) == url && strings.Contains(string(s.Name), cleanFilename(name)) {
 			return entity.Resource{}, errors.New("resource already exists")
 		}
 	}
 	resource := entity.Resource{
-		ResourceName: entity.ResourceName(cleanFilename(name)),
-		PathToFile:   entity.PathToFile(url),
+		Name:       entity.ResourceName(cleanFilename(name)),
+		PathToFile: entity.PathToFile(url),
 	}
 	sources = append(sources, resource)
 	err := writeToFile(sources)
@@ -61,7 +61,7 @@ func RemoveSourceByName(sourceName string) error {
 	sources, _ := readSourcesFromFile()
 	deletedSources := make([]entity.Resource, 0)
 	for _, s := range sources {
-		if !strings.Contains(string(s.ResourceName), sourceName) {
+		if !strings.Contains(string(s.Name), sourceName) {
 			deletedSources = append(deletedSources, s)
 		}
 	}
