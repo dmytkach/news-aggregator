@@ -5,3 +5,7 @@ type ResourceName string
 
 // PathToFile represents the path to a file containing news information.
 type PathToFile string
+type Resource struct {
+	ResourceName ResourceName
+	PathToFile   PathToFile
+}
