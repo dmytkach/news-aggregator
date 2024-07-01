@@ -1,9 +1,9 @@
-package admin
+package service
 
 import (
 	"log"
 	"news-aggregator/internal/entity"
-	"news-aggregator/server/handlers/admin/managers"
+	"news-aggregator/server/managers"
 )
 
 type NewsFeed struct {

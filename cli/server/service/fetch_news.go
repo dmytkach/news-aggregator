@@ -1,16 +1,15 @@
-package admin
+package service
 
 import (
 	"io"
 	"log"
 	"net/http"
 	"news-aggregator/internal/entity"
-	"news-aggregator/server/handlers/admin/managers"
+	managers2 "news-aggregator/server/managers"
 	"os"
 )
 
 const tempFileName = "tempfile.xml"
-const resourceFolder = "server-resources/"
 
 func FetchNewsFromResponse(url entity.PathToFile) ([]entity.News, error) {
 	resp, err := http.Get(string(url))
@@ -33,7 +32,7 @@ func FetchNewsFromResponse(url entity.PathToFile) ([]entity.News, error) {
 		return nil, err
 	}
 
-	news, err := managers.GetNewsFromFile(tempFileName)
+	news, err := managers2.GetNewsFromFile(tempFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -41,12 +40,12 @@ func FetchNewsFromResponse(url entity.PathToFile) ([]entity.News, error) {
 }
 
 func FetchNews() error {
-	resources, err := managers.GetAllSourcesNames()
+	resources, err := managers2.GetAllSourcesNames()
 	if err != nil {
 		return err
 	}
 	for _, name := range resources {
-		links, err := managers.GetSourcesFeeds(name)
+		links, err := managers2.GetSourcesFeeds(name)
 		if err != nil {
 			return err
 		}
@@ -68,7 +67,7 @@ func fetchFromResource(resource entity.Resource) error {
 		print("Failed to parse feed", http.StatusInternalServerError)
 		return err
 	}
-	allNews, err := managers.GetNewsFromFolder(string(resource.Name))
+	allNews, err := managers2.GetNewsFromFolder(string(resource.Name))
 	if err != nil {
 		print("Failed to parse static resources", http.StatusInternalServerError)
 		return err
@@ -84,7 +83,7 @@ func fetchFromResource(resource entity.Resource) error {
 			newsWithoutRepeat = append(newsWithoutRepeat, loadedNews)
 		}
 	}
-	err = managers.AddNews(newsWithoutRepeat, string(resource.Name))
+	err = managers2.AddNews(newsWithoutRepeat, string(resource.Name))
 	if err != nil {
 		return err
 	}
