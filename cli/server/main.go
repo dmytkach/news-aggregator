@@ -8,8 +8,11 @@ import (
 
 func main() {
 
-	http.HandleFunc("/news", handlers.NewsHandler)
-	http.HandleFunc("/sources", handlers.SourcesHandler)
+	http.HandleFunc("/news", handlers.News)
+	http.HandleFunc("/sources", handlers.Sources)
+	http.HandleFunc("/set-interval", handlers.SetInterval)
+
+	go handlers.StartFetchScheduler()
 
 	log.Println("Starting server on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
