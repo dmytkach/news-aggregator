@@ -11,6 +11,7 @@ type NewsParser struct {
 	FilePath entity.PathToFile
 }
 
+// Parse - implementation of a parser for files with pre-processed news.
 func (newsParser *NewsParser) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(newsParser.FilePath))
 	if err != nil {
