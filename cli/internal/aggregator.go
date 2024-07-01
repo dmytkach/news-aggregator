@@ -72,7 +72,7 @@ func (a *aggregator) Print(news []entity.News, keywords string) error {
 func (a *aggregator) collectNews(sources []string) []entity.News {
 	var news []entity.News
 	for _, sourceName := range sources {
-		sourceName = strings.TrimSpace(sourceName)
+		sourceName = strings.ToLower(strings.TrimSpace(sourceName))
 		newsFromSource := a.getNewsForSource(sourceName)
 		news = append(news, newsFromSource...)
 	}
