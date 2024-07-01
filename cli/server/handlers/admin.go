@@ -3,46 +3,51 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"news-aggregator/server/handlers/admin"
+	"news-aggregator/server/service"
 )
 
-func SourcesHandler(w http.ResponseWriter, r *http.Request) {
+// Sources handles HTTP requests for managing news sources and feeds.
+func Sources(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		getSourcesHandler(w, r)
+		getSources(w, r)
 	case http.MethodPost:
-		downloadFeed(w, r)
+		downloadSource(w, r)
 	case http.MethodPut:
-		updateFeed(w, r)
+		updateSource(w, r)
 	case http.MethodDelete:
-		removeFeed(w, r)
+		removeSource(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-func downloadFeed(w http.ResponseWriter, r *http.Request) {
+
+// downloadSource handles HTTP POST requests to add new news feed URL.
+func downloadSource(w http.ResponseWriter, r *http.Request) {
 	urlStr := r.URL.Query().Get("url")
 	if urlStr == "" {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	_, err := admin.NewsFeed{}.Add(urlStr)
+	_, err := service.NewsFeed{}.Add(urlStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = admin.FetchNews()
+	err = service.FetchNews()
 }
-func getSourcesHandler(w http.ResponseWriter, r *http.Request) {
+
+// getSources handles HTTP GET requests to retrieve news sources.
+func getSources(w http.ResponseWriter, r *http.Request) {
 	sourceName := r.URL.Query().Get("name")
 
 	var feeds interface{}
 	var err error
 
 	if sourceName == "" {
-		feeds, err = admin.NewsFeed{}.GetAll()
+		feeds, err = service.NewsFeed{}.GetAll()
 	} else {
-		feeds, err = admin.NewsFeed{}.Get(sourceName)
+		feeds, err = service.NewsFeed{}.Get(sourceName)
 	}
 
 	if err != nil {
@@ -54,26 +59,30 @@ func getSourcesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(feeds)
 
 }
-func updateFeed(w http.ResponseWriter, r *http.Request) {
+
+// updateSource handles HTTP PUT requests to update an existing news source URL.
+func updateSource(w http.ResponseWriter, r *http.Request) {
 	oldUrl := r.URL.Query().Get("oldUrl")
 	newUrl := r.URL.Query().Get("newUrl")
 	if oldUrl == "" || newUrl == "" {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	err := admin.NewsFeed{}.Update(oldUrl, newUrl)
+	err := service.NewsFeed{}.Update(oldUrl, newUrl)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
-func removeFeed(w http.ResponseWriter, r *http.Request) {
+
+// removeSource handles HTTP DELETE requests to remove a news source.
+func removeSource(w http.ResponseWriter, r *http.Request) {
 	sourceName := r.URL.Query().Get("name")
 	if sourceName == "" {
 		http.Error(w, "source name is missing", http.StatusBadRequest)
 		return
 	}
-	err := admin.NewsFeed{}.Remove(sourceName)
+	err := service.NewsFeed{}.Remove(sourceName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

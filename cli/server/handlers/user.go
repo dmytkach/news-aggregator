@@ -7,10 +7,11 @@ import (
 	"news-aggregator/internal/initializers"
 	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
-	"news-aggregator/server/handlers/admin/managers"
 )
 
-func NewsHandler(w http.ResponseWriter, r *http.Request) {
+// News handlers for HTTP GET requests to retrieve aggregated news based
+// on specified query parameters.
+func News(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -22,9 +23,13 @@ func NewsHandler(w http.ResponseWriter, r *http.Request) {
 	dateEnd := r.URL.Query().Get("date-end")
 	sortOrder := r.URL.Query().Get("sort-order")
 	sortBy := r.URL.Query().Get("sort-by")
-	availableSources, err := managers.GetAllSourcesNames()
+	resources, err := initializers.LoadStaticResourcesFromFolder("server-news/")
 	if err != nil {
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	availableSources := make([]string, 0)
+	for sourceName := range resources {
+		availableSources = append(availableSources, sourceName)
 	}
 	v := validator.Validator{
 		Sources:          sources,
@@ -35,10 +40,6 @@ func NewsHandler(w http.ResponseWriter, r *http.Request) {
 	if !v.Validate() {
 		http.Error(w, "Invalid query parameters", http.StatusBadRequest)
 		return
-	}
-	resources, err := initializers.LoadStaticResourcesFromFolder("server-news/")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	a := internal.NewAggregator(
 		resources,
