@@ -14,7 +14,7 @@ const pathToResources = "server-resources/source.json"
 
 // GetAllSourcesNames from resource file.
 func GetAllSourcesNames() ([]string, error) {
-	sources, _ := readSourcesFromFile()
+	sources, _ := readFromFile()
 	resourceNames := make([]string, 0)
 	for _, s := range sources {
 		resourceNames = append(resourceNames, string(s.Name))
@@ -27,7 +27,7 @@ func GetAllSourcesNames() ([]string, error) {
 
 // GetSourcesFeeds by given name from resource file.
 func GetSourcesFeeds(name string) ([]string, error) {
-	sources, _ := readSourcesFromFile()
+	sources, _ := readFromFile()
 	resourceFeeds := make([]string, 0)
 	for _, s := range sources {
 		if strings.Contains(string(s.Name), name) {
@@ -39,8 +39,10 @@ func GetSourcesFeeds(name string) ([]string, error) {
 	}
 	return resourceFeeds, nil
 }
+
+// CreateSource creates a new source with the provided name and URL.
 func CreateSource(name, url string) (entity.Resource, error) {
-	sources, _ := readSourcesFromFile()
+	sources, _ := readFromFile()
 	for _, s := range sources {
 		if string(s.PathToFile) == url && strings.Contains(string(s.Name), cleanFilename(name)) {
 			return entity.Resource{}, errors.New("resource already exists")
@@ -57,8 +59,10 @@ func CreateSource(name, url string) (entity.Resource, error) {
 	}
 	return resource, nil
 }
+
+// RemoveSourceByName from the resource file.
 func RemoveSourceByName(sourceName string) error {
-	sources, _ := readSourcesFromFile()
+	sources, _ := readFromFile()
 	deletedSources := make([]entity.Resource, 0)
 	for _, s := range sources {
 		if !strings.Contains(string(s.Name), sourceName) {
@@ -67,8 +71,10 @@ func RemoveSourceByName(sourceName string) error {
 	}
 	return writeToFile(deletedSources)
 }
+
+// UpdateSource identified by its old URL.
 func UpdateSource(oldUrl, newUrl string) error {
-	sources, err := readSourcesFromFile()
+	sources, err := readFromFile()
 	if err != nil {
 		return err
 	}
@@ -85,6 +91,8 @@ func UpdateSource(oldUrl, newUrl string) error {
 	}
 	return fmt.Errorf("source with URL %s not found", oldUrl)
 }
+
+// writeToFile sources in JSON format.
 func writeToFile(sources []entity.Resource) error {
 	jsonData, err := json.Marshal(sources)
 	if err != nil {
@@ -97,7 +105,9 @@ func writeToFile(sources []entity.Resource) error {
 	}
 	return nil
 }
-func readSourcesFromFile() ([]entity.Resource, error) {
+
+// readFromFile resources file.
+func readFromFile() ([]entity.Resource, error) {
 	file, err := os.Open(pathToResources)
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -29,7 +29,7 @@ func downloadSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	_, err := service.NewsFeed{}.Add(urlStr)
+	_, err := service.Add(urlStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -45,9 +45,9 @@ func getSources(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if sourceName == "" {
-		feeds, err = service.NewsFeed{}.GetAll()
+		feeds, err = service.GetAll()
 	} else {
-		feeds, err = service.NewsFeed{}.Get(sourceName)
+		feeds, err = service.Get(sourceName)
 	}
 
 	if err != nil {
@@ -68,7 +68,7 @@ func updateSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	err := service.NewsFeed{}.Update(oldUrl, newUrl)
+	err := service.Update(oldUrl, newUrl)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,7 +82,7 @@ func removeSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "source name is missing", http.StatusBadRequest)
 		return
 	}
-	err := service.NewsFeed{}.Remove(sourceName)
+	err := service.Remove(sourceName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

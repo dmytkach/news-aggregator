@@ -15,6 +15,8 @@ const resourceFolder = "server-news/"
 
 var timeNow = time.Now().Format("2006-01-02")
 
+// GetNewsFromFolder retrieves news data from a specified folder
+// containing structured news resources.
 func GetNewsFromFolder(folderName string) ([]entity.News, error) {
 	resources, err := initializers.LoadStaticResourcesFromFolder(resourceFolder)
 	if err != nil {
@@ -31,6 +33,8 @@ func GetNewsFromFolder(folderName string) ([]entity.News, error) {
 	}
 	return allNews, nil
 }
+
+// GetNewsFromFile using parsers.
 func GetNewsFromFile(filePath string) ([]entity.News, error) {
 	parsers, err := parser.GetFileParser(entity.PathToFile(filePath))
 	if err != nil {
@@ -45,6 +49,9 @@ func GetNewsFromFile(filePath string) ([]entity.News, error) {
 	}
 	return nil, err
 }
+
+// AddNews in JSON format in the server's news folder,
+// organized by source and timestamp.
 func AddNews(news []entity.News, newsSource string) error {
 	finalFileName := fmt.Sprintf("%s/%s.json", cleanFilename(newsSource), timeNow)
 	finalFilePath := filepath.Join(resourceFolder, finalFileName)
