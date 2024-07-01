@@ -12,6 +12,7 @@ type sourceValidator struct {
 	sources          string
 }
 
+// Validate checks that the given sources exist.
 func (v sourceValidator) Validate() bool {
 	sourcesList := strings.Split(v.sources, ",")
 	if len(sourcesList) == 0 {
@@ -23,7 +24,7 @@ func (v sourceValidator) Validate() bool {
 		return false
 	}
 	for _, source := range sourcesList {
-		if !contains(v.availableSources, source) {
+		if !v.exist(source) {
 			fmt.Println("Source not available:", source)
 			return false
 		}
@@ -31,10 +32,10 @@ func (v sourceValidator) Validate() bool {
 	return v.baseValidator.Validate()
 }
 
-// contains check elements existing in slice.
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if strings.Contains(s, item) {
+// exist check elements existing in slice.
+func (v sourceValidator) exist(source string) bool {
+	for _, s := range v.availableSources {
+		if strings.Contains(s, strings.ToLower(source)) {
 			return true
 		}
 	}
