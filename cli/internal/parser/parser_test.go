@@ -13,22 +13,24 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Parser
+		want []Parser
 	}{
 		{
 			name: "RSS file",
 			args: args{Path: "testdata/news.xml"},
-			want: &Rss{FilePath: "testdata/news.xml"},
+			want: []Parser{&Rss{FilePath: "testdata/news.xml"}},
 		},
 		{
 			name: "JSON file",
 			args: args{Path: "testdata/news.json"},
-			want: &Json{FilePath: "testdata/news.json"},
+			want: []Parser{
+				&Json{FilePath: "testdata/news.json"},
+				&NewsParser{FilePath: "testdata/news.json"}},
 		},
 		{
 			name: "HTML file",
 			args: args{Path: "testdata/news.html"},
-			want: &UsaToday{FilePath: "testdata/news.html"},
+			want: []Parser{&UsaToday{FilePath: "testdata/news.html"}},
 		},
 		{
 			name: "Unsupported file type",
@@ -38,7 +40,8 @@ func TestNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := GetFileParser(tt.args.Path); !reflect.DeepEqual(got, tt.want) {
+			got, _ := GetFileParser(tt.args.Path)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetFileParser() = %v, want %v", got, tt.want)
 			}
 		})
