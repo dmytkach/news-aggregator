@@ -11,6 +11,7 @@ import (
 
 const tempFileName = "tempfile.xml"
 
+// FetchNews from all registered sources and updates the local storage.
 func FetchNews() error {
 	resources, err := managers.GetAllSourcesNames()
 	if err != nil {
@@ -22,7 +23,7 @@ func FetchNews() error {
 			return err
 		}
 		for _, link := range links {
-			err := fetchFromResource(entity.Resource{
+			err := fetchNewsFromResource(entity.Resource{
 				Name:       entity.ResourceName(name),
 				PathToFile: entity.PathToFile(link),
 			})
@@ -33,7 +34,9 @@ func FetchNews() error {
 	}
 	return nil
 }
-func fetchFromResource(resource entity.Resource) error {
+
+// fetchNewsFromResource and updates local storage if the news is not already present.
+func fetchNewsFromResource(resource entity.Resource) error {
 	news, err := fetchNewsFromResponse(resource.PathToFile)
 	if err != nil {
 		print("Failed to parse feed", http.StatusInternalServerError)
@@ -61,6 +64,8 @@ func fetchFromResource(resource entity.Resource) error {
 	}
 	return nil
 }
+
+// fetchNewsFromResponse downloads and parses the news feed from the given URL.
 func fetchNewsFromResponse(url entity.PathToFile) ([]entity.News, error) {
 	resp, err := http.Get(string(url))
 	if err != nil {
