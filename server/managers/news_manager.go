@@ -3,6 +3,7 @@ package managers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"news-aggregator/internal/entity"
 	"news-aggregator/internal/initializers"
 	"news-aggregator/internal/parser"
@@ -20,13 +21,15 @@ var timeNow = time.Now().Format("2006-01-02")
 func GetNewsFromFolder(folderName string) ([]entity.News, error) {
 	resources, err := initializers.LoadStaticResourcesFromFolder(resourceFolder)
 	if err != nil {
+		log.Printf("Error loading static resources from folder: %v", err)
 		return nil, err
 	}
 	r := resources[folderName]
 	allNews := make([]entity.News, 0)
-	for i := range r {
-		news, err := GetNewsFromFile(r[i])
+	for _, i := range r {
+		news, err := GetNewsFromFile(i)
 		if err != nil {
+			log.Printf("Error getting news from file %s: %v", i, err)
 			return nil, err
 		}
 		allNews = append(allNews, news...)
@@ -38,6 +41,7 @@ func GetNewsFromFolder(folderName string) ([]entity.News, error) {
 func GetNewsFromFile(filePath string) ([]entity.News, error) {
 	parsers, err := parser.GetFileParser(entity.PathToFile(filePath))
 	if err != nil {
+		log.Printf("Error getting file parser for %s: %v", filePath, err)
 		return nil, err
 	}
 	for _, p := range parsers {
@@ -47,6 +51,7 @@ func GetNewsFromFile(filePath string) ([]entity.News, error) {
 		}
 		return news, nil
 	}
+	log.Printf("No parsers succeeded for file %s", filePath)
 	return nil, err
 }
 
@@ -65,6 +70,7 @@ func AddNews(news []entity.News, newsSource string) error {
 	}
 	err = os.WriteFile(finalFilePath, jsonData, 0644)
 	if err != nil {
+		log.Printf("Error writing news to file %s: %v", finalFilePath, err)
 		return err
 	}
 	return nil

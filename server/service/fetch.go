@@ -15,11 +15,13 @@ const tempFileName = "tempfile.xml"
 func FetchNews() error {
 	resources, err := managers.GetAllSourcesNames()
 	if err != nil {
+		log.Printf("Error fetching sources: %v", err)
 		return err
 	}
 	for _, name := range resources {
 		links, err := managers.GetSourcesFeeds(name)
 		if err != nil {
+			log.Printf("Error fetching feeds for source %s: %v", name, err)
 			return err
 		}
 		for _, link := range links {
@@ -28,6 +30,7 @@ func FetchNews() error {
 				PathToFile: entity.PathToFile(link),
 			})
 			if err != nil {
+				log.Printf("Error fetching news from resource %s: %v", name, err)
 				return err
 			}
 		}
@@ -39,12 +42,12 @@ func FetchNews() error {
 func fetchNewsFromResource(resource entity.Resource) error {
 	news, err := fetchNewsFromResponse(resource.PathToFile)
 	if err != nil {
-		print("Failed to parse feed", http.StatusInternalServerError)
+		log.Printf("Failed to fetch news from %s: %v", resource.PathToFile, err)
 		return err
 	}
 	allNews, err := managers.GetNewsFromFolder(string(resource.Name))
 	if err != nil {
-		print("Failed to parse static resources", http.StatusInternalServerError)
+		log.Printf("Failed to get existing news for %s: %v", resource.Name, err)
 		return err
 	}
 	allNewsLink := make([]entity.Link, 0)
@@ -60,6 +63,7 @@ func fetchNewsFromResource(resource entity.Resource) error {
 	}
 	err = managers.AddNews(newsWithoutRepeat, string(resource.Name))
 	if err != nil {
+		log.Printf("Failed to add news for %s: %v", resource.Name, err)
 		return err
 	}
 	return nil
@@ -75,20 +79,24 @@ func fetchNewsFromResponse(url entity.PathToFile) ([]entity.News, error) {
 	defer resp.Body.Close()
 	tempFile, err := os.Create(tempFileName)
 	if err != nil {
+		log.Printf("Failed to create temporary file: %v", err)
 		return nil, err
 	}
 	defer os.Remove(tempFileName)
 
 	if _, err := io.Copy(tempFile, resp.Body); err != nil {
+		log.Printf("Failed to write response to file: %v", err)
 		return nil, err
 	}
 	err = tempFile.Close()
 	if err != nil {
+		log.Printf("Failed to close temporary file: %v", err)
 		return nil, err
 	}
 
 	news, err := managers.GetNewsFromFile(tempFileName)
 	if err != nil {
+		log.Printf("Failed to parse news from file: %v", err)
 		return nil, err
 	}
 	return news, nil

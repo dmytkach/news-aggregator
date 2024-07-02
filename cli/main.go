@@ -23,14 +23,17 @@ func main() {
 		flag.Usage()
 		return
 	}
-	newsFromStaticResources, err := initializers.LoadStaticResourcesFromFolder("resources/")
+	resources, err := initializers.LoadStaticResourcesFromFolder("server-news/")
 	if err != nil {
-		log.Print("Error loading static resources: ", err)
 		return
+	}
+	availableSources := make([]string, 0)
+	for sourceName := range resources {
+		availableSources = append(availableSources, sourceName)
 	}
 	v := validator.Validator{
 		Sources:          *sources,
-		AvailableSources: availableSources(newsFromStaticResources),
+		AvailableSources: availableSources,
 		DateStart:        *dateStart,
 		DateEnd:          *dateEnd,
 	}
@@ -39,7 +42,7 @@ func main() {
 		return
 	}
 	a := internal.NewAggregator(
-		newsFromStaticResources,
+		resources,
 		*sources,
 		initializers.InitializeFilters(keywords, dateStart, dateEnd),
 		sort.Options{
@@ -51,11 +54,4 @@ func main() {
 	if err != nil {
 		return
 	}
-}
-func availableSources(resources map[string][]string) []string {
-	sources := make([]string, 0, len(resources))
-	for source := range resources {
-		sources = append(sources, source)
-	}
-	return sources
 }

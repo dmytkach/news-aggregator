@@ -2,10 +2,11 @@ package initializers
 
 import (
 	"news-aggregator/internal/filters"
-	"news-aggregator/internal/validator"
 	"strings"
 	"time"
 )
+
+const dateFormat = "2006-01-02"
 
 // InitializeFilters based on provided parameters.
 func InitializeFilters(keywords, dateStart, dateEnd *string) []filters.NewsFilter {
@@ -36,7 +37,7 @@ func convertKeywords(keywords *string) *filters.Keyword {
 // convertDateStart string into a DateStart filter.
 func convertDateStart(dateStart *string) *filters.DateStart {
 	if len(*dateStart) > 0 {
-		startDate, _ := time.Parse(validator.DateFormat, *dateStart)
+		startDate, _ := time.Parse(dateFormat, *dateStart)
 		return &filters.DateStart{StartDate: startDate}
 	}
 	return nil
@@ -45,7 +46,7 @@ func convertDateStart(dateStart *string) *filters.DateStart {
 // convertDateEnd string into a DateEnd filter.
 func convertDateEnd(dateEnd *string) *filters.DateEnd {
 	if len(*dateEnd) > 0 {
-		endDate, _ := time.Parse(validator.DateFormat, *dateEnd)
+		endDate, _ := time.Parse(dateFormat, *dateEnd)
 		return &filters.DateEnd{EndDate: endDate}
 	}
 	return nil

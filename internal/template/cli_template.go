@@ -28,7 +28,7 @@ type groupedNews struct {
 	NewsList []entity.News
 }
 
-const pathToTemplate = "cli/internal/template/news.tmpl"
+const pathToTemplate = "internal/template/news.tmpl"
 
 // Create generates a template for rendering news.
 func (t Data) Create(keywords string) (*template.Template, error) {

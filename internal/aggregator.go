@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"news-aggregator/internal/entity"
 	"news-aggregator/internal/filters"
-	"news-aggregator/internal/parser"
 	"news-aggregator/internal/sort"
 	t "news-aggregator/internal/template"
 	"os"
@@ -31,7 +33,7 @@ type Aggregate interface {
 	Print(news []entity.News, keywords string) error
 }
 
-// Aggregate aggregates news from the specified Sources and applies NewsFilters.
+// Aggregate news from the specified Sources and applies NewsFilters.
 func (a *aggregator) Aggregate() []entity.News {
 	sources := strings.Split(a.Sources, ",")
 	news := a.collectNews(sources)
@@ -58,17 +60,19 @@ func (a *aggregator) Print(news []entity.News, keywords string) error {
 	}
 	tmpl, err := template.Create(keywords)
 	if err != nil {
+		log.Printf("Error creating template: %v", err)
 		return err
 	}
 	data := template.Prepare()
 	err = tmpl.ExecuteTemplate(os.Stdout, "news", data)
 	if err != nil {
+		log.Printf("Error executing template: %v", err)
 		return err
 	}
 	return nil
 }
 
-// collectNews collects news from all specified resources.
+// collectNews from all specified resources.
 func (a *aggregator) collectNews(sources []string) []entity.News {
 	var news []entity.News
 	for _, sourceName := range sources {
@@ -96,20 +100,25 @@ func (a *aggregator) getNewsForSource(sourceName string) []entity.News {
 	return news
 }
 
-// getResourceNews parses news from a single resource.
+// getResourceNews from a single resource.
 func (a *aggregator) getResourceNews(path entity.PathToFile) ([]entity.News, error) {
-	parsers, err := parser.GetFileParser(path)
+	file, err := os.Open(string(path))
 	if err != nil {
+		log.Printf("Failed to open file %s: %v", path, err)
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer func(file *os.File) {
+		closeErr := file.Close()
+		if closeErr != nil && err == nil {
+			err = fmt.Errorf("error closing file: %w", closeErr)
+		}
+	}(file)
+	var articles []entity.News
+	if err := json.NewDecoder(file).Decode(&articles); err != nil {
+		log.Printf("Error decoding file %s: %v", path, err)
 		return nil, err
 	}
-	for _, p := range parsers {
-		news, err := p.Parse()
-		if err != nil {
-			continue
-		}
-		return news, nil
-	}
-	return nil, err
+	return articles, nil
 }
 
 // applyFilters applies the configured NewsFilters to the aggregated news.

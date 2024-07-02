@@ -1,6 +1,9 @@
 package validator
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 // dateEndValidator checks the end date format.
 type dateEndValidator struct {
@@ -15,7 +18,7 @@ func (d dateEndValidator) Validate() bool {
 	if d.dateEnd != "" {
 		_, err := time.Parse(DateFormat, d.dateEnd)
 		if err != nil {
-			println("Invalid end date format. Please use YYYY-MM-DD.")
+			log.Print("Invalid end date format. Please use YYYY-MM-DD.")
 			return false
 		}
 	}

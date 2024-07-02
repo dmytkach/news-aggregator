@@ -15,7 +15,7 @@ func TestAggregate(t *testing.T) {
 		Sources     string
 		NewsFilters []filters.NewsFilter
 	}
-	resources, err := initializers.LoadStaticResourcesFromFolder("../../resources/")
+	resources, err := initializers.LoadStaticResourcesFromFolder("../resources/")
 	if err != nil {
 		t.Errorf("error with load resource from Folder")
 	}

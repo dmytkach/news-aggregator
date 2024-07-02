@@ -6,6 +6,8 @@ import (
 	"news-aggregator/server/handlers"
 )
 
+const PORT = ":8080"
+
 func main() {
 
 	http.HandleFunc("/news", handlers.News)
@@ -14,6 +16,6 @@ func main() {
 
 	go handlers.StartFetchScheduler()
 
-	log.Println("Starting server on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Starting server on ", PORT)
+	log.Fatal(http.ListenAndServe(PORT, nil))
 }

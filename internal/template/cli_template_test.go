@@ -21,7 +21,7 @@ func setWorkingDirectory(t *testing.T) func() {
 	if err != nil {
 		t.Fatalf("failed to get working directory: %v", err)
 	}
-	rootPath := filepath.Join(wd, "../../..")
+	rootPath := filepath.Join(wd, "../..")
 	err = os.Chdir(rootPath)
 	if err != nil {
 		t.Fatalf("failed to change working directory: %v", err)
