@@ -7,7 +7,7 @@ import (
 )
 
 func Add(url string) (entity.Resource, error) {
-	news, err := FetchNewsFromResponse(entity.PathToFile(url))
+	news, err := fetchNewsFromResponse(entity.PathToFile(url))
 	if err != nil {
 		log.Print("error loading feed")
 		return entity.Resource{}, err
