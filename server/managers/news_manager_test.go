@@ -37,12 +37,13 @@ func TestAddNews(t *testing.T) {
 
 	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, mockTime.Format("2006-01-02"))
 	finalFilePath := filepath.Join("server-news", finalFileName)
-	defer func() {
-		err := os.Remove(finalFilePath)
+
+	t.Cleanup(func() {
+		err := os.RemoveAll("server-news")
 		if err != nil {
-			t.Errorf("Failed to clean up test file: %v", err)
+			t.Errorf("Failed to clean up server-news folder: %v", err)
 		}
-	}()
+	})
 
 	fileData, err := os.ReadFile(finalFilePath)
 	if err != nil {
