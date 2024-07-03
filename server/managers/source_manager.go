@@ -11,8 +11,8 @@ import (
 
 const pathToResources = "server-resources/source.json"
 
-// GetAllSources from resource file.
-func GetAllSources() ([]entity.Source, error) {
+// GetSources from source file.
+func GetSources() ([]entity.Source, error) {
 	sources, err := readFromFile()
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
@@ -21,8 +21,8 @@ func GetAllSources() ([]entity.Source, error) {
 	return sources, nil
 }
 
-// GetSourcesFeeds by given name from resource file.
-func GetSourcesFeeds(name string) (entity.Source, error) {
+// GetSource by given name from resource file.
+func GetSource(name string) (entity.Source, error) {
 	sources, err := readFromFile()
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)

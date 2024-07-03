@@ -19,12 +19,12 @@ func AddSource(url string) (entity.Source, error) {
 
 // GetSources names of registered news sources.
 func GetSources() ([]entity.Source, error) {
-	return managers.GetAllSources()
+	return managers.GetSources()
 }
 
 // GetSource url by of given news name.
-func GetSource(newsName string) (entity.Source, error) {
-	return managers.GetSourcesFeeds(newsName)
+func GetSource(name string) (entity.Source, error) {
+	return managers.GetSource(name)
 }
 
 // UpdateSource the URL of an existing news source.

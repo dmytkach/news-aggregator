@@ -26,39 +26,47 @@ func GetNewsFromFolder(folderName string) ([]entity.News, error) {
 	}
 	r := resources[folderName]
 	allNews := make([]entity.News, 0)
-	for _, i := range r {
-		news, err := GetNewsFromFile(i)
+	for _, path := range r {
+		file, err := os.Open(path)
 		if err != nil {
-			log.Printf("Error getting news from file %s: %v", i, err)
+			log.Printf("Failed to open file %s: %v", path, err)
+			return nil, fmt.Errorf("failed to open file: %w", err)
+		}
+		defer func(file *os.File) {
+			closeErr := file.Close()
+			if closeErr != nil && err == nil {
+				err = fmt.Errorf("error closing file: %w", closeErr)
+			}
+		}(file)
+		var articles []entity.News
+		if err := json.NewDecoder(file).Decode(&articles); err != nil {
+			log.Printf("Error decoding file %s: %v", path, err)
 			return nil, err
 		}
-		allNews = append(allNews, news...)
+		allNews = append(allNews, articles...)
 	}
 	return allNews, nil
 }
 
 // GetNewsFromFile using parsers.
-func GetNewsFromFile(filePath string) ([]entity.News, error) {
-	parsers, err := parser.GetFileParser(entity.PathToFile(filePath))
+func GetNewsFromFile(filePath string) (entity.Feed, error) {
+	p, err := parser.GetFileParser(entity.PathToFile(filePath))
 	if err != nil {
 		log.Printf("Error getting file parser for %s: %v", filePath, err)
-		return nil, err
+		return entity.Feed{}, err
 	}
-	for _, p := range parsers {
-		news, err := p.Parse()
-		if err != nil {
-			continue
-		}
-		return news, nil
+	f, err := p.Parse()
+	if err != nil {
+		log.Printf("Error parsing file %s: %v", filePath, err)
+		return entity.Feed{}, err
 	}
-	log.Printf("No parsers succeeded for file %s", filePath)
-	return nil, err
+	return f, err
 }
 
 // AddNews in JSON format in the server's news folder,
 // organized by source and timestamp.
 func AddNews(news []entity.News, newsSource string) error {
-	finalFileName := fmt.Sprintf("%s/%s.json", cleanFilename(newsSource), timeNow)
+	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
 	finalFilePath := filepath.Join(resourceFolder, finalFileName)
 	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
 	if err != nil {
