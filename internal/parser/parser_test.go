@@ -13,28 +13,26 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []Parser
+		want Parser
 	}{
 		{
 			name: "RSS file",
-			args: args{Path: "testdata/news.xml"},
-			want: []Parser{&Rss{FilePath: "testdata/news.xml"}},
+			args: args{Path: "../testdata/news.xml"},
+			want: &Rss{FilePath: "../testdata/news.xml"},
 		},
 		{
 			name: "JSON file",
-			args: args{Path: "testdata/news.json"},
-			want: []Parser{
-				&Json{FilePath: "testdata/news.json"},
-				&NewsParser{FilePath: "testdata/news.json"}},
+			args: args{Path: "../testdata/news.json"},
+			want: &Json{FilePath: "../testdata/news.json"},
 		},
 		{
 			name: "HTML file",
-			args: args{Path: "testdata/news.html"},
-			want: []Parser{&UsaToday{FilePath: "testdata/news.html"}},
+			args: args{Path: "../testdata/news.html"},
+			want: &UsaToday{FilePath: "../testdata/news.html"},
 		},
 		{
 			name: "Unsupported file type",
-			args: args{Path: "testdata/news.txt"},
+			args: args{Path: "../testdata/news.txt"},
 			want: nil,
 		},
 	}

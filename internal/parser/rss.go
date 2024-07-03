@@ -6,7 +6,6 @@ import (
 	"github.com/mmcdole/gofeed"
 	"news-aggregator/internal/entity"
 	"os"
-	"strings"
 )
 
 // Rss - parser for RSS files.
@@ -19,10 +18,10 @@ func (rssParser *Rss) CanParseFileType(ext string) bool {
 }
 
 // Parse - implementation of a parser for files in RSS format.
-func (rssParser *Rss) Parse() ([]entity.News, error) {
+func (rssParser *Rss) Parse() (entity.Feed, error) {
 	file, err := os.Open(string(rssParser.FilePath))
 	if err != nil {
-		return nil, err
+		return entity.Feed{}, err
 	}
 	defer func(file *os.File) {
 		closeErr := file.Close()
@@ -35,21 +34,25 @@ func (rssParser *Rss) Parse() ([]entity.News, error) {
 	fp := gofeed.NewParser()
 	feed, err := fp.Parse(file)
 	if err != nil {
-		return nil, err
+		return entity.Feed{}, err
 	}
 
 	var allNews []entity.News
+	resourceName := cleanSourceName(feed.Title)
 	for _, item := range feed.Items {
 		allNews = append(allNews, entity.News{
 			Title:       entity.Title(item.Title),
 			Description: entity.Description(item.Description),
 			Link:        entity.Link(item.Link),
 			Date:        *item.PublishedParsed,
-			Source:      strings.ToLower(feed.Title),
+			Source:      resourceName,
 		})
 	}
 	if len(allNews) == 0 {
-		return nil, errors.New("no news found")
+		return entity.Feed{}, errors.New("no news found")
 	}
-	return allNews, nil
+	return entity.Feed{
+		Name: entity.SourceName(resourceName),
+		News: allNews,
+	}, nil
 }

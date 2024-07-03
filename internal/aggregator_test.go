@@ -15,7 +15,7 @@ func TestAggregate(t *testing.T) {
 		Sources     string
 		NewsFilters []filters.NewsFilter
 	}
-	resources, err := initializers.LoadStaticResourcesFromFolder("../resources/")
+	resources, err := initializers.LoadStaticResourcesFromFolder("testdata/")
 	if err != nil {
 		t.Errorf("error with load resource from Folder")
 	}
@@ -29,18 +29,18 @@ func TestAggregate(t *testing.T) {
 			News:    resources,
 			Sources: "bbc",
 			NewsFilters: []filters.NewsFilter{
-				&filters.Keyword{Keywords: []string{"Dymond"}},
+				&filters.Keyword{Keywords: []string{"South"}},
 				&filters.DateStart{StartDate: time.Date(2024, time.May, 17, 10, 10, 10, 0, time.UTC)},
-				&filters.DateEnd{EndDate: time.Date(2024, time.May, 18, 23, 30, 10, 0, time.UTC)},
+				&filters.DateEnd{EndDate: time.Date(2024, time.July, 18, 23, 30, 10, 0, time.UTC)},
 			},
 		},
 		want: []entity.News{
 			{
-				Title:       "Su and Steve fought for justice, but didn't live to see it",
-				Description: "Su Gorman and Steve Dymond helped to expose an NHS scandal - but they died without seeing justice.",
-				Link:        "https://www.bbc.co.uk/news/health-69018125",
-				Date:        time.Date(2024, time.May, 18, 23, 05, 19, 0, time.UTC),
-				Source:      "bbc news",
+				Title:       "Why parents are locking themselves in cells at Korean 'happiness factory'",
+				Description: "Some South Koreans are spending time in a cell to try to understand their socially isolated children.",
+				Link:        "https://www.bbc.com/news/articles/c2x0le06kn7o",
+				Date:        time.Date(2024, time.June, 30, 1, 6, 19, 0, time.UTC),
+				Source:      "bbc_news",
 			},
 		},
 	},

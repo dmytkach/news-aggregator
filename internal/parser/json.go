@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"news-aggregator/internal/entity"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -31,57 +32,51 @@ type newsArticle struct {
 	} `json:"source"`
 }
 
-// Parse implements a parser for JSON files, attempting to parse into different structures.
-func (jsonParser *Json) Parse() ([]entity.News, error) {
+// Parse - implementation of a parser for files in JSON format.
+func (jsonParser *Json) Parse() (entity.Feed, error) {
 	file, err := os.Open(string(jsonParser.FilePath))
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return entity.Feed{}, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer func(file *os.File) {
 		closeErr := file.Close()
 		if closeErr != nil && err == nil {
 			err = fmt.Errorf("error closing file: %w", closeErr)
+			return
 		}
 	}(file)
 
-	var allNews []entity.News
-
-	if news, err := jsonParser.decodeNewsResponse(file); err == nil {
-		allNews = append(allNews, news...)
-	} else {
-		return nil, fmt.Errorf("failed to decode JSON: %w", err)
-	}
-
-	if len(allNews) == 0 {
-		return nil, errors.New("no news found")
-	}
-
-	return allNews, nil
-}
-
-// decodeNewsResponse attempts to decode the file into the newsResponse structure.
-func (jsonParser *Json) decodeNewsResponse(file *os.File) ([]entity.News, error) {
 	var response newsResponse
-	if err := json.NewDecoder(file).Decode(&response); err != nil {
-		return nil, err
+	err = json.NewDecoder(file).Decode(&response)
+	if err != nil {
+		return entity.Feed{}, err
 	}
 
 	var allNews []entity.News
+	var title string
 	for _, article := range response.Articles {
 		news := entity.News{
 			Title:       entity.Title(article.Title),
 			Description: entity.Description(article.Description),
 			Link:        entity.Link(article.Link),
 			Date:        article.Date,
-			Source:      strings.ToLower(article.Source.Name),
+			Source:      cleanSourceName(article.Source.Name),
 		}
+		title = cleanSourceName(article.Source.Name)
 		allNews = append(allNews, news)
 	}
-
-	return allNews, nil
+	if len(allNews) == 0 {
+		return entity.Feed{}, errors.New("no news found")
+	}
+	return entity.Feed{Name: entity.SourceName(title), News: allNews}, nil
 }
 
 // CanParseFileType checks if the file extension is .json
 func (jsonParser *Json) CanParseFileType(ext string) bool {
 	return ext == ".json"
+}
+func cleanSourceName(filename string) string {
+	reg := regexp.MustCompile("[^a-zA-Z0-9_]+")
+	cleaned := reg.ReplaceAllString(filename, "_")
+	return strings.ToLower(cleaned)
 }

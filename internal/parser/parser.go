@@ -10,27 +10,22 @@ import (
 // Parser provides an API for a news parser capable of processing a specific file type.
 type Parser interface {
 	CanParseFileType(ext string) bool
-	Parse() ([]entity.News, error)
+	Parse() (entity.Feed, error)
 }
 
 // GetFileParser returns the appropriate parser implementation based on the path to file.
-func GetFileParser(path entity.PathToFile) ([]Parser, error) {
+func GetFileParser(path entity.PathToFile) (Parser, error) {
 	ext := strings.ToLower(filepath.Ext(string(path)))
 
 	parsers := []Parser{
 		&Rss{FilePath: path},
 		&Json{FilePath: path},
-		&NewsParser{FilePath: path},
 		&UsaToday{FilePath: path},
 	}
-	var parserList = make([]Parser, 0, len(parsers))
 	for p := range parsers {
 		if parsers[p].CanParseFileType(ext) {
-			parserList = append(parserList, parsers[p])
+			return parsers[p], nil
 		}
 	}
-	if len(parserList) == 0 {
-		return nil, fmt.Errorf("unsupported file type: %s", ext)
-	}
-	return parserList, nil
+	return nil, fmt.Errorf("unsupported file type: %s", ext)
 }
