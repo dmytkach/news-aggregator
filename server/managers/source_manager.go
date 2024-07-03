@@ -7,69 +7,68 @@ import (
 	"log"
 	"news-aggregator/internal/entity"
 	"os"
-	"regexp"
-	"strings"
 )
 
 const pathToResources = "server-resources/source.json"
 
-// GetAllSourcesNames from resource file.
-func GetAllSourcesNames() ([]string, error) {
+// GetAllSources from resource file.
+func GetAllSources() ([]entity.Source, error) {
 	sources, err := readFromFile()
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
 		return nil, err
 	}
-	resourceNames := make([]string, 0)
-	for _, s := range sources {
-		resourceNames = append(resourceNames, string(s.Name))
-	}
-	if len(resourceNames) == 0 {
-		return nil, errors.New("no resources found")
-	}
-	return resourceNames, nil
+	return sources, nil
 }
 
 // GetSourcesFeeds by given name from resource file.
-func GetSourcesFeeds(name string) ([]string, error) {
+func GetSourcesFeeds(name string) (entity.Source, error) {
 	sources, err := readFromFile()
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
-		return nil, err
+		return entity.Source{}, err
 	}
-	resourceFeeds := make([]string, 0)
 	for _, s := range sources {
-		if strings.Contains(string(s.Name), name) {
-			resourceFeeds = append(resourceFeeds, string(s.PathToFile))
+		if string(s.Name) == name {
+			return s, nil
 		}
 	}
-	if len(resourceFeeds) == 0 {
-		return nil, errors.New("No resources found for name: " + name)
-	}
-	return resourceFeeds, nil
+	return entity.Source{}, errors.New("No resources found for name: " + name)
 }
 
 // CreateSource creates a new source with the provided name and URL.
-func CreateSource(name, url string) (entity.Resource, error) {
+func CreateSource(name, url string) (entity.Source, error) {
 	sources, err := readFromFile()
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
-		return entity.Resource{}, err
+		return entity.Source{}, err
 	}
-	for _, s := range sources {
-		if string(s.PathToFile) == url && strings.Contains(string(s.Name), cleanFilename(name)) {
-			return entity.Resource{}, errors.New("resource already exists")
+	for i, s := range sources {
+		if string(s.Name) == name {
+			for _, path := range s.PathsToFile {
+				if string(path) == url {
+					return entity.Source{}, errors.New("resource already exists")
+				}
+			}
+			sources[i].PathsToFile = append(sources[i].PathsToFile, entity.PathToFile(url))
+			err = writeToFile(sources)
+			if err != nil {
+				log.Printf("Error writing to file: %v", err)
+				return entity.Source{}, err
+			}
+			log.Printf("Updated resource: %v", sources[i])
+			return sources[i], nil
 		}
 	}
-	resource := entity.Resource{
-		Name:       entity.ResourceName(cleanFilename(name)),
-		PathToFile: entity.PathToFile(url),
+	resource := entity.Source{
+		Name:        entity.SourceName(name),
+		PathsToFile: []entity.PathToFile{entity.PathToFile(url)},
 	}
 	sources = append(sources, resource)
 	err = writeToFile(sources)
 	if err != nil {
 		log.Printf("Error writing to file: %v", err)
-		return entity.Resource{}, err
+		return entity.Source{}, err
 	}
 	log.Printf("Created new resource: %v", resource)
 	return resource, nil
@@ -82,9 +81,9 @@ func RemoveSourceByName(sourceName string) error {
 		log.Printf("Error reading from file: %v", err)
 		return err
 	}
-	deletedSources := make([]entity.Resource, 0)
+	deletedSources := make([]entity.Source, 0)
 	for _, s := range sources {
-		if !strings.Contains(string(s.Name), sourceName) {
+		if string(s.Name) != sourceName {
 			deletedSources = append(deletedSources, s)
 		}
 	}
@@ -104,23 +103,25 @@ func UpdateSource(oldUrl, newUrl string) error {
 		log.Printf("Error reading from file: %v", err)
 		return err
 	}
-	for _, s := range sources {
-		if string(s.PathToFile) == newUrl {
-			return errors.New("resource already exists")
-		}
-	}
 	for i, s := range sources {
-		if string(s.PathToFile) == oldUrl {
-			sources[i].PathToFile = entity.PathToFile(newUrl)
-			return writeToFile(sources)
+		for j, path := range s.PathsToFile {
+			if string(path) == oldUrl {
+				for _, p := range s.PathsToFile {
+					if string(p) == newUrl {
+						return errors.New("resource already exists")
+					}
+				}
+				sources[i].PathsToFile[j] = entity.PathToFile(newUrl)
+				return writeToFile(sources)
+			}
 		}
 	}
 	return fmt.Errorf("source with URL %s not found", oldUrl)
 }
 
 // writeToFile sources in JSON format.
-func writeToFile(sources []entity.Resource) error {
-	jsonData, err := json.Marshal(sources)
+func writeToFile(sources []entity.Source) error {
+	jsonData, err := json.MarshalIndent(sources, "", "  ")
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		return err
@@ -135,27 +136,35 @@ func writeToFile(sources []entity.Resource) error {
 }
 
 // readFromFile resources file.
-func readFromFile() ([]entity.Resource, error) {
+func readFromFile() ([]entity.Source, error) {
 	file, err := os.Open(pathToResources)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("Resource file does not exist: %v", err)
-			return nil, err
+			log.Printf("Source file does not exist, creating a new one: %v", pathToResources)
+			newFile, err := os.Create(pathToResources)
+			if err != nil {
+				log.Printf("Error creating new source file: %v", err)
+				return nil, err
+			}
+			defer newFile.Close()
+
+			// Initialize with empty slice
+			var emptySources []entity.Source
+			if err := writeToFile(emptySources); err != nil {
+				log.Printf("Error initializing new source file: %v", err)
+				return nil, err
+			}
+			return emptySources, nil
 		}
 		log.Printf("Error opening sources file: %v", err)
 		return nil, err
 	}
 	defer file.Close()
 
-	var sources []entity.Resource
+	var sources []entity.Source
 	if err := json.NewDecoder(file).Decode(&sources); err != nil {
 		log.Printf("Error decoding sources file: %v", err)
 		return nil, err
 	}
 	return sources, nil
-}
-func cleanFilename(filename string) string {
-	reg := regexp.MustCompile("[^a-zA-Z0-9_]+")
-	cleaned := reg.ReplaceAllString(filename, "_")
-	return cleaned
 }
