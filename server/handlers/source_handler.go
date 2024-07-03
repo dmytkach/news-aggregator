@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"news-aggregator/server/service"
-	"time"
 )
 
 // Sources handles HTTP requests for managing news sources and feeds.
@@ -31,12 +29,18 @@ func downloadSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	_, err := service.Add(urlStr)
+	source, err := service.AddSource(urlStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	err = service.FetchNews()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(source)
 }
 
 // getSources handles HTTP GET requests to retrieve news sources.
@@ -47,9 +51,9 @@ func getSources(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if sourceName == "" {
-		feeds, err = service.GetAll()
+		feeds, err = service.GetSources()
 	} else {
-		feeds, err = service.Get(sourceName)
+		feeds, err = service.GetSource(sourceName)
 	}
 
 	if err != nil {
@@ -70,7 +74,7 @@ func updateSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	err := service.Update(oldUrl, newUrl)
+	err := service.UpdateSource(oldUrl, newUrl)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -84,50 +88,9 @@ func removeSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "source name is missing", http.StatusBadRequest)
 		return
 	}
-	err := service.Remove(sourceName)
+	err := service.RemoveSource(sourceName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-// SetInterval handles HTTP POST requests to set the fetch interval for
-// automatic news updates.
-func SetInterval(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
-
-	intervalStr := r.FormValue("interval")
-	if intervalStr == "" {
-		http.Error(w, "Interval is required", http.StatusBadRequest)
-		return
-	}
-
-	interval, err := time.ParseDuration(intervalStr)
-	if err != nil {
-		http.Error(w, "Invalid interval format", http.StatusBadRequest)
-		return
-	}
-
-	service.SetFetchInterval(interval)
-
-	_, err = w.Write([]byte("Interval updated successfully"))
-	if err != nil {
-		return
-	}
-}
-
-// StartFetchScheduler news based on the set interval.
-func StartFetchScheduler() {
-	go func() {
-		for {
-			err := service.FetchNews()
-			if err != nil {
-				log.Fatalf("Error Fetching News: %v", err)
-			}
-			time.Sleep(service.GetFetchInterval())
-		}
-	}()
 }

@@ -49,8 +49,11 @@ func News(w http.ResponseWriter, r *http.Request) {
 			Criterion: sortBy,
 			Order:     sortOrder,
 		})
-	news := a.Aggregate()
-
+	news, err := a.Aggregate()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(news)
 }
