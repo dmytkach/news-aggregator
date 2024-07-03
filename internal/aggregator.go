@@ -29,16 +29,19 @@ func NewAggregator(news map[string][]string, sources string, newsFilters []filte
 }
 
 type Aggregate interface {
-	Aggregate() []entity.News
+	Aggregate() ([]entity.News, error)
 	Print(news []entity.News, keywords string) error
 }
 
 // Aggregate news from the specified Sources and applies NewsFilters.
-func (a *aggregator) Aggregate() []entity.News {
+func (a *aggregator) Aggregate() ([]entity.News, error) {
 	sources := strings.Split(a.Sources, ",")
-	news := a.collectNews(sources)
+	news, err := a.collectNews(sources)
+	if err != nil {
+		return nil, err
+	}
 	news = a.applyFilters(news)
-	return a.SortOptions.Sort(news)
+	return a.SortOptions.Sort(news), nil
 }
 
 // Print news according to the created template
@@ -73,31 +76,34 @@ func (a *aggregator) Print(news []entity.News, keywords string) error {
 }
 
 // collectNews from all specified resources.
-func (a *aggregator) collectNews(sources []string) []entity.News {
+func (a *aggregator) collectNews(sources []string) ([]entity.News, error) {
 	var news []entity.News
 	for _, sourceName := range sources {
 		sourceName = strings.ToLower(strings.TrimSpace(sourceName))
-		newsFromSource := a.getNewsForSource(sourceName)
+		newsFromSource, err := a.getNewsForSource(sourceName)
+		if err != nil {
+			return nil, err
+		}
 		news = append(news, newsFromSource...)
 	}
-	return news
+	return news, nil
 }
 
 // getNewsForSource fetches news for a single source by comparing it with the list of resources.
-func (a *aggregator) getNewsForSource(sourceName string) []entity.News {
+func (a *aggregator) getNewsForSource(sourceName string) ([]entity.News, error) {
 	var news []entity.News
 	for source, path := range a.Resources {
 		if strings.Contains(source, sourceName) {
 			for _, b := range path {
 				newsFromResource, err := a.getResourceNews(entity.PathToFile(b))
 				if err != nil {
-					return nil
+					return nil, err
 				}
 				news = append(news, newsFromResource...)
 			}
 		}
 	}
-	return news
+	return news, nil
 }
 
 // getResourceNews from a single resource.

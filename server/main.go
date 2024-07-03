@@ -12,10 +12,9 @@ func main() {
 
 	http.HandleFunc("/news", handlers.News)
 	http.HandleFunc("/sources", handlers.Sources)
-	http.HandleFunc("/set-interval", handlers.SetInterval)
 
-	go handlers.StartFetchScheduler()
+	go handlers.FetchJob()
 
-	log.Println("Starting server on ", PORT)
+	log.Println("Starting server on", PORT)
 	log.Fatal(http.ListenAndServe(PORT, nil))
 }
