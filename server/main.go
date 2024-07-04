@@ -6,7 +6,11 @@ import (
 	"news-aggregator/server/handlers"
 )
 
-const PORT = ":8080"
+const (
+	PORT        = ":8080"
+	SERVER_CERT = "certificates/cert.pem"
+	SERVER_KEY  = "certificates/key.pem"
+)
 
 func main() {
 
@@ -16,5 +20,5 @@ func main() {
 	go handlers.FetchJob()
 
 	log.Println("Starting server on", PORT)
-	log.Fatal(http.ListenAndServe(PORT, nil))
+	log.Fatal(http.ListenAndServeTLS(PORT, SERVER_CERT, SERVER_KEY, nil))
 }
