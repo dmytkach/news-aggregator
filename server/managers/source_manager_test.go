@@ -90,7 +90,6 @@ func initializeTestFile() error {
 		},
 	}
 
-	// Write test data to file
 	jsonData, err := json.Marshal(testData)
 	if err != nil {
 		return err

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var fetchInterval = time.Minute * 5
+var fetchInterval = time.Hour
 
 func init() {
 	intervalStr := os.Getenv("FETCH_INTERVAL")
