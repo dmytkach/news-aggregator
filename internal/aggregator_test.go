@@ -52,7 +52,7 @@ func TestAggregate(t *testing.T) {
 				Sources:     tt.args.Sources,
 				NewsFilters: tt.args.NewsFilters,
 			}
-			if got := a.Aggregate(); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := a.Aggregate(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Aggregate() = %v, want %v", got, tt.want)
 			}
 		})
