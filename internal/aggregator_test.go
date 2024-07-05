@@ -27,7 +27,7 @@ func TestAggregate(t *testing.T) {
 		name: "should aggregate news on given Sources applying NewsFilters.",
 		args: args{
 			News:    resources,
-			Sources: "bbc",
+			Sources: "bbc_news",
 			NewsFilters: []filters.NewsFilter{
 				&filters.Keyword{Keywords: []string{"South"}},
 				&filters.DateStart{StartDate: time.Date(2024, time.May, 17, 10, 10, 10, 0, time.UTC)},
