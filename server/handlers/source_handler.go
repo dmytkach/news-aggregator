@@ -6,6 +6,15 @@ import (
 	"news-aggregator/server/service"
 )
 
+var (
+	addSourceFunc    = service.AddSource
+	fetchNewsFunc    = service.FetchNews
+	getSourcesFunc   = service.GetSources
+	getSourceFunc    = service.GetSource
+	updateSourceFunc = service.UpdateSource
+	removeSourceFunc = service.RemoveSource
+)
+
 // Sources handles HTTP requests for managing news sources and feeds.
 func Sources(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -29,12 +38,12 @@ func downloadSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	source, err := service.AddSource(urlStr)
+	source, err := addSourceFunc(urlStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = service.FetchNews()
+	err = fetchNewsFunc()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -51,9 +60,9 @@ func getSources(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if sourceName == "" {
-		feeds, err = service.GetSources()
+		feeds, err = getSourcesFunc()
 	} else {
-		feeds, err = service.GetSource(sourceName)
+		feeds, err = getSourceFunc(sourceName)
 	}
 
 	if err != nil {
@@ -63,7 +72,6 @@ func getSources(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(feeds)
-
 }
 
 // updateSource handles HTTP PUT requests to update an existing news source URL.
@@ -74,7 +82,7 @@ func updateSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	err := service.UpdateSource(oldUrl, newUrl)
+	err := updateSourceFunc(oldUrl, newUrl)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -88,7 +96,7 @@ func removeSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "source name is missing", http.StatusBadRequest)
 		return
 	}
-	err := service.RemoveSource(sourceName)
+	err := removeSourceFunc(sourceName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
