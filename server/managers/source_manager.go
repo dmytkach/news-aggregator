@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const pathToResources = "server-resources/source.json"
+var PathToResources = "server-resources/source.json"
 
 // GetSources from source file.
 func GetSources() ([]entity.Source, error) {
@@ -127,7 +127,7 @@ func writeToFile(sources []entity.Source) error {
 		return err
 	}
 
-	err = os.WriteFile(pathToResources, jsonData, 0644)
+	err = os.WriteFile(PathToResources, jsonData, 0644)
 	if err != nil {
 		log.Printf("Error writing to file: %v", err)
 		return err
@@ -137,18 +137,17 @@ func writeToFile(sources []entity.Source) error {
 
 // readFromFile resources file.
 func readFromFile() ([]entity.Source, error) {
-	file, err := os.Open(pathToResources)
+	file, err := os.Open(PathToResources)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("Source file does not exist, creating a new one: %v", pathToResources)
-			newFile, err := os.Create(pathToResources)
+			log.Printf("Source file does not exist, creating a new one: %v", PathToResources)
+			newFile, err := os.Create(PathToResources)
 			if err != nil {
 				log.Printf("Error creating new source file: %v", err)
 				return nil, err
 			}
 			defer newFile.Close()
 
-			// Initialize with empty slice
 			var emptySources []entity.Source
 			if err := writeToFile(emptySources); err != nil {
 				log.Printf("Error initializing new source file: %v", err)

@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	PORT        = ":8080"
-	SERVER_CERT = "certificates/cert.pem"
-	SERVER_KEY  = "certificates/key.pem"
+	PORT       = ":8080"
+	ServerCert = "certificates/cert.pem"
+	ServerKey  = "certificates/key.pem"
 )
 
 func main() {
@@ -20,5 +20,5 @@ func main() {
 	go handlers.FetchJob()
 
 	log.Println("Starting server on", PORT)
-	log.Fatal(http.ListenAndServeTLS(PORT, SERVER_CERT, SERVER_KEY, nil))
+	log.Fatal(http.ListenAndServeTLS(PORT, ServerCert, ServerKey, nil))
 }
