@@ -1,6 +1,6 @@
 package entity
 
-// SourceName represents the name of a news resource.
+// SourceName represents the name of a news source.
 type SourceName string
 
 // PathToFile represents the path to a file containing news information.

@@ -12,14 +12,14 @@ import (
 	"time"
 )
 
-const resourceFolder = "server-news/"
+var NewsFolder = "server-news/"
 
 var timeNow = time.Now().Format("2006-01-02")
 
 // GetNewsFromFolder retrieves news data from a specified folder
 // containing structured news resources.
 func GetNewsFromFolder(folderName string) ([]entity.News, error) {
-	resources, err := initializers.LoadStaticResourcesFromFolder(resourceFolder)
+	resources, err := initializers.LoadSources(NewsFolder)
 	if err != nil {
 		log.Printf("Error loading static resources from folder: %v", err)
 		return nil, err
@@ -67,7 +67,7 @@ func GetNewsFromFile(filePath string) (entity.Feed, error) {
 // organized by source and timestamp.
 func AddNews(news []entity.News, newsSource string) error {
 	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
-	finalFilePath := filepath.Join(resourceFolder, finalFileName)
+	finalFilePath := filepath.Join(NewsFolder, finalFileName)
 	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)

@@ -9,6 +9,10 @@ import (
 	"news-aggregator/internal/validator"
 )
 
+var (
+	SourceInitializer = initializers.LoadSources
+)
+
 // News handlers for HTTP GET requests to retrieve aggregated news based
 // on specified query parameters.
 func News(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +27,7 @@ func News(w http.ResponseWriter, r *http.Request) {
 	dateEnd := r.URL.Query().Get("date-end")
 	sortOrder := r.URL.Query().Get("sort-order")
 	sortBy := r.URL.Query().Get("sort-by")
-	resources, err := initializers.LoadStaticResourcesFromFolder("server-news/")
+	resources, err := SourceInitializer("server-news/")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

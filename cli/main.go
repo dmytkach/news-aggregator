@@ -23,7 +23,7 @@ func main() {
 		flag.Usage()
 		return
 	}
-	resources, err := initializers.LoadStaticResourcesFromFolder("server-news/")
+	resources, err := initializers.LoadSources("server-news/")
 	if err != nil {
 		return
 	}
