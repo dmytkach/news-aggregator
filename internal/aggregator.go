@@ -93,7 +93,7 @@ func (a *aggregator) collectNews(sources []string) ([]entity.News, error) {
 func (a *aggregator) getNewsForSource(sourceName string) ([]entity.News, error) {
 	var news []entity.News
 	for source, path := range a.Resources {
-		if strings.Contains(source, sourceName) {
+		if strings.EqualFold(source, sourceName) {
 			for _, b := range path {
 				newsFromResource, err := a.getResourceNews(entity.PathToFile(b))
 				if err != nil {

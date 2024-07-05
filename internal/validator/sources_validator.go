@@ -35,7 +35,7 @@ func (v sourceValidator) Validate() bool {
 // exist check elements existing in slice.
 func (v sourceValidator) exist(source string) bool {
 	for _, s := range v.availableSources {
-		if strings.Contains(s, strings.ToLower(source)) {
+		if strings.EqualFold(s, source) {
 			return true
 		}
 	}
