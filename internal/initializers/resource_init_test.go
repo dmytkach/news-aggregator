@@ -41,9 +41,9 @@ func TestLoadStaticResourcesFromFolder(t *testing.T) {
 		}
 	}
 
-	result, err := LoadStaticResourcesFromFolder(tempDir)
+	result, err := LoadSources(tempDir)
 	if err != nil {
-		t.Errorf("LoadStaticResourcesFromFolder returned an error: %v", err)
+		t.Errorf("LoadSources returned an error: %v", err)
 	}
 
 	expected := map[string][]string{
@@ -62,7 +62,7 @@ func TestLoadStaticResourcesFromFolder(t *testing.T) {
 		t.Errorf("Result does not match expected:\nExpected: %v\nGot: %v", expected, result)
 	}
 
-	_, err = LoadStaticResourcesFromFolder("/non-existing-folder")
+	_, err = LoadSources("/non-existing-folder")
 	if err == nil {
 		t.Error("Expected an error for non-existing directory, but got nil")
 	}

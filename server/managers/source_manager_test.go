@@ -2,101 +2,133 @@ package managers
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/assert"
+	"log"
 	"news-aggregator/internal/entity"
 	"os"
 	"testing"
 )
 
-const testResourcesFile = "test_sources.json"
+func TestGetSources(t *testing.T) {
+	setupTestFile()
+	defer cleanupTestFile()
 
-type MockedResourceManager struct {
-	mock.Mock
-}
-
-func (m *MockedResourceManager) GetSources() ([]entity.Source, error) {
-	args := m.Called()
-	return args.Get(0).([]entity.Source), args.Error(1)
-}
-
-func (m *MockedResourceManager) GetSource(name string) (entity.Source, error) {
-	args := m.Called(name)
-	return args.Get(0).(entity.Source), args.Error(1)
-}
-
-func (m *MockedResourceManager) CreateSource(name, url string) (entity.Source, error) {
-	args := m.Called(name, url)
-	return args.Get(0).(entity.Source), args.Error(1)
-}
-
-func (m *MockedResourceManager) RemoveSourceByName(sourceName string) error {
-	args := m.Called(sourceName)
-	return args.Error(0)
-}
-
-func (m *MockedResourceManager) UpdateSource(oldUrl, newUrl string) error {
-	args := m.Called(oldUrl, newUrl)
-	return args.Error(0)
-}
-
-func TestCRUDOperationsOnSources(t *testing.T) {
-	if err := initializeTestFile(); err != nil {
-		t.Fatalf("Failed to initialize test file: %v", err)
+	sources := []entity.Source{
+		{Name: "source1", PathsToFile: []entity.PathToFile{"path1", "path2"}},
+		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
 	}
-	defer func() {
-		err := os.Remove(testResourcesFile)
-		if err != nil {
-			t.Fatalf("Failed to clean up test file: %v", err)
-		}
-	}()
+	writeTestDataToFile(sources)
 
-	mockManager := new(MockedResourceManager)
+	result, err := GetSources()
+	assert.Nil(t, err, "Expected no error")
+	assert.Equal(t, sources, result, "Expected sources to match")
+}
 
-	mockManager.On("CreateSource", "test-source", "test-path").Return(
-		entity.Source{Name: "test-source", PathsToFile: []entity.PathToFile{"test-path"}}, nil)
-	mockManager.On("GetSource", "test-source").Return(
-		entity.Source{Name: "test-source", PathsToFile: []entity.PathToFile{"test-path"}}, nil)
-	mockManager.On("UpdateSource", "test-path", "new-test-path").Return(nil)
-	mockManager.On("RemoveSourceByName", "test-source").Return(nil)
+func TestGetSource(t *testing.T) {
+	setupTestFile()
+	defer cleanupTestFile()
 
-	_, err := mockManager.CreateSource("test-source", "test-path")
+	sources := []entity.Source{
+		{Name: "source1", PathsToFile: []entity.PathToFile{"path1", "path2"}},
+		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
+	}
+	writeTestDataToFile(sources)
+
+	result, err := GetSource("source1")
+	assert.Nil(t, err, "Expected no error")
+	assert.Equal(t, sources[0], result, "Expected source to match")
+
+	result, err = GetSource("nonexistent")
+	assert.NotNil(t, err, "Expected an error")
+	assert.EqualError(t, err, "No resources found for name: nonexistent", "Expected specific error message")
+	assert.Equal(t, entity.Source{}, result, "Expected empty source")
+}
+
+func TestCreateSource(t *testing.T) {
+	setupTestFile()
+	defer cleanupTestFile()
+
+	result, err := CreateSource("source1", "path1")
+	assert.Nil(t, err, "Expected no error")
+	assert.Equal(t, entity.Source{Name: "source1", PathsToFile: []entity.PathToFile{"path1"}}, result, "Expected source to match")
+
+	result, err = CreateSource("source1", "path2")
+	assert.Nil(t, err, "Expected no error")
+	assert.Equal(t, entity.Source{Name: "source1", PathsToFile: []entity.PathToFile{"path1", "path2"}}, result, "Expected empty source")
+	result, err = CreateSource("source1", "path1")
+
+	assert.NotNil(t, err, "Expected an error")
+	assert.EqualError(t, err, "resource already exists", "Expected specific error message")
+	assert.Equal(t, entity.Source{}, result, "Expected empty source")
+}
+
+func TestRemoveSourceByName(t *testing.T) {
+	setupTestFile()
+	defer cleanupTestFile()
+
+	sources := []entity.Source{
+		{Name: "source1", PathsToFile: []entity.PathToFile{"path1", "path2"}},
+		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
+	}
+	writeTestDataToFile(sources)
+
+	err := RemoveSourceByName("source1")
+	assert.Nil(t, err, "Expected no error")
+
+	remainingSources, _ := GetSources()
+	assert.Equal(t, 1, len(remainingSources), "Expected only one source remaining")
+	assert.Equal(t, "source2", string(remainingSources[0].Name), "Expected remaining source to be 'source2'")
+
+}
+
+func TestUpdateSource(t *testing.T) {
+	setupTestFile()
+	defer cleanupTestFile()
+
+	sources := []entity.Source{
+		{Name: "source1", PathsToFile: []entity.PathToFile{"path1", "path2"}},
+		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
+	}
+	writeTestDataToFile(sources)
+
+	err := UpdateSource("path2", "newpath")
+	assert.Nil(t, err, "Expected no error")
+
+	updatedSources, _ := GetSources()
+	assert.Equal(t, "newpath", string(updatedSources[0].PathsToFile[1]), "Expected updated path")
+
+	err = UpdateSource("nonexistent", "newpath")
+	assert.NotNil(t, err, "Expected an error")
+	assert.EqualError(t, err, "source with URL nonexistent not found", "Expected specific error message")
+
+	err = UpdateSource("newpath", "path1")
+	assert.NotNil(t, err, "Expected an error")
+	assert.EqualError(t, err, "resource already exists", "Expected specific error message")
+}
+func setupTestFile() {
+	data := []byte(`[]`)
+	PathToResources = "test_sources.json"
+	err := os.WriteFile(PathToResources, data, 0644)
 	if err != nil {
-		t.Fatalf("CreateSource() failed: %v", err)
+		log.Fatalf("Error setting up test file: %v", err)
 	}
-
-	_, err = mockManager.GetSource("test-source")
-	if err != nil {
-		t.Fatalf("GetSource() failed: %v", err)
-	}
-
-	err = mockManager.UpdateSource("test-path", "new-test-path")
-	if err != nil {
-		t.Fatalf("UpdateSource() failed: %v", err)
-	}
-
-	err = mockManager.RemoveSourceByName("test-source")
-	if err != nil {
-		t.Fatalf("RemoveSourceByName() failed: %v", err)
-	}
-
-	mockManager.AssertExpectations(t)
 }
 
-func initializeTestFile() error {
-	testData := []entity.Source{
-		{
-			Name:        "test-source",
-			PathsToFile: []entity.PathToFile{"test-path"},
-		},
-	}
-
-	jsonData, err := json.Marshal(testData)
+func cleanupTestFile() {
+	PathToResources = "test_sources.json"
+	err := os.Remove(PathToResources)
 	if err != nil {
-		return err
+		log.Fatalf("Error cleaning up test file: %v", err)
 	}
-	err = os.WriteFile(testResourcesFile, jsonData, 0644)
+}
+func writeTestDataToFile(sources []entity.Source) {
+	jsonData, err := json.MarshalIndent(sources, "", "  ")
 	if err != nil {
-		return err
+		log.Fatalf("Error marshalling JSON: %v", err)
 	}
-	return nil
+	PathToResources = "test_sources.json"
+	err = os.WriteFile(PathToResources, jsonData, 0644)
+	if err != nil {
+		log.Fatalf("Error writing test data to file: %v", err)
+	}
 }
