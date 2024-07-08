@@ -4,7 +4,6 @@ import (
 	"log"
 	"news-aggregator/server/service"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -13,11 +12,15 @@ var fetchInterval = time.Hour
 func init() {
 	intervalStr := os.Getenv("FETCH_INTERVAL")
 	if intervalStr != "" {
-		interval, err := strconv.Atoi(intervalStr)
+		interval, err := time.ParseDuration(intervalStr)
 		if err == nil && interval > 0 {
-			fetchInterval = time.Duration(interval) * time.Second
+			fetchInterval = interval
 			log.Println("Fetch interval set to ", fetchInterval)
+		} else {
+			log.Println("Failed to parse FETCH_INTERVAL:", intervalStr, err)
 		}
+	} else {
+		log.Println("FETCH_INTERVAL not set")
 	}
 }
 
