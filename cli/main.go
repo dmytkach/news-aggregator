@@ -21,8 +21,12 @@ func main() {
 		flag.Usage()
 		return
 	}
+	sortOptions := sort.Options{
+		Criterion: *sortBy,
+		Order:     *sortOrder,
+	}
 	resources := initializeDefaultResource()
-	v := validator.NewValidator(*sources, resources, *dateStart, *dateEnd)
+	v := validator.NewValidator(*sources, resources, *dateStart, *dateEnd, sortOptions)
 	if !v.Validate() {
 		return
 	}
@@ -30,10 +34,7 @@ func main() {
 		resources,
 		*sources,
 		internal.InitializeFilters(keywords, dateStart, dateEnd),
-		sort.Options{
-			Criterion: *sortBy,
-			Order:     *sortOrder,
-		})
+		sortOptions)
 	news, err := a.Aggregate()
 	if err != nil {
 		return
