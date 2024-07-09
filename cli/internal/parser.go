@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-// Parser provides an API for a news parser capable of processing a specific file type.
-type Parser interface {
-	CanParseFileType(ext string) bool
-	Parse() ([]entity.News, error)
-}
-
 // GetFileParser returns the appropriate parser implementation based on the path to file.
 func GetFileParser(path entity.PathToFile) (Parser, error) {
 	ext := strings.ToLower(filepath.Ext(string(path)))
@@ -24,9 +18,9 @@ func GetFileParser(path entity.PathToFile) (Parser, error) {
 		&parser.UsaToday{FilePath: path},
 	}
 
-	for p := range parsers {
-		if parsers[p].CanParseFileType(ext) {
-			return parsers[p], nil
+	for _, p := range parsers {
+		if p.CanParseFileType(ext) {
+			return p, nil
 		}
 	}
 	return nil, fmt.Errorf("unsupported file type: %s", ext)

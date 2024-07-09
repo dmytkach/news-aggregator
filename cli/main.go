@@ -34,8 +34,11 @@ func main() {
 			Criterion: *sortBy,
 			Order:     *sortOrder,
 		})
-	news := a.Aggregate()
-	err := a.Print(news, *keywords)
+	news, err := a.Aggregate()
+	if err != nil {
+		return
+	}
+	err = a.Print(news, *keywords)
 	if err != nil {
 		print(err)
 	}

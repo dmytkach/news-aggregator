@@ -51,7 +51,7 @@ func TestAggregate(t *testing.T) {
 				Sources:     tt.args.Sources,
 				NewsFilters: tt.args.NewsFilters,
 			}
-			if got := a.Aggregate(); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := a.Aggregate(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Aggregate() = %v, want %v", got, tt.want)
 			}
 		})
@@ -172,7 +172,7 @@ func TestAggregator_collectNews(t *testing.T) {
 			a := &aggregator{
 				Resources: tt.fields.Resources,
 			}
-			if got := a.collectNews(tt.args.sources); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := a.collectNews(tt.args.sources); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("collectNews() = %v, want %v", got, tt.want)
 			}
 		})
