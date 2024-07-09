@@ -22,12 +22,7 @@ func main() {
 		return
 	}
 	resources := initializeDefaultResource()
-	v := validator.Validator{
-		Sources:          *sources,
-		AvailableSources: resources,
-		DateStart:        *dateStart,
-		DateEnd:          *dateEnd,
-	}
+	v := validator.NewValidator(*sources, resources, *dateStart, *dateEnd)
 	if !v.Validate() {
 		return
 	}

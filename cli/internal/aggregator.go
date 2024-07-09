@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// todo: docs
 type aggregator struct {
 	Resources   map[string]string
 	Sources     string
