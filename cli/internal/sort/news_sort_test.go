@@ -38,7 +38,7 @@ func TestSort(t *testing.T) {
 		expected  []entity.News
 	}{
 		{
-			name:      "Sort by date ASC",
+			name:      "Apply by date ASC",
 			criterion: "date",
 			order:     "ASC",
 			expected: []entity.News{
@@ -67,7 +67,7 @@ func TestSort(t *testing.T) {
 			},
 		},
 		{
-			name:      "Sort by date DESC",
+			name:      "Apply by date DESC",
 			criterion: "date",
 			order:     "DESC",
 			expected: []entity.News{
@@ -95,7 +95,7 @@ func TestSort(t *testing.T) {
 			},
 		},
 		{
-			name:      "Sort by source ASC",
+			name:      "Apply by source ASC",
 			criterion: "source",
 			order:     "ASC",
 			expected: []entity.News{
@@ -123,7 +123,7 @@ func TestSort(t *testing.T) {
 			},
 		},
 		{
-			name:      "Sort by source DESC",
+			name:      "Apply by source DESC",
 			criterion: "source",
 			order:     "DESC",
 			expected: []entity.News{
@@ -155,7 +155,7 @@ func TestSort(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := Options{test.criterion, test.order}
-			if !reflect.DeepEqual(result.Sort(news), test.expected) {
+			if !reflect.DeepEqual(result.Apply(news), test.expected) {
 				t.Errorf("unexpected result - got: %+v, want: %+v", result, test.expected)
 			}
 		})

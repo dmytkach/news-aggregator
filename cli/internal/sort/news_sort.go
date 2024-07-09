@@ -14,8 +14,8 @@ type Options struct {
 	Order     string
 }
 
-// Sort news according to the specified Options.
-func (s *Options) Sort(news []entity.News) []entity.News {
+// Apply sort Options to News
+func (s *Options) Apply(news []entity.News) []entity.News {
 	sort.Slice(news, func(i, j int) bool {
 		if s.Criterion == "date" {
 			if s.Order == desc {

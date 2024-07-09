@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-// Parser provides an API for a news parser capable of processing a specific file type.
-type Parser interface {
-	CanParseFileType(ext string) bool
-	Parse() ([]entity.News, error)
-}
-
 // aggregator aggregates news data from various sources.
 type aggregator struct {
 	Resources   map[string]string
@@ -24,20 +18,13 @@ type aggregator struct {
 
 // NewAggregator creates a new instance of an aggregator with the given resources, sources,
 // news filters, and sorting options.
-func NewAggregator(resources map[string]string, sources string, newsFilters []NewsFilter, sortParams sort.Options) Aggregate {
+func NewAggregator(resources map[string]string, sources string, newsFilters []NewsFilter, sortParams sort.Options) *aggregator {
 	return &aggregator{
 		Resources:   resources,
 		Sources:     sources,
 		NewsFilters: newsFilters,
 		SortOptions: sortParams,
 	}
-}
-
-// Aggregate provides API for aggregating news data from various sources
-// and for printing the aggregated news using predefined templates.
-type Aggregate interface {
-	Aggregate() ([]entity.News, error)
-	Print(news []entity.News, keywords string) error
 }
 
 // Aggregate aggregates news from the specified Sources and applies NewsFilters.
@@ -48,7 +35,7 @@ func (a *aggregator) Aggregate() ([]entity.News, error) {
 		return nil, err
 	}
 	news = a.applyFilters(news)
-	return a.SortOptions.Sort(news), nil
+	return a.SortOptions.Apply(news), nil
 }
 
 // Print news according to the created template
@@ -106,6 +93,12 @@ func (a *aggregator) getNewsForSource(sourceName string) ([]entity.News, error) 
 		resourceNews[i].Source = sourceName
 	}
 	return resourceNews, nil
+}
+
+// Parser provides an API for a news parser capable of processing a specific file type.
+type Parser interface {
+	CanParseFileType(ext string) bool
+	Parse() ([]entity.News, error)
 }
 
 // getResourceNews parses news from a single resource.
