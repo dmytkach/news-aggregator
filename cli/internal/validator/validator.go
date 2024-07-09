@@ -2,6 +2,7 @@ package validator
 
 import "news-aggregator/internal/sort"
 
+// validator stores all the necessary parameters for performing validation.
 type validator struct {
 	Sources          string
 	AvailableSources map[string]string
@@ -11,14 +12,24 @@ type validator struct {
 	Order            string
 }
 
-func NewValidator(sources string, availableSources map[string]string, dateStart, dateEnd string, sort sort.Options) ValidatingComponent {
+// Config contains all the parameters required to initialize a validator.
+type Config struct {
+	Sources          string
+	AvailableSources map[string]string
+	DateStart        string
+	DateEnd          string
+	SortOptions      sort.Options
+}
+
+// NewValidator instance configured with the specified parameters.
+func NewValidator(config Config) ValidatingComponent {
 	return &validator{
-		Sources:          sources,
-		AvailableSources: availableSources,
-		DateStart:        dateStart,
-		DateEnd:          dateEnd,
-		Criterion:        sort.Criterion,
-		Order:            sort.Order,
+		Sources:          config.Sources,
+		AvailableSources: config.AvailableSources,
+		DateStart:        config.DateStart,
+		DateEnd:          config.DateEnd,
+		Criterion:        config.SortOptions.Criterion,
+		Order:            config.SortOptions.Order,
 	}
 }
 

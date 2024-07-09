@@ -27,7 +27,15 @@ func main() {
 		Order:     *sortOrder,
 	}
 	resources := initializeDefaultResource()
-	v := validator.NewValidator(*sources, resources, *dateStart, *dateEnd, sortOptions)
+	config := validator.Config{
+		Sources:          *sources,
+		AvailableSources: resources,
+		DateStart:        *dateStart,
+		DateEnd:          *dateEnd,
+		SortOptions:      sortOptions,
+	}
+
+	v := validator.NewValidator(config)
 	if !v.Validate() {
 		return
 	}
@@ -38,11 +46,13 @@ func main() {
 		sortOptions)
 	news, err := a.Aggregate()
 	if err != nil {
+		print(err)
 		return
 	}
 	err = a.Print(news, *keywords)
 	if err != nil {
 		print(err)
+		return
 	}
 }
 func initializeDefaultResource() map[string]string {
