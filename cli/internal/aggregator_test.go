@@ -12,7 +12,7 @@ func TestAggregate(t *testing.T) {
 	type args struct {
 		Resources   map[string]string
 		Sources     string
-		NewsFilters []NewsFilter
+		NewsFilters []filters.NewsFilter
 	}
 	tests := []struct {
 		name string
@@ -27,7 +27,7 @@ func TestAggregate(t *testing.T) {
 				"json": "testdata/news.json",
 			},
 			Sources: "RSS",
-			NewsFilters: []NewsFilter{
+			NewsFilters: []filters.NewsFilter{
 				&filters.Keyword{Keywords: []string{"Dymond"}},
 				&filters.DateStart{StartDate: time.Date(2024, time.May, 17, 10, 10, 10, 0, time.UTC)},
 				&filters.DateEnd{EndDate: time.Date(2024, time.May, 18, 23, 30, 10, 0, time.UTC)},
@@ -61,7 +61,7 @@ func TestAggregator_applyFilters(t *testing.T) {
 	type fields struct {
 		Resources   map[string]string
 		Sources     string
-		NewsFilters []NewsFilter
+		NewsFilters []filters.NewsFilter
 	}
 	type args struct {
 		news []entity.News
@@ -74,7 +74,7 @@ func TestAggregator_applyFilters(t *testing.T) {
 	}{{
 		name: "should aggregate news on given Sources applying NewsFilters.",
 		fields: fields{
-			NewsFilters: []NewsFilter{
+			NewsFilters: []filters.NewsFilter{
 				&filters.Keyword{Keywords: []string{"Dymond"}},
 				&filters.DateStart{StartDate: time.Date(2024, time.May, 17, 10, 10, 10, 0, time.UTC)},
 				&filters.DateEnd{EndDate: time.Date(2024, time.May, 18, 23, 30, 10, 0, time.UTC)},

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"news-aggregator/internal/entity"
+	"news-aggregator/internal/filters"
 	"news-aggregator/internal/sort"
 	t "news-aggregator/internal/template"
 	"os"
@@ -12,13 +13,13 @@ import (
 type aggregator struct {
 	Resources   map[string]string
 	Sources     string
-	NewsFilters []NewsFilter
+	NewsFilters []filters.NewsFilter
 	SortOptions sort.Options
 }
 
 // NewAggregator creates a new instance of an aggregator with the given resources, sources,
 // news filters, and sorting options.
-func NewAggregator(resources map[string]string, sources string, newsFilters []NewsFilter, sortParams sort.Options) *aggregator {
+func NewAggregator(resources map[string]string, sources string, newsFilters []filters.NewsFilter, sortParams sort.Options) *aggregator {
 	return &aggregator{
 		Resources:   resources,
 		Sources:     sources,

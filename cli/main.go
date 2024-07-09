@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"news-aggregator/internal"
+	"news-aggregator/internal/filters"
 	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
 )
@@ -33,7 +34,7 @@ func main() {
 	a := internal.NewAggregator(
 		resources,
 		*sources,
-		internal.InitializeFilters(keywords, dateStart, dateEnd),
+		filters.InitializeFilters(keywords, dateStart, dateEnd),
 		sortOptions)
 	news, err := a.Aggregate()
 	if err != nil {

@@ -1,11 +1,17 @@
-package internal
+package filters
 
 import (
-	"news-aggregator/internal/filters"
+	"news-aggregator/internal/entity"
 	"news-aggregator/internal/validator"
 	"strings"
 	"time"
 )
+
+// NewsFilter is a filtering of news according to specified parameters.
+type NewsFilter interface {
+	Filter(news []entity.News) []entity.News
+	String() string
+}
 
 // InitializeFilters based on provided parameters.
 func InitializeFilters(keywords, dateStart, dateEnd *string) []NewsFilter {
@@ -25,28 +31,28 @@ func InitializeFilters(keywords, dateStart, dateEnd *string) []NewsFilter {
 }
 
 // convertKeywords a comma-separated keyword string into a filter.
-func convertKeywords(keywords *string) *filters.Keyword {
+func convertKeywords(keywords *string) *Keyword {
 	if len(*keywords) > 0 {
 		keywordList := strings.Split(*keywords, ",")
-		return &filters.Keyword{Keywords: keywordList}
+		return &Keyword{Keywords: keywordList}
 	}
 	return nil
 }
 
 // convertDateStart string into a DateStart filter.
-func convertDateStart(dateStart *string) *filters.DateStart {
+func convertDateStart(dateStart *string) *DateStart {
 	if len(*dateStart) > 0 {
 		startDate, _ := time.Parse(validator.DateFormat, *dateStart)
-		return &filters.DateStart{StartDate: startDate}
+		return &DateStart{StartDate: startDate}
 	}
 	return nil
 }
 
 // convertDateEnd string into a DateEnd filter.
-func convertDateEnd(dateEnd *string) *filters.DateEnd {
+func convertDateEnd(dateEnd *string) *DateEnd {
 	if len(*dateEnd) > 0 {
 		endDate, _ := time.Parse(validator.DateFormat, *dateEnd)
-		return &filters.DateEnd{EndDate: endDate}
+		return &DateEnd{EndDate: endDate}
 	}
 	return nil
 }
