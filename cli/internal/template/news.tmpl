@@ -1,0 +1,28 @@
+{{- define "news" -}}
+Filters applied: sources:{{- .Header.Sources -}};{{.Header.Filters}}; sort-by:{{.Header.SortOptions.Criterion}}; sort-order:{{.Header.SortOptions.Order}};
+{{- if eq (len .News) 0 }}
+    News not found.
+{{else}}
+Number of selected news: {{- len .News}}
+    {{- if eq .Header.SortOptions.Criterion "source"}}
+        {{- range .Grouped}}
+Source: {{.Source}} ({{len .NewsList}} items)
+            {{- range .NewsList}}
+        {{ template "article" . }}
+            {{- end}}
+       {{- end}}
+    {{- else}}
+        {{- range .News}}
+Source: {{.Source }}
+{{- template "article" . -}}
+        {{end}}
+    {{end}}
+{{end}}
+{{end}}
+{{- define "article" }}
+Title: {{highlight (toString .Title)}}
+Description: {{highlight (toString .Description)}}
+Link: {{toString .Link}}
+Date: {{.Date.Format "2006-01-02 15:04:05"}}
+--------------------------------------------
+{{end}}
