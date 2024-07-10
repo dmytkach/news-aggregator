@@ -1,16 +1,22 @@
 package initializers
 
 import (
+	"news-aggregator/internal/entity"
 	"news-aggregator/internal/filters"
+	"news-aggregator/internal/validator"
 	"strings"
 	"time"
 )
 
-const dateFormat = "2006-01-02"
+// NewsFilter is a filtering of news according to specified parameters.
+type NewsFilter interface {
+	Filter(news []entity.News) []entity.News
+	String() string
+}
 
 // InitializeFilters based on provided parameters.
-func InitializeFilters(keywords, dateStart, dateEnd *string) []filters.NewsFilter {
-	var newsFilters []filters.NewsFilter
+func InitializeFilters(keywords, dateStart, dateEnd *string) []NewsFilter {
+	var newsFilters []NewsFilter
 
 	if keywordFilter := convertKeywords(keywords); keywordFilter != nil {
 		newsFilters = append(newsFilters, keywordFilter)
@@ -37,7 +43,7 @@ func convertKeywords(keywords *string) *filters.Keyword {
 // convertDateStart string into a DateStart filter.
 func convertDateStart(dateStart *string) *filters.DateStart {
 	if len(*dateStart) > 0 {
-		startDate, _ := time.Parse(dateFormat, *dateStart)
+		startDate, _ := time.Parse(validator.DateFormat, *dateStart)
 		return &filters.DateStart{StartDate: startDate}
 	}
 	return nil
@@ -46,7 +52,7 @@ func convertDateStart(dateStart *string) *filters.DateStart {
 // convertDateEnd string into a DateEnd filter.
 func convertDateEnd(dateEnd *string) *filters.DateEnd {
 	if len(*dateEnd) > 0 {
-		endDate, _ := time.Parse(dateFormat, *dateEnd)
+		endDate, _ := time.Parse(validator.DateFormat, *dateEnd)
 		return &filters.DateEnd{EndDate: endDate}
 	}
 	return nil

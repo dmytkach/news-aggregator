@@ -13,7 +13,7 @@ func TestAggregate(t *testing.T) {
 	type args struct {
 		News        map[string][]string
 		Sources     string
-		NewsFilters []filters.NewsFilter
+		NewsFilters []initializers.NewsFilter
 	}
 	resources, err := initializers.LoadSources("testdata/")
 	if err != nil {
@@ -28,7 +28,7 @@ func TestAggregate(t *testing.T) {
 		args: args{
 			News:    resources,
 			Sources: "bbc_news",
-			NewsFilters: []filters.NewsFilter{
+			NewsFilters: []initializers.NewsFilter{
 				&filters.Keyword{Keywords: []string{"South"}},
 				&filters.DateStart{StartDate: time.Date(2024, time.May, 17, 10, 10, 10, 0, time.UTC)},
 				&filters.DateEnd{EndDate: time.Date(2024, time.July, 18, 23, 30, 10, 0, time.UTC)},
@@ -61,7 +61,7 @@ func TestAggregate(t *testing.T) {
 func TestAggregator_applyFilters(t *testing.T) {
 	type fields struct {
 		Sources     string
-		NewsFilters []filters.NewsFilter
+		NewsFilters []initializers.NewsFilter
 	}
 	type args struct {
 		news []entity.News
@@ -74,7 +74,7 @@ func TestAggregator_applyFilters(t *testing.T) {
 	}{{
 		name: "should aggregate news on given Sources applying NewsFilters.",
 		fields: fields{
-			NewsFilters: []filters.NewsFilter{
+			NewsFilters: []initializers.NewsFilter{
 				&filters.Keyword{Keywords: []string{"Dymond"}},
 				&filters.DateStart{StartDate: time.Date(2024, time.May, 17, 10, 10, 10, 0, time.UTC)},
 				&filters.DateEnd{EndDate: time.Date(2024, time.May, 18, 23, 30, 10, 0, time.UTC)},

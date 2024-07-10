@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"news-aggregator/internal/entity"
-	"news-aggregator/internal/filters"
+	"news-aggregator/internal/initializers"
 	"news-aggregator/internal/sort"
 	t "news-aggregator/internal/template"
 	"os"
@@ -15,11 +15,11 @@ import (
 type aggregator struct {
 	Resources   map[string][]string
 	Sources     string
-	NewsFilters []filters.NewsFilter
+	NewsFilters []initializers.NewsFilter
 	SortOptions sort.Options
 }
 
-func NewAggregator(news map[string][]string, sources string, newsFilters []filters.NewsFilter, sortParams sort.Options) Aggregate {
+func NewAggregator(news map[string][]string, sources string, newsFilters []initializers.NewsFilter, sortParams sort.Options) Aggregate {
 	return &aggregator{
 		Resources:   news,
 		Sources:     sources,

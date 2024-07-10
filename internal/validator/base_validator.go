@@ -6,7 +6,7 @@ type baseValidator struct {
 	next ValidatingComponent
 }
 
-// SetNext Validator in Chain.
+// SetNext validator in Chain.
 func (b *baseValidator) SetNext(next ValidatingComponent) {
 	b.next = next
 }

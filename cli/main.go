@@ -31,12 +31,19 @@ func main() {
 	for sourceName := range resources {
 		availableSources = append(availableSources, sourceName)
 	}
-	v := validator.Validator{
+	sortOptions := sort.Options{
+		Criterion: *sortBy,
+		Order:     *sortOrder,
+	}
+	config := validator.Config{
 		Sources:          *sources,
 		AvailableSources: availableSources,
 		DateStart:        *dateStart,
 		DateEnd:          *dateEnd,
+		SortOptions:      sortOptions,
 	}
+
+	v := validator.NewValidator(config)
 	if !v.Validate() {
 		log.Println("Invalid parameters")
 		return
@@ -45,13 +52,10 @@ func main() {
 		resources,
 		*sources,
 		initializers.InitializeFilters(keywords, dateStart, dateEnd),
-		sort.Options{
-			Criterion: *sortBy,
-			Order:     *sortOrder,
-		})
+		sortOptions)
 	news, err := a.Aggregate()
 	if err != nil {
-		log.Println(err)
+		print(err)
 		return
 	}
 	err = a.Print(news, *keywords)

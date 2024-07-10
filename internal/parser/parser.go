@@ -22,9 +22,10 @@ func GetFileParser(path entity.PathToFile) (Parser, error) {
 		&Json{FilePath: path},
 		&UsaToday{FilePath: path},
 	}
-	for p := range parsers {
-		if parsers[p].CanParseFileType(ext) {
-			return parsers[p], nil
+
+	for _, p := range parsers {
+		if p.CanParseFileType(ext) {
+			return p, nil
 		}
 	}
 	return nil, fmt.Errorf("unsupported file type: %s", ext)
