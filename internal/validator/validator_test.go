@@ -14,7 +14,7 @@ func TestValidator_Validate(t *testing.T) {
 		dateEnd          string
 		expected         bool
 	}{
-		{"All valid inputs", "source1", []string{"Source 1"}, "2023-01-01", "2023-12-31", true},
+		{"All valid inputs", "source1", []string{"source1", "source2"}, "2023-01-01", "2023-12-31", true},
 		{"Invalid source", "source2", []string{"Source 1"}, "2023-01-01", "2023-12-31", false},
 		{"Invalid start date format", "source1", []string{"Source 1"}, "01-01-2023", "2023-12-31", false},
 		{"Future start date", "source1", []string{"Source 1"}, time.Now().AddDate(1, 0, 0).Format(DateFormat), "2023-12-31", false},
