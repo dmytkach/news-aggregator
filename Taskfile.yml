@@ -1,0 +1,54 @@
+version: '3'
+
+tasks:
+  # Task to test Go code
+  test:
+    cmds:
+      - go test ./...
+    desc: "Run tests"
+
+  # Task to build Go source code
+  build:
+    cmds:
+      - go build -o ./bin/news-aggregator ./server/main.go
+    desc: "Build Go source code"
+
+  # Task to run `go fmt` and `go vet`
+  fmt_vet:
+    cmds:
+      - go fmt ./...
+      - go vet ./...
+    desc: "Run go fmt and go vet"
+
+  # Task to run `go mod tidy`
+  mod_tidy:
+    cmds:
+      - go mod tidy
+    desc: "Run go mod tidy"
+
+  # Task to run the project locally
+  run:
+    cmds:
+      - go run ./server/main.go
+    desc: "Run the project locally"
+
+  # A meta-task to run all checks
+  check_all:
+    cmds:
+      - task: mod_tidy
+      - task: fmt_vet
+      - task: test
+    desc: "Run all checks: mod tidy, fmt, vet, and tests"
+
+
+  # Task to build Docker image
+  docker_build:
+    cmds:
+      - docker build -t news-aggregator:latest .
+    desc: "Build Docker image"
+
+   # Task to run Docker container locally
+  docker_run:
+    cmds:
+      - docker run --rm -p 8080:8080 news-aggregator:latest
+    desc: "Run Docker container locally"
