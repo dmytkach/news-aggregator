@@ -1,5 +1,11 @@
 version: '3'
 
+env:
+  DOCKER_IMAGE_NAME: "dmytro/news-aggregator"
+  DOCKER_IMAGE_TAG: "v1.0"
+  DOCKERFILE_PATH: ".Dockerfile"
+  DOCKER_PORT: "8080"
+  SERVER_EXPOSE_PORT: "8080"
 tasks:
   # Task to test Go code
   test:
@@ -53,10 +59,10 @@ tasks:
 
   # Task to build Docker image
   docker_build:
-    cmd: docker build -t news-aggregator:latest .
+    cmd: docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
     desc: "Build Docker image"
 
    # Task to run Docker container locally
   docker_run:
-    cmd: docker run --rm -p 8080:8080 news-aggregator:latest
+    cmd: docker run --rm -p $DOCKER_PORT:$SERVER_EXPOSE_PORT $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
     desc: "Run Docker container locally"
