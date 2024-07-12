@@ -79,4 +79,3 @@ jobs:
           task fmt
           task vet
           task mod_tidy
-
