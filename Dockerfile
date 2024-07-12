@@ -28,6 +28,6 @@ COPY --from=build /app/server-resources ./server-resources
 COPY --from=build /app/server-news ./server-news
 
 ENV FETCH_INTERVAL=1h0m
-EXPOSE 8080
+EXPOSE 8443
 
 CMD ["./news-aggregator"]
