@@ -12,14 +12,14 @@ on:
     branches: [ "**" ]
 
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Go and Install Task
+      - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.22'
@@ -27,14 +27,6 @@ jobs:
       - name: Install Task
         run: |
           sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-
-  build:
-    runs-on: ubuntu-latest
-    needs: setup
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Run go mod tidy
         run: task mod_tidy
@@ -47,38 +39,67 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    needs: setup
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Install Task
+        run: |
+          sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
       - name: Run tests
         run: task test
 
   static-analysis:
     runs-on: ubuntu-latest
-    needs: setup
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Install Task
+        run: |
+          sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
       - name: Run static analysis
         run: task build_server  # Replace with your actual static analysis task
 
   before-merge:
     runs-on: ubuntu-latest
-    needs: setup
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Install Task
+        run: |
+          sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
       - name: Run tasks before merge
         run: |
           task fmt
           task vet
           task test
-          task build_server  # Replace with your actual build task
-          task build_cli  # Replace with your actual build task
+          # Add other tasks as needed
+
+      - name: Build server before merge
+        run: task build_server  # Replace with your actual build task
+
+      - name: Build CLI before merge
+        run: task build_cli  # Replace with your actual build task
