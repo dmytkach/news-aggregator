@@ -6,7 +6,14 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
+# Copy all necessary files and directories
+COPY ./certificates ./certificates
+COPY ./cli ./cli
+COPY ./internal ./internal
+COPY ./server ./server
+COPY ./server-news ./server-news
+COPY ./server-resources ./server-resources
+
 RUN go build -o /news-aggregator ./server/main.go
 
 # Second stage - Create the final image
@@ -20,6 +27,7 @@ COPY --from=build /news-aggregator .
 COPY --from=build /app/certificates ./certificates
 COPY --from=build /app/server-resources ./server-resources
 COPY --from=build /app/server-news ./server-news
+
 ENV FETCH_INTERVAL=1h0m
 EXPOSE 8080
 
