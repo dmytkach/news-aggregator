@@ -1,0 +1,5 @@
+{
+  "releaseType": "node",
+  "versioningStrategy": "default",
+  "changelogPath": "CHANGELOG.md"
+}
