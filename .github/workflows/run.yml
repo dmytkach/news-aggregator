@@ -93,5 +93,6 @@ jobs:
 
       - name: Create Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: release-please release-pr --token ${{ secrets.GITHUB_TOKEN }} --repo-url ${{ github.repository }} --target-branch feature/release-please
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          release-please release-pr --token ${{ secrets.PERSONAL_ACCESS_TOKEN }} --repo-url ${{ github.repository }} --target-branch feature/release-please
