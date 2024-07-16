@@ -76,3 +76,22 @@ jobs:
           task fmt
           task vet
           task mod_tidy
+  release:
+    runs-on: ubuntu-latest
+    needs: [ build, test, static-analysis ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Release Please
+        run: npm install -g release-please
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: release-please release-pr --token ${{ secrets.GITHUB_TOKEN }} --repo-url ${{ github.repository }} --default-branch main
