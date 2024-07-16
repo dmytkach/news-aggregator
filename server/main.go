@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	PORT       = ":8080"
+	PORT       = ":8443"
 	ServerCert = "certificates/cert.pem"
 	ServerKey  = "certificates/key.pem"
 )
