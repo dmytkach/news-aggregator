@@ -86,7 +86,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '16'
 
       - name: Install Release Please
         run: npm install -g release-please
@@ -94,4 +94,4 @@ jobs:
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: release-please release-pr --token ${{ secrets.GITHUB_TOKEN }} --repo-url ${{ github.repository }} --default-branch main
+        run: release-please release-pr --token ${{ secrets.GITHUB_TOKEN }} --repo-url ${{ github.repository }}
