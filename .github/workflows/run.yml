@@ -30,14 +30,8 @@ jobs:
         run: |
           sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
-      - name: Run go mod tidy
-        run: task mod_tidy
-
-      - name: Run go fmt
-        run: task fmt
-
-      - name: Run go vet
-        run: task vet
+      - name: Build
+        run:  task build
 
   test:
     runs-on: ubuntu-latest
