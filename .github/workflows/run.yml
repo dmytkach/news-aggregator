@@ -30,8 +30,11 @@ jobs:
         run: |
           sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
-      - name: Build
-        run:  task build
+      - name: Build cli
+        run:  task build_cli
+
+      - name: Build server
+        run: task build_server
 
   test:
     runs-on: ubuntu-latest
