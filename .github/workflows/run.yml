@@ -95,4 +95,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          release-please release-pr --token ${{ secrets.PERSONAL_ACCESS_TOKEN }} --repo-url ${{ github.repository }} --target-branch main
+          release-please release-pr --token ${{ secrets.PERSONAL_ACCESS_TOKEN }} --repo-url ${{ github.repository }}
