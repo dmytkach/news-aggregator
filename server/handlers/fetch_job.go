@@ -7,20 +7,20 @@ import (
 )
 
 type FetchJob struct {
-	FetchService  service.FetchService
-	FetchInterval time.Duration
+	Service  service.FetchService
+	Interval time.Duration
 }
 
 // Fetch for news updating based on the set interval.
 func (f FetchJob) Fetch() {
-	log.Println("Starting fetch job with interval :", f.FetchInterval)
-	go func() {
+	log.Println("Starting fetch job with interval :", f.Interval)
+	go func(fetchInterval time.Duration) {
 		for {
-			err := f.FetchService.UpdateNews()
+			err := f.Service.UpdateNews()
 			if err != nil {
 				log.Printf("Error Fetching News: %v", err)
 			}
-			time.Sleep(f.FetchInterval)
+			time.Sleep(fetchInterval)
 		}
-	}()
+	}(f.Interval)
 }

@@ -9,6 +9,7 @@ import (
 type FetchService struct {
 	SourceRepo managers.SourceManager
 	NewsRepo   managers.NewsManager
+	Fetch      managers.Fetch
 }
 
 // UpdateNews from all registered sources and updates the local storage.
@@ -36,7 +37,7 @@ func (fetcher FetchService) UpdateNews() error {
 // fetchNewsFromSource and updates local storage if the news is not already present.
 func (fetcher FetchService) fetchNewsFromSource(resource entity.Source) error {
 	for _, path := range resource.PathsToFile {
-		news, err := managers.FetchFeed(path)
+		news, err := fetcher.Fetch.Fetch(string(path))
 		if err != nil {
 			log.Printf("Failed to fetch news from %s: %v", path, err)
 			continue

@@ -11,14 +11,25 @@ import (
 
 const tempFileName = "tempfile.xml"
 
-// FetchFeed downloads and parses the news feed from the given URL.
-func FetchFeed(url entity.PathToFile) (entity.Feed, error) {
-	resp, err := http.Get(string(url))
+type Fetch interface {
+	Fetch(path string) (entity.Feed, error)
+}
+type UrlFeed struct {
+}
+
+// Fetch downloads and parses the news feed from the given URL.
+func (f UrlFeed) Fetch(path string) (entity.Feed, error) {
+	resp, err := http.Get(path)
 	if err != nil {
 		log.Println("Failed to download feed", http.StatusInternalServerError)
 		return entity.Feed{}, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			return
+		}
+	}(resp.Body)
 	tempFile, err := os.Create(tempFileName)
 	if err != nil {
 		log.Printf("Failed to create temporary file: %v", err)
@@ -36,7 +47,7 @@ func FetchFeed(url entity.PathToFile) (entity.Feed, error) {
 		return entity.Feed{}, err
 	}
 
-	feed, err := fromTempFile(tempFileName)
+	feed, err := getFeedFromFile(tempFileName)
 	if err != nil {
 		log.Printf("Failed to parse feed from file: %v", err)
 		return entity.Feed{}, err
@@ -44,8 +55,8 @@ func FetchFeed(url entity.PathToFile) (entity.Feed, error) {
 	return feed, nil
 }
 
-// getNewsFromFile using parsers.
-func fromTempFile(filePath string) (entity.Feed, error) {
+// getFeedFromFile using parsers.
+func getFeedFromFile(filePath string) (entity.Feed, error) {
 	p, err := parser.GetFileParser(entity.PathToFile(filePath))
 	if err != nil {
 		log.Printf("Error getting file parser for %s: %v", filePath, err)
