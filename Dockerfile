@@ -6,7 +6,7 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-COPY ./certificates ./certificates
+COPY server/certificates ./certificates
 COPY ./cli ./cli
 COPY ./internal ./internal
 COPY ./server ./server
