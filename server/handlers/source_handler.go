@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"news-aggregator/internal/entity"
 	"news-aggregator/server/managers"
 )
 
 type SourceHandler struct {
 	SourceRepo managers.SourceManager
+	FeedRepo   managers.FeedManager
 }
 
 // Sources handles HTTP requests for managing news sources and feeds.
@@ -35,7 +35,7 @@ func (sourceHandler SourceHandler) downloadSource(w http.ResponseWriter, r *http
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	feed, err := managers.FetchFeed(entity.PathToFile(urlStr))
+	feed, err := sourceHandler.FeedRepo.Fetch(urlStr)
 	if err != nil {
 		log.Print("error loading feed")
 		return
@@ -45,11 +45,6 @@ func (sourceHandler SourceHandler) downloadSource(w http.ResponseWriter, r *http
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	//err = sourceHandler.FetchService.UpdateNews()
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(source)
 }

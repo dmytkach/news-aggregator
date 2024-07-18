@@ -9,7 +9,7 @@ import (
 type FetchService struct {
 	SourceRepo managers.SourceManager
 	NewsRepo   managers.NewsManager
-	Fetch      managers.Fetch
+	Fetch      managers.FeedManager
 }
 
 // UpdateNews from all registered sources and updates the local storage.

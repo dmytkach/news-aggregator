@@ -2,11 +2,10 @@ package service
 
 import (
 	"errors"
-	"news-aggregator/internal/entity"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"news-aggregator/internal/entity"
+	"testing"
 )
 
 type MockSourceManager struct {
