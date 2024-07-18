@@ -6,27 +6,38 @@ import (
 	"log"
 	"news-aggregator/internal/entity"
 	"news-aggregator/internal/initializers"
-	"news-aggregator/internal/parser"
 	"os"
 	"path/filepath"
 	"time"
 )
 
-var NewsFolder = "server-news/"
-
 var timeNow = time.Now().Format("2006-01-02")
+
+type NewsManager interface {
+	//GetNewsFromFile(filePath string) (entity.Feed, error)
+	AddNews(newsToAdd []entity.News, newsSource string) error
+	GetNewsFromFolder(folderName string) ([]entity.News, error)
+	GetNewsSourceFilePath(sourceName []string) (map[string][]string, error)
+}
+
+type newsFolderManager struct {
+	path string
+}
+
+func CreateNewsFolderManager(pathToNews string) NewsManager {
+	return newsFolderManager{pathToNews}
+}
 
 // GetNewsFromFolder retrieves news data from a specified folder
 // containing structured news resources.
-func GetNewsFromFolder(folderName string) ([]entity.News, error) {
-	resources, err := initializers.LoadSources(NewsFolder)
+func (repo newsFolderManager) GetNewsFromFolder(folderName string) ([]entity.News, error) {
+	sourcePath := filepath.Join(repo.path, folderName)
+	resources, err := getNewsSources(sourcePath)
 	if err != nil {
-		log.Printf("Error loading static resources from folder: %v", err)
 		return nil, err
 	}
-	r := resources[folderName]
 	allNews := make([]entity.News, 0)
-	for _, path := range r {
+	for _, path := range resources {
 		file, err := os.Open(path)
 		if err != nil {
 			log.Printf("Failed to open file %s: %v", path, err)
@@ -48,26 +59,40 @@ func GetNewsFromFolder(folderName string) ([]entity.News, error) {
 	return allNews, nil
 }
 
-// GetNewsFromFile using parsers.
-func GetNewsFromFile(filePath string) (entity.Feed, error) {
-	p, err := parser.GetFileParser(entity.PathToFile(filePath))
-	if err != nil {
-		log.Printf("Error getting file parser for %s: %v", filePath, err)
-		return entity.Feed{}, err
+func (repo newsFolderManager) GetNewsSourceFilePath(sourceName []string) (map[string][]string, error) {
+	resources := make(map[string][]string)
+	for _, source := range sourceName {
+		sourcePath := filepath.Join(repo.path, source)
+		paths, err := getNewsSources(sourcePath)
+		if err != nil {
+			log.Print("Not found news source")
+			return nil, err
+		}
+		resources[source] = paths
 	}
-	f, err := p.Parse()
-	if err != nil {
-		log.Printf("Error parsing file %s: %v", filePath, err)
-		return entity.Feed{}, err
-	}
-	return f, err
+	return resources, nil
 }
+
+//// GetNewsFromFile using parsers.
+//func (repo newsFolderManager) GetNewsFromFile(filePath string) (entity.Feed, error) {
+//	p, err := parser.GetFileParser(entity.PathToFile(filePath))
+//	if err != nil {
+//		log.Printf("Error getting file parser for %s: %v", filePath, err)
+//		return entity.Feed{}, err
+//	}
+//	f, err := p.Parse()
+//	if err != nil {
+//		log.Printf("Error parsing file %s: %v", filePath, err)
+//		return entity.Feed{}, err
+//	}
+//	return f, err
+//}
 
 // AddNews in JSON format in the server's news folder,
 // organized by source and timestamp.
-func AddNews(newsToAdd []entity.News, newsSource string) error {
+func (repo newsFolderManager) AddNews(newsToAdd []entity.News, newsSource string) error {
 	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
-	finalFilePath := filepath.Join(NewsFolder, finalFileName)
+	finalFilePath := filepath.Join(repo.path, finalFileName)
 	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
@@ -90,7 +115,14 @@ func AddNews(newsToAdd []entity.News, newsSource string) error {
 	}
 	return nil
 }
-
+func getNewsSources(sourceName string) ([]string, error) {
+	s, err := initializers.AnalyzeDirectory(sourceName)
+	if err != nil {
+		log.Printf("Failed to analyze source %s: %v", sourceName, err)
+		return nil, err
+	}
+	return s, nil
+}
 func loadNewsFromFile(filePath string) ([]entity.News, error) {
 	var news []entity.News
 	jsonData, err := os.ReadFile(filePath)
