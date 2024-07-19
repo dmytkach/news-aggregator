@@ -1,68 +1,49 @@
 version: '3'
 
 env:
-  DOCKER_IMAGE_NAME: "dmytro/news-aggregator"
+  DOCKER_IMAGE_NAME: "dmytro-tkach/news-aggregator"
   DOCKER_IMAGE_TAG: "v1.0"
   DOCKERFILE_PATH: ".Dockerfile"
   DOCKER_PORT: "8443"
   SERVER_EXPOSE_PORT: "8443"
+
 tasks:
-  # Task to test Go code
   test:
     cmd: go test ./...
     desc: "Run tests"
 
-  # Task to build server
   build_server:
     cmd: go build -o ./bin/news-aggregator-server ./server/main.go
     desc: "Build web-server version"
 
-  # Task to build cli
   build_cli:
     cmd: go build -o ./bin/news-aggregator-cli ./cli/main.go
     desc: "Build cli version"
 
-  # Task to run `go fmt`
   fmt:
     cmd: go fmt ./...
     desc: "Run go fmt"
 
-  # Task to run `go vet`
   vet:
     cmd: go vet ./...
     desc: "Run go vet"
 
-  # Task to run `go mod tidy`
   mod_tidy:
     cmd: go mod tidy
     desc: "Run go mod tidy"
 
-  # Task to run the server locally
   run_server:
     cmd: go run ./server/main.go
     desc: "Run the web-server locally"
 
-  # Task to run cli
   run_cli:
     cmd: go run ./cli/main.go
     desc: "Run cli locally"
 
-  # A meta-task to run all checks
-  check_all:
-    cmds:
-      - task: mod_tidy
-      - task: fmt
-      - task: vet
-      - task: test
-    desc: "Run all checks: mod tidy, fmt, vet, and tests"
-
-
-  # Task to build Docker image
   docker_build:
     cmd: docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
     desc: "Build Docker image"
 
-   # Task to run Docker container locally
   docker_run:
     cmd: docker run --rm -p $DOCKER_PORT:$SERVER_EXPOSE_PORT $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
     desc: "Run Docker container locally"
