@@ -105,7 +105,7 @@ To pull the Docker image for this project, use the following command. Replace `n
 appropriate image name and tag if needed.
 
 ```
-docker pull news-aggregator:latest
+docker pull news-aggregator:v1.0
 ````
 
 ### 2. Build the Docker Image
@@ -117,7 +117,7 @@ Navigate to the root directory of the project.
 Build the Docker image using the following command:
 
 ```
-docker build -t news-aggregator:latest .
+docker build -t news-aggregator:v1.0 .
 ```
 
 ### 3. Run the Docker Container
@@ -125,7 +125,7 @@ docker build -t news-aggregator:latest .
 To run the Docker container, use the following command:
 
 ```
-docker run --rm -p 8443:8443 news-aggregator:latest -fetch_interval=30s 
+docker run --rm -p 8443:8443 news-aggregator:v1.0 -fetch_interval=30s 
     -cert=/path/to/your/cert.pem \
     -key=/path/to/your/key.pem \
     -path_to_source=sources.json \
