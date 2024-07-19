@@ -1,122 +1,269 @@
 package handlers
 
 import (
-	"encoding/json"
+	"errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"news-aggregator/internal/entity"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func mockAddSource(url string) (entity.Source, error) {
-	return entity.Source{Name: "mockedSource", PathsToFile: []entity.PathToFile{entity.PathToFile(url)}}, nil
+type MockFeedManager struct {
+	mock.Mock
 }
 
-func mockFetchNews() error {
-	return nil
+func (m *MockFeedManager) Fetch(path string) (entity.Feed, error) {
+	args := m.Called(path)
+	return args.Get(0).(entity.Feed), args.Error(1)
 }
+func TestSourcesGet(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
 
-func mockGetSources() ([]entity.Source, error) {
-	return []entity.Source{
-		{Name: "mockedSource1", PathsToFile: []entity.PathToFile{"http://example.com/rss1"}},
-		{Name: "mockedSource2", PathsToFile: []entity.PathToFile{"http://example.com/rss2"}},
-	}, nil
-}
-
-func mockGetSource(name string) (entity.Source, error) {
-	return entity.Source{Name: entity.SourceName(name), PathsToFile: []entity.PathToFile{"http://example.com/rss"}}, nil
-}
-
-func mockUpdateSource(oldUrl, newUrl string) error {
-	return nil
-}
-
-func mockRemoveSource(name string) error {
-	return nil
-}
-
-var (
-	response      *httptest.ResponseRecorder
-	mockSourceURL = "http://feeds.bbci.co.uk/news/rss.xml"
-)
-
-func setup() {
-	response = httptest.NewRecorder()
-
-	addSourceFunc = mockAddSource
-	fetchNewsFunc = mockFetchNews
-	getSourcesFunc = mockGetSources
-	getSourceFunc = mockGetSource
-	updateSourceFunc = mockUpdateSource
-	removeSourceFunc = mockRemoveSource
-}
-func TestDownloadSource(t *testing.T) {
-	setup()
-
-	req, err := http.NewRequest("POST", "/sources?url="+mockSourceURL, nil)
-	if err != nil {
-		t.Fatal(err)
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
-	handler := http.HandlerFunc(Sources)
-	handler.ServeHTTP(response, req)
-
-	assert.Equal(t, http.StatusOK, response.Code)
-
-	var result entity.Source
-	err = json.NewDecoder(response.Body).Decode(&result)
-	assert.Nil(t, err)
-	assert.Equal(t, "mockedSource", string(result.Name))
-	assert.Equal(t, []entity.PathToFile{entity.PathToFile(mockSourceURL)}, result.PathsToFile)
-}
-
-func TestGetSources(t *testing.T) {
-	setup()
+	expectedSources := []entity.Source{{Name: "bbc_news", PathsToFile: nil}}
+	mockSourceManager.On("GetSources").Return(expectedSources, nil)
 
 	req, err := http.NewRequest("GET", "/sources", nil)
-	if err != nil {
-		t.Fatal(err)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Expected status OK")
+	assert.JSONEq(t, `[{"Name":"bbc_news","PathsToFile":null}]`, rr.Body.String(), "Response body does not match expected")
+}
+func TestGetSourcesEmpty(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
-	handler := http.HandlerFunc(Sources)
-	handler.ServeHTTP(response, req)
+	mockSourceManager.On("GetSources").Return([]entity.Source{}, nil)
 
-	assert.Equal(t, http.StatusOK, response.Code)
+	req, err := http.NewRequest("GET", "/sources", nil)
+	assert.NoError(t, err, "Expected no error creating request")
 
-	var result []entity.Source
-	err = json.NewDecoder(response.Body).Decode(&result)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(result))
-	assert.Equal(t, "mockedSource1", string(result[0].Name))
-	assert.Equal(t, "mockedSource2", string(result[1].Name))
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Expected status OK")
+	assert.JSONEq(t, `[]`, rr.Body.String(), "Response body does not match expected")
 }
 
+func TestDownloadSource(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	feed := entity.Feed{Name: "test_feed"}
+	mockFeedManager.On("Fetch", "http://example.com/feed").Return(feed, nil)
+	expectedSource := entity.Source{Name: "test_feed", PathsToFile: []entity.PathToFile{"http://example.com/feed"}}
+	mockSourceManager.On("CreateSource", "test_feed", "http://example.com/feed").Return(expectedSource, nil)
+
+	req, err := http.NewRequest("POST", "/sources?url=http://example.com/feed", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Expected status OK")
+	assert.JSONEq(t, `{"Name":"test_feed","PathsToFile":["http://example.com/feed"]}`, rr.Body.String(), "Response body does not match expected")
+}
+func TestDownloadSourceError(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	mockFeedManager.On("Fetch", "http://example.com/feed").Return(entity.Feed{}, errors.New("fetch error"))
+
+	req, err := http.NewRequest("POST", "/sources?url=http://example.com/feed", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Expected status Internal Server Error")
+}
+
+func TestDownloadSourceMissingURL(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	req, err := http.NewRequest("POST", "/sources", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Expected status Bad Request")
+}
+
+func TestDownloadSourceCreationError(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	feed := entity.Feed{Name: "test_feed"}
+	mockFeedManager.On("Fetch", "http://example.com/feed").Return(feed, nil)
+	mockSourceManager.On("CreateSource", "test_feed", "http://example.com/feed").Return(entity.Source{}, errors.New("creation error"))
+
+	req, err := http.NewRequest("POST", "/sources?url=http://example.com/feed", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Expected status Internal Server Error")
+}
 func TestUpdateSource(t *testing.T) {
-	setup()
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
 
-	req, err := http.NewRequest("PUT", "/sources?oldUrl=old&newUrl=new", nil)
-	if err != nil {
-		t.Fatal(err)
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
-	handler := http.HandlerFunc(Sources)
-	handler.ServeHTTP(response, req)
+	mockSourceManager.On("UpdateSource", "http://oldurl.com", "http://newurl.com").Return(nil)
 
-	assert.Equal(t, http.StatusOK, response.Code)
+	req, err := http.NewRequest("PUT", "/sources?oldUrl=http://oldurl.com&newUrl=http://newurl.com", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Expected status OK")
+}
+func TestRemoveSource(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	mockSourceManager.On("RemoveSourceByName", "bbc_news").Return(nil)
+
+	req, err := http.NewRequest("DELETE", "/sources?name=bbc_news", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Expected status OK")
+}
+func TestUpdateSourceError(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	mockSourceManager.On("UpdateSource", "http://oldurl.com", "http://newurl.com").Return(errors.New("update error"))
+
+	req, err := http.NewRequest("PUT", "/sources?oldUrl=http://oldurl.com&newUrl=http://newurl.com", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Expected status Internal Server Error")
 }
 
-func TestRemoveSource(t *testing.T) {
-	setup()
+func TestRemoveSourceMissingName(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
 
-	req, err := http.NewRequest("DELETE", "/sources?name=example", nil)
-	if err != nil {
-		t.Fatal(err)
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
-	handler := http.HandlerFunc(Sources)
-	handler.ServeHTTP(response, req)
+	req, err := http.NewRequest("DELETE", "/sources", nil)
+	assert.NoError(t, err, "Expected no error creating request")
 
-	assert.Equal(t, http.StatusOK, response.Code)
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Expected status Bad Request")
+}
+
+func TestRemoveSourceError(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	mockSourceManager.On("RemoveSourceByName", "bbc_news").Return(errors.New("remove error"))
+
+	req, err := http.NewRequest("DELETE", "/sources?name=bbc_news", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Expected status Internal Server Error")
+}
+
+func TestSourcesMethodNotAllowed(t *testing.T) {
+	mockSourceManager := new(MockSourceManager)
+	mockFeedManager := new(MockFeedManager)
+
+	sourceHandler := SourceHandler{
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
+	}
+
+	req, err := http.NewRequest("PATCH", "/sources", nil)
+	assert.NoError(t, err, "Expected no error creating request")
+
+	rr := httptest.NewRecorder()
+	httpHandler := http.HandlerFunc(sourceHandler.Sources)
+	httpHandler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code, "Expected status Method Not Allowed")
 }

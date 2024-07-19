@@ -9,11 +9,28 @@ import (
 	"os"
 )
 
-var PathToResources = "server-resources/source.json"
+// SourceManager provides API for handling news sources.
+type SourceManager interface {
+	CreateSource(name, url string) (entity.Source, error)
+	GetSource(name string) (entity.Source, error)
+	GetSources() ([]entity.Source, error)
+	UpdateSource(oldUrl, newUrl string) error
+	RemoveSourceByName(sourceName string) error
+}
+
+// sourceFolder implements SourceManager using a folder-based storage for sources.
+type sourceFolder struct {
+	path string
+}
+
+// CreateSourceFolder in the specified directory.
+func CreateSourceFolder(pathToSources string) SourceManager {
+	return sourceFolder{pathToSources}
+}
 
 // GetSources from source file.
-func GetSources() ([]entity.Source, error) {
-	sources, err := readFromFile()
+func (sourceManager sourceFolder) GetSources() ([]entity.Source, error) {
+	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
 		return nil, err
@@ -22,8 +39,8 @@ func GetSources() ([]entity.Source, error) {
 }
 
 // GetSource by given name from resource file.
-func GetSource(name string) (entity.Source, error) {
-	sources, err := readFromFile()
+func (sourceManager sourceFolder) GetSource(name string) (entity.Source, error) {
+	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
 		return entity.Source{}, err
@@ -37,8 +54,8 @@ func GetSource(name string) (entity.Source, error) {
 }
 
 // CreateSource creates a new source with the provided name and URL.
-func CreateSource(name, url string) (entity.Source, error) {
-	sources, err := readFromFile()
+func (sourceManager sourceFolder) CreateSource(name, url string) (entity.Source, error) {
+	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
 		return entity.Source{}, err
@@ -51,7 +68,7 @@ func CreateSource(name, url string) (entity.Source, error) {
 				}
 			}
 			sources[i].PathsToFile = append(sources[i].PathsToFile, entity.PathToFile(url))
-			err = writeToFile(sources)
+			err = writeToFile(sourceManager.path, sources)
 			if err != nil {
 				log.Printf("Error writing to file: %v", err)
 				return entity.Source{}, err
@@ -65,7 +82,7 @@ func CreateSource(name, url string) (entity.Source, error) {
 		PathsToFile: []entity.PathToFile{entity.PathToFile(url)},
 	}
 	sources = append(sources, resource)
-	err = writeToFile(sources)
+	err = writeToFile(sourceManager.path, sources)
 	if err != nil {
 		log.Printf("Error writing to file: %v", err)
 		return entity.Source{}, err
@@ -75,8 +92,8 @@ func CreateSource(name, url string) (entity.Source, error) {
 }
 
 // RemoveSourceByName from the resource file.
-func RemoveSourceByName(sourceName string) error {
-	sources, err := readFromFile()
+func (sourceManager sourceFolder) RemoveSourceByName(sourceName string) error {
+	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
 		return err
@@ -87,18 +104,18 @@ func RemoveSourceByName(sourceName string) error {
 			deletedSources = append(deletedSources, s)
 		}
 	}
-	err = writeToFile(deletedSources)
+	err = writeToFile(sourceManager.path, deletedSources)
 	if err != nil {
 		log.Printf("Error writing to file: %v", err)
 		return err
 	}
-	log.Printf("Removed source with name: %s", sourceName)
+	log.Printf("Removed source with name: %sourceManager", sourceName)
 	return nil
 }
 
 // UpdateSource identified by its old URL.
-func UpdateSource(oldUrl, newUrl string) error {
-	sources, err := readFromFile()
+func (sourceManager sourceFolder) UpdateSource(oldUrl, newUrl string) error {
+	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
 		return err
@@ -112,7 +129,7 @@ func UpdateSource(oldUrl, newUrl string) error {
 					}
 				}
 				sources[i].PathsToFile[j] = entity.PathToFile(newUrl)
-				return writeToFile(sources)
+				return writeToFile(sourceManager.path, sources)
 			}
 		}
 	}
@@ -120,14 +137,14 @@ func UpdateSource(oldUrl, newUrl string) error {
 }
 
 // writeToFile sources in JSON format.
-func writeToFile(sources []entity.Source) error {
+func writeToFile(path string, sources []entity.Source) error {
 	jsonData, err := json.MarshalIndent(sources, "", "  ")
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		return err
 	}
 
-	err = os.WriteFile(PathToResources, jsonData, 0644)
+	err = os.WriteFile(path, jsonData, 0644)
 	if err != nil {
 		log.Printf("Error writing to file: %v", err)
 		return err
@@ -136,20 +153,23 @@ func writeToFile(sources []entity.Source) error {
 }
 
 // readFromFile resources file.
-func readFromFile() ([]entity.Source, error) {
-	file, err := os.Open(PathToResources)
+func readFromFile(path string) ([]entity.Source, error) {
+	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("Source file does not exist, creating a new one: %v", PathToResources)
-			newFile, err := os.Create(PathToResources)
+			log.Printf("Source file does not exist, creating a new one: %v", path)
+			newFile, err := os.Create(path)
 			if err != nil {
 				log.Printf("Error creating new source file: %v", err)
 				return nil, err
 			}
-			defer newFile.Close()
-
+			defer func(file *os.File) {
+				if err := file.Close(); err != nil {
+					log.Printf("Error closing file %s: %v", file.Name(), err)
+				}
+			}(newFile)
 			var emptySources []entity.Source
-			if err := writeToFile(emptySources); err != nil {
+			if err := writeToFile(path, emptySources); err != nil {
 				log.Printf("Error initializing new source file: %v", err)
 				return nil, err
 			}
@@ -158,7 +178,11 @@ func readFromFile() ([]entity.Source, error) {
 		log.Printf("Error opening sources file: %v", err)
 		return nil, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Printf("Error closing file %s: %v", file.Name(), err)
+		}
+	}(file)
 
 	var sources []entity.Source
 	if err := json.NewDecoder(file).Decode(&sources); err != nil {

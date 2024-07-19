@@ -2,6 +2,7 @@ package initializers
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -17,9 +18,9 @@ func LoadSources(sourceFolder string) (map[string][]string, error) {
 		}
 		if !info.IsDir() {
 			resourceName := filepath.Base(filepath.Dir(path))
-
+			log.Print(resourceName)
 			pathToFile := filepath.Join(filepath.Dir(path), info.Name())
-
+			log.Print(pathToFile)
 			newsMap[resourceName] = append(newsMap[resourceName], pathToFile)
 		}
 		return nil
@@ -28,4 +29,43 @@ func LoadSources(sourceFolder string) (map[string][]string, error) {
 		return nil, fmt.Errorf("failed to walk directory: %w", err)
 	}
 	return newsMap, nil
+}
+
+// AnalyzeDirectory analyzes the contents of a given directory.
+// It returns a slice of strings, each representing a full path to a file or directory.
+func AnalyzeDirectory(directory string) ([]string, error) {
+	// Check if the directory exists
+	_, err := os.Stat(directory)
+	if os.IsNotExist(err) {
+		// Directory does not exist, create it
+		if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+		log.Printf("Directory created: %s", directory)
+	}
+
+	// Open the directory
+	dir, err := os.Open(directory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open directory: %w", err)
+	}
+	defer func() {
+		if err := dir.Close(); err != nil {
+			log.Printf("failed to close directory: %v", err)
+		}
+	}()
+
+	// Read the directory contents
+	files, err := dir.Readdir(-1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	var entries []string
+	for _, f := range files {
+		fullPath := filepath.Join(directory, f.Name())
+		entries = append(entries, fullPath)
+	}
+
+	return entries, nil
 }
