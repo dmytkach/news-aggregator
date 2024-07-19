@@ -28,12 +28,11 @@ func main() {
 	}
 
 	interval, err := time.ParseDuration(*fetchInterval)
-	if err == nil && interval > 0 {
-		log.Println("FeedManager interval set to", *fetchInterval)
-	} else {
+	if err != nil || interval <= 0 {
 		log.Println("Failed to parse FETCH_INTERVAL:", *fetchInterval, err)
 		return
 	}
+	log.Println("FeedManager interval set to", *fetchInterval)
 
 	sourceFolder := managers.CreateSourceFolder(*pathToSourcesFile)
 	newsFolder := managers.CreateNewsFolder(*pathToNews)

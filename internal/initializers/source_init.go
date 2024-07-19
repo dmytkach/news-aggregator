@@ -34,23 +34,34 @@ func LoadSources(sourceFolder string) (map[string][]string, error) {
 // AnalyzeDirectory analyzes the contents of a given directory.
 // It returns a slice of strings, each representing a full path to a file or directory.
 func AnalyzeDirectory(directory string) ([]string, error) {
-	var entries []string
-	file, err := os.Open(directory)
+	// Check if the directory exists
+	_, err := os.Stat(directory)
+	if os.IsNotExist(err) {
+		// Directory does not exist, create it
+		if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+		log.Printf("Directory created: %s", directory)
+	}
+
+	// Open the directory
+	dir, err := os.Open(directory)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open directory: %w", err)
 	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			log.Printf("failed to close file: %v", err)
+	defer func() {
+		if err := dir.Close(); err != nil {
+			log.Printf("failed to close directory: %v", err)
 		}
-	}(file)
+	}()
 
-	files, err := file.Readdir(-1)
+	// Read the directory contents
+	files, err := dir.Readdir(-1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
 
+	var entries []string
 	for _, f := range files {
 		fullPath := filepath.Join(directory, f.Name())
 		entries = append(entries, fullPath)
