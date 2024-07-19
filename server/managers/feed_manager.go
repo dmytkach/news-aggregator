@@ -17,7 +17,7 @@ type FeedManager interface {
 type UrlFeed struct {
 }
 
-// FeedManager downloads and parses the news feed from the given URL.
+// Fetch downloads and parses the news feed from the given URL.
 func (f UrlFeed) Fetch(path string) (entity.Feed, error) {
 	resp, err := http.Get(path)
 	if err != nil {

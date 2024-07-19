@@ -14,7 +14,6 @@ import (
 var timeNow = time.Now().Format("2006-01-02")
 
 type NewsManager interface {
-	//GetNewsFromFile(filePath string) (entity.Feed, error)
 	AddNews(newsToAdd []entity.News, newsSource string) error
 	GetNewsFromFolder(folderName string) ([]entity.News, error)
 	GetNewsSourceFilePath(sourceName []string) (map[string][]string, error)
@@ -26,6 +25,34 @@ type newsFolderManager struct {
 
 func CreateNewsFolderManager(pathToNews string) NewsManager {
 	return newsFolderManager{pathToNews}
+}
+
+// AddNews in JSON format in the server's news folder,
+// organized by source and timestamp.
+func (repo newsFolderManager) AddNews(newsToAdd []entity.News, newsSource string) error {
+	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
+	finalFilePath := filepath.Join(repo.path, finalFileName)
+	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+	currentNews, err := loadNewsFromFile(finalFilePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("failed to load current news: %w", err)
+		}
+		currentNews = []entity.News{}
+	}
+	currentNews = append(currentNews, newsToAdd...)
+	jsonData, err := json.Marshal(currentNews)
+	if err != nil {
+		return fmt.Errorf("failed to marshal news to JSON: %w", err)
+	}
+	err = os.WriteFile(finalFilePath, jsonData, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write news to file: %w", err)
+	}
+	return nil
 }
 
 // GetNewsFromFolder retrieves news data from a specified folder
@@ -73,48 +100,6 @@ func (repo newsFolderManager) GetNewsSourceFilePath(sourceName []string) (map[st
 	return resources, nil
 }
 
-//// GetNewsFromFile using parsers.
-//func (repo newsFolderManager) GetNewsFromFile(filePath string) (entity.Feed, error) {
-//	p, err := parser.GetFileParser(entity.PathToFile(filePath))
-//	if err != nil {
-//		log.Printf("Error getting file parser for %s: %v", filePath, err)
-//		return entity.Feed{}, err
-//	}
-//	f, err := p.Parse()
-//	if err != nil {
-//		log.Printf("Error parsing file %s: %v", filePath, err)
-//		return entity.Feed{}, err
-//	}
-//	return f, err
-//}
-
-// AddNews in JSON format in the server's news folder,
-// organized by source and timestamp.
-func (repo newsFolderManager) AddNews(newsToAdd []entity.News, newsSource string) error {
-	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
-	finalFilePath := filepath.Join(repo.path, finalFileName)
-	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
-	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-	currentNews, err := loadNewsFromFile(finalFilePath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return fmt.Errorf("failed to load current news: %w", err)
-		}
-		currentNews = []entity.News{}
-	}
-	currentNews = append(currentNews, newsToAdd...)
-	jsonData, err := json.Marshal(currentNews)
-	if err != nil {
-		return fmt.Errorf("failed to marshal news to JSON: %w", err)
-	}
-	err = os.WriteFile(finalFilePath, jsonData, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to write news to file: %w", err)
-	}
-	return nil
-}
 func getNewsSources(sourceName string) ([]string, error) {
 	s, err := initializers.AnalyzeDirectory(sourceName)
 	if err != nil {
