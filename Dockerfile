@@ -6,7 +6,7 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-COPY server/certificates ./certificates
+#COPY server/certificates ./certificates
 COPY ./internal ./internal
 COPY ./server ./server
 
@@ -20,7 +20,7 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 WORKDIR /root/
 
 COPY --from=build /news-aggregator .
-COPY --from=build /app/certificates ./server/certificates
+COPY --from=build /app/server/certificates ./server/certificates
 
 # Expose port
 EXPOSE 8443
