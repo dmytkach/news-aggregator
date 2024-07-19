@@ -1,6 +1,6 @@
 ## Overview
 The news aggregator app allows users to collect, filter and display news from various sources.
-Interaction with the application occurs through HTTP endpoints and a CLI interface.
+Interaction with the application occurs through HTTPs endpoints and a CLI interface.
 
 ## Server API
 
@@ -33,9 +33,65 @@ Managing news sources including adding, updating, and removing news sources.
   - `DELETE`: Removes a news source.
 ### Starting the Server
 
-When you start the server, you can set the news fetching interval
-using the `FETCH_INTERVAL` environment variable. The value must be specified in seconds.
+When you start the server, you can configure various settings using command-line flags. 
+Here are the available flags and their descriptions:
+
+1. --help:
+
+Displays all available arguments and their descriptions.
+If you run the server with this flag, it will show a help message with details about each flag.
+
+**Usage**: `go run server/main.go --help`
+
+2. --port: 
+
+Specifies the port on which the server will listen. The default value is :8443. 
+You can set it to a different port if needed.
+
+**Usage**: `go run server/main.go --port=:443`
+
+3. --cert:
+
+Provides the path to the server certificate file. The default path is server/certificates/cert.pem.
+If you have a different certificate file, specify its path here.
+
+**Usage**:`go run server/main.go --cert=/path/to/your/cert.pem`
+
+4. --key:
+
+Provides the path to the server key file. The default path is server/certificates/key.pem.
+If you have a different key file, specify its path here.
+
+**Usage**:`go run server/main.go --key=/path/to/your/key.pem`
+
+5. --fetch_interval:
+
+Sets the interval for fetching news updates. The default value is 1h (1 hour).
+You can specify a different interval using valid time units (e.g., 30s for 30 seconds, 5m for 5 minutes).
+
+**Usage**: `go run server/main.go --fetch_interval=30s`
+
+6. --path_to_source:
+
+Specifies the path to the source file containing news sources. 
+The default path is server/sources.json.
+If your sources file is located elsewhere, provide its path here.
+
+**Usage**: `go run server/main.go --path_to_source=/path/to/your/sources.json`
+
+7. --news_folder: 
+
+Specifies the folder where news files are stored. The default folder is server-news/. 
+If your news folder is located elsewhere, provide its path here.
+
+**Usage**: `go run server/main.go --news_folder=/path/to/your/news_folder`
+
 #### Example usage:
+Custom settings:
+```
+go run server/main.go --port=:8080 --cert=/path/to/your/cert.pem --key=/path/to/your/key.pem --fetch_interval=30s --path_to_source=/path/to/your/sources.json --news_folder=/path/to/your/news_folder
+```
+Default settings:
 ```
 go run server/main.go
 ```

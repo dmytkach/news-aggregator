@@ -12,12 +12,12 @@ import (
 
 func main() {
 	help := flag.Bool("help", false, "Show all available arguments and their descriptions.")
-	port := flag.String("port", ":8443", "Port to listen on")
-	serverCert := flag.String("cert", "server/certificates/cert.pem", "Path to server certificate file")
-	serverKey := flag.String("key", "server/certificates/key.pem", "Path to server key file")
-	fetchInterval := flag.String("fetch_interval", "1h", "Provide your fetch interval or interval will be set on 1h")
-	pathToSourcesFile := flag.String("path_to_source", "server-resources/sources.json", "Please provide your source file path")
-	pathToNews := flag.String("news_folder", "server-news/", "Please provide your source folder")
+	port := flag.String("port", ":8443", "Specify the port on which the server should listen. Default is :8443.")
+	serverCert := flag.String("cert", "server/certificates/cert.pem", "Path to the server's certificate file. Default is 'server/certificates/cert.pem'.")
+	serverKey := flag.String("key", "server/certificates/key.pem", "Path to the server's key file. Default is 'server/certificates/key.pem'.")
+	fetchInterval := flag.String("fetch_interval", "1h", "Set the interval for fetching news updates. The default is 1 hour.")
+	pathToSourcesFile := flag.String("path_to_source", "server/sources.json", "Path to the file containing news sources. Default is 'server/sources.json'.")
+	pathToNews := flag.String("news_folder", "server-news/", "Path to the folder where news files are stored. Default is 'server-news/'.")
 
 	flag.Parse()
 
