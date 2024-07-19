@@ -11,9 +11,12 @@ import (
 
 const tempFileName = "tempfile.xml"
 
+// FeedManager for fetching news feeds.
 type FeedManager interface {
 	Fetch(path string) (entity.Feed, error)
 }
+
+// UrlFeed implements the FeedManager for fetching feeds from URLs.
 type UrlFeed struct {
 }
 
@@ -35,8 +38,11 @@ func (f UrlFeed) Fetch(path string) (entity.Feed, error) {
 		log.Printf("Failed to create temporary file: %v", err)
 		return entity.Feed{}, err
 	}
-	defer os.Remove(tempFileName)
-
+	defer func() {
+		if err := os.Remove(tempFileName); err != nil {
+			log.Printf("Error removing temporary file %s: %v", tempFileName, err)
+		}
+	}()
 	if _, err := io.Copy(tempFile, resp.Body); err != nil {
 		log.Printf("Failed to write response to file: %v", err)
 		return entity.Feed{}, err

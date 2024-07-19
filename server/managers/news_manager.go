@@ -13,25 +13,28 @@ import (
 
 var timeNow = time.Now().Format("2006-01-02")
 
+// NewsManager provides API for handling news data.
 type NewsManager interface {
 	AddNews(newsToAdd []entity.News, newsSource string) error
 	GetNewsFromFolder(folderName string) ([]entity.News, error)
 	GetNewsSourceFilePath(sourceName []string) (map[string][]string, error)
 }
 
-type newsFolderManager struct {
+// newsFolder implements the NewsManager for managing news data stored in folders.
+type newsFolder struct {
 	path string
 }
 
-func CreateNewsFolderManager(pathToNews string) NewsManager {
-	return newsFolderManager{pathToNews}
+// CreateNewsFolder with the given path.
+func CreateNewsFolder(pathToNews string) NewsManager {
+	return newsFolder{pathToNews}
 }
 
 // AddNews in JSON format in the server's news folder,
 // organized by source and timestamp.
-func (repo newsFolderManager) AddNews(newsToAdd []entity.News, newsSource string) error {
+func (folder newsFolder) AddNews(newsToAdd []entity.News, newsSource string) error {
 	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
-	finalFilePath := filepath.Join(repo.path, finalFileName)
+	finalFilePath := filepath.Join(folder.path, finalFileName)
 	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
@@ -57,8 +60,8 @@ func (repo newsFolderManager) AddNews(newsToAdd []entity.News, newsSource string
 
 // GetNewsFromFolder retrieves news data from a specified folder
 // containing structured news resources.
-func (repo newsFolderManager) GetNewsFromFolder(folderName string) ([]entity.News, error) {
-	sourcePath := filepath.Join(repo.path, folderName)
+func (folder newsFolder) GetNewsFromFolder(folderName string) ([]entity.News, error) {
+	sourcePath := filepath.Join(folder.path, folderName)
 	resources, err := getNewsSources(sourcePath)
 	if err != nil {
 		return nil, err
@@ -86,10 +89,12 @@ func (repo newsFolderManager) GetNewsFromFolder(folderName string) ([]entity.New
 	return allNews, nil
 }
 
-func (repo newsFolderManager) GetNewsSourceFilePath(sourceName []string) (map[string][]string, error) {
+// GetNewsSourceFilePath provides the file paths associated with each news source,
+// helping in locating where news data for each source is stored.
+func (folder newsFolder) GetNewsSourceFilePath(sourceName []string) (map[string][]string, error) {
 	resources := make(map[string][]string)
 	for _, source := range sourceName {
-		sourcePath := filepath.Join(repo.path, source)
+		sourcePath := filepath.Join(folder.path, source)
 		paths, err := getNewsSources(sourcePath)
 		if err != nil {
 			log.Print("Not found news source")

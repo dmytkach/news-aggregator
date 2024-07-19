@@ -23,8 +23,8 @@ func TestSourcesGet(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	expectedSources := []entity.Source{{Name: "bbc_news", PathsToFile: nil}}
@@ -45,8 +45,8 @@ func TestGetSourcesEmpty(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	mockSourceManager.On("GetSources").Return([]entity.Source{}, nil)
@@ -67,8 +67,8 @@ func TestDownloadSource(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	feed := entity.Feed{Name: "test_feed"}
@@ -91,8 +91,8 @@ func TestDownloadSourceError(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	mockFeedManager.On("Fetch", "http://example.com/feed").Return(entity.Feed{}, errors.New("fetch error"))
@@ -112,8 +112,8 @@ func TestDownloadSourceMissingURL(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	req, err := http.NewRequest("POST", "/sources", nil)
@@ -131,8 +131,8 @@ func TestDownloadSourceCreationError(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	feed := entity.Feed{Name: "test_feed"}
@@ -153,8 +153,8 @@ func TestUpdateSource(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	mockSourceManager.On("UpdateSource", "http://oldurl.com", "http://newurl.com").Return(nil)
@@ -173,8 +173,8 @@ func TestRemoveSource(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	mockSourceManager.On("RemoveSourceByName", "bbc_news").Return(nil)
@@ -193,8 +193,8 @@ func TestUpdateSourceError(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	mockSourceManager.On("UpdateSource", "http://oldurl.com", "http://newurl.com").Return(errors.New("update error"))
@@ -214,8 +214,8 @@ func TestRemoveSourceMissingName(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	req, err := http.NewRequest("DELETE", "/sources", nil)
@@ -233,8 +233,8 @@ func TestRemoveSourceError(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	mockSourceManager.On("RemoveSourceByName", "bbc_news").Return(errors.New("remove error"))
@@ -254,8 +254,8 @@ func TestSourcesMethodNotAllowed(t *testing.T) {
 	mockFeedManager := new(MockFeedManager)
 
 	sourceHandler := SourceHandler{
-		SourceRepo: mockSourceManager,
-		FeedRepo:   mockFeedManager,
+		SourceManager: mockSourceManager,
+		FeedManager:   mockFeedManager,
 	}
 
 	req, err := http.NewRequest("PATCH", "/sources", nil)

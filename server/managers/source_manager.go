@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// SourceManager provides API for handling news sources.
 type SourceManager interface {
 	CreateSource(name, url string) (entity.Source, error)
 	GetSource(name string) (entity.Source, error)
@@ -17,16 +18,18 @@ type SourceManager interface {
 	RemoveSourceByName(sourceName string) error
 }
 
-type sourceFolderManager struct {
+// sourceFolder implements SourceManager using a folder-based storage for sources.
+type sourceFolder struct {
 	path string
 }
 
-func CreateSourceFolderManager(pathToSources string) SourceManager {
-	return sourceFolderManager{pathToSources}
+// CreateSourceFolder in the specified directory.
+func CreateSourceFolder(pathToSources string) SourceManager {
+	return sourceFolder{pathToSources}
 }
 
 // GetSources from source file.
-func (sourceManager sourceFolderManager) GetSources() ([]entity.Source, error) {
+func (sourceManager sourceFolder) GetSources() ([]entity.Source, error) {
 	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
@@ -36,7 +39,7 @@ func (sourceManager sourceFolderManager) GetSources() ([]entity.Source, error) {
 }
 
 // GetSource by given name from resource file.
-func (sourceManager sourceFolderManager) GetSource(name string) (entity.Source, error) {
+func (sourceManager sourceFolder) GetSource(name string) (entity.Source, error) {
 	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
@@ -51,7 +54,7 @@ func (sourceManager sourceFolderManager) GetSource(name string) (entity.Source, 
 }
 
 // CreateSource creates a new source with the provided name and URL.
-func (sourceManager sourceFolderManager) CreateSource(name, url string) (entity.Source, error) {
+func (sourceManager sourceFolder) CreateSource(name, url string) (entity.Source, error) {
 	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
@@ -89,7 +92,7 @@ func (sourceManager sourceFolderManager) CreateSource(name, url string) (entity.
 }
 
 // RemoveSourceByName from the resource file.
-func (sourceManager sourceFolderManager) RemoveSourceByName(sourceName string) error {
+func (sourceManager sourceFolder) RemoveSourceByName(sourceName string) error {
 	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
@@ -111,7 +114,7 @@ func (sourceManager sourceFolderManager) RemoveSourceByName(sourceName string) e
 }
 
 // UpdateSource identified by its old URL.
-func (sourceManager sourceFolderManager) UpdateSource(oldUrl, newUrl string) error {
+func (sourceManager sourceFolder) UpdateSource(oldUrl, newUrl string) error {
 	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
@@ -160,8 +163,11 @@ func readFromFile(path string) ([]entity.Source, error) {
 				log.Printf("Error creating new source file: %v", err)
 				return nil, err
 			}
-			defer newFile.Close()
-
+			defer func(file *os.File) {
+				if err := file.Close(); err != nil {
+					log.Printf("Error closing file %s: %v", file.Name(), err)
+				}
+			}(newFile)
 			var emptySources []entity.Source
 			if err := writeToFile(path, emptySources); err != nil {
 				log.Printf("Error initializing new source file: %v", err)
@@ -172,7 +178,11 @@ func readFromFile(path string) ([]entity.Source, error) {
 		log.Printf("Error opening sources file: %v", err)
 		return nil, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Printf("Error closing file %s: %v", file.Name(), err)
+		}
+	}(file)
 
 	var sources []entity.Source
 	if err := json.NewDecoder(file).Decode(&sources); err != nil {

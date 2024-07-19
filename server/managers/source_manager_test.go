@@ -18,7 +18,7 @@ func TestGetSources(t *testing.T) {
 		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
 	}
 	writeTestDataToFile(sources)
-	s := sourceFolderManager{path: "test_sources.json"}
+	s := sourceFolder{path: "test_sources.json"}
 	result, err := s.GetSources()
 	assert.Nil(t, err, "Expected no error")
 	assert.Equal(t, sources, result, "Expected sources to match")
@@ -33,7 +33,7 @@ func TestGetSource(t *testing.T) {
 		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
 	}
 	writeTestDataToFile(sources)
-	s := sourceFolderManager{path: "test_sources.json"}
+	s := sourceFolder{path: "test_sources.json"}
 	result, err := s.GetSource("source1")
 	assert.Nil(t, err, "Expected no error")
 	assert.Equal(t, sources[0], result, "Expected source to match")
@@ -47,7 +47,7 @@ func TestGetSource(t *testing.T) {
 func TestCreateSource(t *testing.T) {
 	setupTestFile()
 	defer cleanupTestFile()
-	s := sourceFolderManager{path: "test_sources.json"}
+	s := sourceFolder{path: "test_sources.json"}
 	result, err := s.CreateSource("source1", "path1")
 	assert.Nil(t, err, "Expected no error")
 	assert.Equal(t, entity.Source{Name: "source1", PathsToFile: []entity.PathToFile{"path1"}}, result, "Expected source to match")
@@ -71,7 +71,7 @@ func TestRemoveSourceByName(t *testing.T) {
 		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
 	}
 	writeTestDataToFile(sources)
-	s := sourceFolderManager{path: "test_sources.json"}
+	s := sourceFolder{path: "test_sources.json"}
 	err := s.RemoveSourceByName("source1")
 	assert.Nil(t, err, "Expected no error")
 
@@ -92,7 +92,7 @@ func TestUpdateSource(t *testing.T) {
 		{Name: "source2", PathsToFile: []entity.PathToFile{"path3"}},
 	}
 	writeTestDataToFile(sources)
-	s := sourceFolderManager{path: "test_sources.json"}
+	s := sourceFolder{path: "test_sources.json"}
 	err := s.UpdateSource("path2", "newpath")
 	assert.Nil(t, err, "Expected no error")
 
@@ -110,7 +110,7 @@ func TestUpdateSource(t *testing.T) {
 
 func TestReadFromFileNonExistent(t *testing.T) {
 	path := "non_existent_file.json"
-	s := sourceFolderManager{path: path}
+	s := sourceFolder{path: path}
 
 	sources, err := s.GetSources()
 	assert.Nil(t, err, "Expected no error when file does not exist")
@@ -124,7 +124,7 @@ func TestWriteToFileError(t *testing.T) {
 	defer cleanupTestFile()
 	os.Chmod("test_sources.json", 0444)
 
-	s := sourceFolderManager{path: "test_sources.json"}
+	s := sourceFolder{path: "test_sources.json"}
 	_, err := s.CreateSource("source1", "path1")
 	assert.NotNil(t, err, "Expected an error due to write protection")
 }
@@ -135,7 +135,7 @@ func TestReadFromFileError(t *testing.T) {
 	invalidJSON := []byte(`invalid json`)
 	os.WriteFile("test_sources.json", invalidJSON, 0644)
 
-	s := sourceFolderManager{path: "test_sources.json"}
+	s := sourceFolder{path: "test_sources.json"}
 	_, err := s.GetSources()
 	assert.NotNil(t, err, "Expected an error due to invalid JSON")
 }

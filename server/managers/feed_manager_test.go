@@ -51,7 +51,7 @@ func TestUrlFeed_Fetch(t *testing.T) {
 			f := UrlFeed{}
 			_, err := f.Fetch(tt.url)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("UrlFeed.Fetch() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("UrlFeed.FeedManager() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 		})

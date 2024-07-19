@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// main initializes and starts the news aggregator server.
 func main() {
 	help := flag.Bool("help", false, "Show all available arguments and their descriptions.")
 	port := flag.String("port", ":8443", "Specify the port on which the server should listen. Default is :8443.")
@@ -34,19 +35,19 @@ func main() {
 		return
 	}
 
-	sourceFolder := managers.CreateSourceFolderManager(*pathToSourcesFile)
-	newsFolder := managers.CreateNewsFolderManager(*pathToNews)
+	sourceFolder := managers.CreateSourceFolder(*pathToSourcesFile)
+	newsFolder := managers.CreateNewsFolder(*pathToNews)
 	urlFeed := managers.UrlFeed{}
-	sourceHandler := handlers.SourceHandler{SourceRepo: sourceFolder, FeedRepo: urlFeed}
+	sourceHandler := handlers.SourceHandler{SourceManager: sourceFolder, FeedManager: urlFeed}
 	newsHandler := handlers.NewsHandler{NewsManager: newsFolder, SourceManager: sourceFolder}
 
 	http.HandleFunc("/news", newsHandler.News)
 	http.HandleFunc("/sources", sourceHandler.Sources)
 
-	job := handlers.FetchJob{Service: service.FetchService{
-		SourceRepo: sourceFolder,
-		NewsRepo:   newsFolder,
-		Fetch:      urlFeed},
+	job := handlers.FetchJob{Service: service.Fetch{
+		SourceManager: sourceFolder,
+		NewsManager:   newsFolder,
+		FeedManager:   urlFeed},
 		Interval: interval}
 
 	go job.Fetch()

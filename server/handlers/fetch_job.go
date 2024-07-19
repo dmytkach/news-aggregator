@@ -7,7 +7,7 @@ import (
 )
 
 type FetchJob struct {
-	Service  service.FetchService
+	Service  service.Fetch
 	Interval time.Duration
 }
 

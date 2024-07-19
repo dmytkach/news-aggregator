@@ -33,7 +33,7 @@ func TestAddNews(t *testing.T) {
 		t.Errorf("Stored news data does not match expected data. Got: %v, Expected: %v", storedNews, expectedNews)
 	}
 
-	invalidNewsHandler := newsFolderManager{path: string([]byte{0x00})}
+	invalidNewsHandler := newsFolder{path: string([]byte{0x00})}
 	err = invalidNewsHandler.AddNews(expectedNews, "invalid-source")
 	if err == nil {
 		t.Errorf("Expected an error when creating a directory with an invalid path, but got none")
@@ -53,7 +53,7 @@ func TestAddNews(t *testing.T) {
 
 func TestGetNewsFromFolder(t *testing.T) {
 	NewsFolder := "../../internal/testdata"
-	newsHandler := newsFolderManager{path: NewsFolder}
+	newsHandler := newsFolder{path: NewsFolder}
 	got, err := newsHandler.GetNewsFromFolder("bbc_news")
 	if err != nil {
 		t.Fatalf("GetNewsFromFolder() failed: %v", err)
@@ -111,7 +111,7 @@ func TestGetNewsSourceFilePath(t *testing.T) {
 	NewsFolder, _ := setupTestData(t)
 	defer cleanupTestData(t, NewsFolder)
 
-	newsHandler := newsFolderManager{path: NewsFolder}
+	newsHandler := newsFolder{path: NewsFolder}
 	sourceNames := []string{"test-source"}
 
 	got, err := newsHandler.GetNewsSourceFilePath(sourceNames)
@@ -157,7 +157,7 @@ func setupTestData(t *testing.T) (string, []entity.News) {
 	}
 
 	NewsFolder := "test-data"
-	newsHandler := newsFolderManager{path: NewsFolder}
+	newsHandler := newsFolder{path: NewsFolder}
 	err := newsHandler.AddNews(news, "test-source")
 	if err != nil {
 		t.Fatalf("AddNews() failed: %v", err)

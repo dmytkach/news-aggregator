@@ -6,22 +6,22 @@ import (
 	"news-aggregator/server/managers"
 )
 
-type FetchService struct {
-	SourceRepo managers.SourceManager
-	NewsRepo   managers.NewsManager
-	Fetch      managers.FeedManager
+type Fetch struct {
+	SourceManager managers.SourceManager
+	NewsManager   managers.NewsManager
+	FeedManager   managers.FeedManager
 }
 
 // UpdateNews from all registered sources and updates the local storage.
-func (fetcher FetchService) UpdateNews() error {
-	sources, err := fetcher.SourceRepo.GetSources()
+func (f Fetch) UpdateNews() error {
+	sources, err := f.SourceManager.GetSources()
 	if err != nil {
 		log.Printf("Error fetching sources: %v", err)
 		return err
 	}
 	for _, s := range sources {
 		for _, link := range s.PathsToFile {
-			err := fetcher.fetchNewsFromSource(entity.Source{
+			err := f.fetchNewsFromSource(entity.Source{
 				Name:        s.Name,
 				PathsToFile: []entity.PathToFile{link},
 			})
@@ -35,14 +35,14 @@ func (fetcher FetchService) UpdateNews() error {
 }
 
 // fetchNewsFromSource and updates local storage if the news is not already present.
-func (fetcher FetchService) fetchNewsFromSource(resource entity.Source) error {
+func (f Fetch) fetchNewsFromSource(resource entity.Source) error {
 	for _, path := range resource.PathsToFile {
-		news, err := fetcher.Fetch.Fetch(string(path))
+		news, err := f.FeedManager.Fetch(string(path))
 		if err != nil {
 			log.Printf("Failed to fetch news from %s: %v", path, err)
 			continue
 		}
-		allNews, err := fetcher.NewsRepo.GetNewsFromFolder(string(resource.Name))
+		allNews, err := f.NewsManager.GetNewsFromFolder(string(resource.Name))
 		if err != nil {
 			log.Printf("Failed to get existing news for %s: %v", resource.Name, err)
 			return err
@@ -58,7 +58,7 @@ func (fetcher FetchService) fetchNewsFromSource(resource entity.Source) error {
 				newsWithoutRepeat = append(newsWithoutRepeat, loadedNews)
 			}
 		}
-		err = fetcher.NewsRepo.AddNews(newsWithoutRepeat, string(news.Name))
+		err = f.NewsManager.AddNews(newsWithoutRepeat, string(news.Name))
 		if err != nil {
 			log.Printf("Failed to add news for %s: %v", resource.Name, err)
 			return err

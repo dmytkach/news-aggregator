@@ -94,10 +94,10 @@ func TestFetchService_UpdateNews(t *testing.T) {
 	mockNewsManager.On("AddNews", mock.Anything, "Feed1").Return(nil)
 	mockNewsManager.On("AddNews", mock.Anything, "Feed2").Return(nil)
 
-	fetchService := FetchService{
-		SourceRepo: mockSourceManager,
-		NewsRepo:   mockNewsManager,
-		Fetch:      mockFetch,
+	fetchService := Fetch{
+		SourceManager: mockSourceManager,
+		NewsManager:   mockNewsManager,
+		FeedManager:   mockFetch,
 	}
 
 	err := fetchService.UpdateNews()
@@ -125,10 +125,10 @@ func TestFetchService_UpdateNews_FetchError(t *testing.T) {
 	mockSourceManager.On("GetSources").Return(sources, nil)
 	mockFetch.On("Fetch", "file1.xml").Return(entity.Feed{}, errors.New("fetch error"))
 
-	fetchService := FetchService{
-		SourceRepo: mockSourceManager,
-		NewsRepo:   mockNewsManager,
-		Fetch:      mockFetch,
+	fetchService := Fetch{
+		SourceManager: mockSourceManager,
+		NewsManager:   mockNewsManager,
+		FeedManager:   mockFetch,
 	}
 
 	err := fetchService.UpdateNews()
@@ -151,10 +151,10 @@ func TestFetchService_fetchNewsFromSource_FetchError(t *testing.T) {
 
 	mockFetch.On("Fetch", "file1.xml").Return(entity.Feed{}, errors.New("fetch error"))
 
-	fetchService := FetchService{
-		SourceRepo: mockSourceManager,
-		NewsRepo:   mockNewsManager,
-		Fetch:      mockFetch,
+	fetchService := Fetch{
+		SourceManager: mockSourceManager,
+		NewsManager:   mockNewsManager,
+		FeedManager:   mockFetch,
 	}
 
 	err := fetchService.fetchNewsFromSource(resource)
@@ -194,10 +194,10 @@ func TestFetchService_fetchNewsFromSource_Success(t *testing.T) {
 	mockNewsManager.On("GetNewsFromFolder", "Source1").Return(existingNews, nil)
 	mockNewsManager.On("AddNews", []entity.News{{Link: "new_link"}}, "Source1").Return(nil)
 
-	fetchService := FetchService{
-		SourceRepo: mockSourceManager,
-		NewsRepo:   mockNewsManager,
-		Fetch:      mockFetch,
+	fetchService := Fetch{
+		SourceManager: mockSourceManager,
+		NewsManager:   mockNewsManager,
+		FeedManager:   mockFetch,
 	}
 
 	err := fetchService.fetchNewsFromSource(resource)

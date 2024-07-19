@@ -1,2 +1,3 @@
-// Package managers provide API for managing news and their sources.
+// Package managers provides functionality for managing news
+// sources and news data within the application.
 package managers
