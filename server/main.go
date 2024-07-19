@@ -26,6 +26,14 @@ func main() {
 		return
 	}
 
+	interval, err := time.ParseDuration(*fetchInterval)
+	if err == nil && interval > 0 {
+		log.Println("FeedManager interval set to", *fetchInterval)
+	} else {
+		log.Println("Failed to parse FETCH_INTERVAL:", *fetchInterval, err)
+		return
+	}
+
 	sourceFolder := managers.CreateSourceFolderManager(*pathToSourcesFile)
 	newsFolder := managers.CreateNewsFolderManager(*pathToNews)
 	urlFeed := managers.UrlFeed{}
@@ -34,12 +42,7 @@ func main() {
 
 	http.HandleFunc("/news", newsHandler.News)
 	http.HandleFunc("/sources", sourceHandler.Sources)
-	interval, err := time.ParseDuration(*fetchInterval)
-	if err == nil && interval > 0 {
-		log.Println("FeedManager interval set to ", *fetchInterval)
-	} else {
-		log.Println("Failed to parse FETCH_INTERVAL:", *fetchInterval, err)
-	}
+
 	job := handlers.FetchJob{Service: service.FetchService{
 		SourceRepo: sourceFolder,
 		NewsRepo:   newsFolder,
