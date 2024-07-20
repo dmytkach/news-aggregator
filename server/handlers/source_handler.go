@@ -66,7 +66,7 @@ func (s SourceHandler) downloadSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	feed, err := s.FeedManager.Fetch(urlStr)
+	feed, err := s.FeedManager.FetchFeed(urlStr)
 	if err != nil {
 		log.Printf("Error loading feed from URL %s: %v", urlStr, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

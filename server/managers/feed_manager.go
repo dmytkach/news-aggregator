@@ -13,15 +13,15 @@ const tempFileName = "tempfile.xml"
 
 // FeedManager for fetching news feeds.
 type FeedManager interface {
-	Fetch(path string) (entity.Feed, error)
+	FetchFeed(path string) (entity.Feed, error)
 }
 
 // UrlFeed implements the FeedManager for fetching feeds from URLs.
 type UrlFeed struct {
 }
 
-// Fetch downloads and parses the news feed from the given URL.
-func (f UrlFeed) Fetch(path string) (entity.Feed, error) {
+// FetchFeed downloads and parses the news feed from the given URL.
+func (f UrlFeed) FetchFeed(path string) (entity.Feed, error) {
 	resp, err := http.Get(path)
 	if err != nil {
 		log.Println("Failed to download feed", http.StatusInternalServerError)

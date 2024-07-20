@@ -6,7 +6,6 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-#COPY server/certificates ./certificates
 COPY ./internal ./internal
 COPY ./server ./server
 
@@ -22,7 +21,6 @@ WORKDIR /root/
 COPY --from=build /news-aggregator .
 COPY --from=build /app/server/certificates ./server/certificates
 
-# Expose port
 EXPOSE 8443
 
 ENTRYPOINT ["./news-aggregator"]

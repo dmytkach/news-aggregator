@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"news-aggregator/internal/entity"
-	"news-aggregator/internal/initializers"
 	"os"
 	"path/filepath"
 	"time"
@@ -93,34 +92,66 @@ func (folder newsFolder) GetNewsFromFolder(folderName string) ([]entity.News, er
 // helping in locating where news data for each source is stored.
 func (folder newsFolder) GetNewsSourceFilePath(sourceName []string) (map[string][]string, error) {
 	resources := make(map[string][]string)
-	for _, source := range sourceName {
-		sourcePath := filepath.Join(folder.path, source)
+	for _, s := range sourceName {
+		sourcePath := filepath.Join(folder.path, s)
 		paths, err := getNewsSources(sourcePath)
 		if err != nil {
-			log.Print("Not found news source")
+			log.Print("Not found news s")
 			return nil, err
 		}
-		resources[source] = paths
+		resources[s] = paths
+		log.Printf("Found news s paths for %s", s)
 	}
 	return resources, nil
 }
 
+// getNewsSources analyzes the contents of a given directory.
+// It returns a slice of a full paths to a file .
 func getNewsSources(sourceName string) ([]string, error) {
-	s, err := initializers.AnalyzeDirectory(sourceName)
-	if err != nil {
-		log.Printf("Failed to analyze source %s: %v", sourceName, err)
-		return nil, err
+	_, err := os.Stat(sourceName)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(sourceName, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+		log.Printf("Directory created: %s", sourceName)
 	}
-	return s, nil
+
+	dir, err := os.Open(sourceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open directory: %w", err)
+	}
+	defer func() {
+		if err := dir.Close(); err != nil {
+			log.Printf("failed to close directory: %v", err)
+		}
+	}()
+
+	files, err := dir.Readdir(-1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no news files found in %s", sourceName)
+	}
+	var entries []string
+	for _, f := range files {
+		fullPath := filepath.Join(sourceName, f.Name())
+		entries = append(entries, fullPath)
+	}
+
+	return entries, nil
 }
+
 func loadNewsFromFile(filePath string) ([]entity.News, error) {
 	var news []entity.News
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
+		log.Printf("Failed to read file %s: %v", filePath, err)
 		return nil, err
 	}
 	err = json.Unmarshal(jsonData, &news)
 	if err != nil {
+		log.Printf("Failed to unmarshal JSON data from file %s: %v", filePath, err)
 		return nil, err
 	}
 	return news, nil

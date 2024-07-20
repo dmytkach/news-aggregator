@@ -40,7 +40,7 @@ func TestGetSource(t *testing.T) {
 
 	result, err = s.GetSource("nonexistent")
 	assert.NotNil(t, err, "Expected an error")
-	assert.EqualError(t, err, "No resources found for name: nonexistent", "Expected specific error message")
+	assert.EqualError(t, err, "no resources found for name: nonexistent", "Expected specific error message")
 	assert.Equal(t, entity.Source{}, result, "Expected empty source")
 }
 

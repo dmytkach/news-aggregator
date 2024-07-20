@@ -14,7 +14,7 @@ type MockFeedManager struct {
 	mock.Mock
 }
 
-func (m *MockFeedManager) Fetch(path string) (entity.Feed, error) {
+func (m *MockFeedManager) FetchFeed(path string) (entity.Feed, error) {
 	args := m.Called(path)
 	return args.Get(0).(entity.Feed), args.Error(1)
 }
@@ -72,7 +72,7 @@ func TestDownloadSource(t *testing.T) {
 	}
 
 	feed := entity.Feed{Name: "test_feed"}
-	mockFeedManager.On("Fetch", "http://example.com/feed").Return(feed, nil)
+	mockFeedManager.On("FetchFeed", "http://example.com/feed").Return(feed, nil)
 	expectedSource := entity.Source{Name: "test_feed", PathsToFile: []entity.PathToFile{"http://example.com/feed"}}
 	mockSourceManager.On("CreateSource", "test_feed", "http://example.com/feed").Return(expectedSource, nil)
 
@@ -95,7 +95,7 @@ func TestDownloadSourceError(t *testing.T) {
 		FeedManager:   mockFeedManager,
 	}
 
-	mockFeedManager.On("Fetch", "http://example.com/feed").Return(entity.Feed{}, errors.New("fetch error"))
+	mockFeedManager.On("FetchFeed", "http://example.com/feed").Return(entity.Feed{}, errors.New("fetch error"))
 
 	req, err := http.NewRequest("POST", "/sources?url=http://example.com/feed", nil)
 	assert.NoError(t, err, "Expected no error creating request")
@@ -136,7 +136,7 @@ func TestDownloadSourceCreationError(t *testing.T) {
 	}
 
 	feed := entity.Feed{Name: "test_feed"}
-	mockFeedManager.On("Fetch", "http://example.com/feed").Return(feed, nil)
+	mockFeedManager.On("FetchFeed", "http://example.com/feed").Return(feed, nil)
 	mockSourceManager.On("CreateSource", "test_feed", "http://example.com/feed").Return(entity.Source{}, errors.New("creation error"))
 
 	req, err := http.NewRequest("POST", "/sources?url=http://example.com/feed", nil)
