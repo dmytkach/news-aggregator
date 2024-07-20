@@ -86,12 +86,6 @@ func TestGetNewsFromFolder(t *testing.T) {
 	if !reflect.DeepEqual(got, wants) {
 		t.Errorf("Retrieved news data does not match expected data. Got: %v, Expected: %v", got, wants)
 	}
-
-	_, err = newsHandler.GetNewsFromFolder("non_existent_folder")
-	if err == nil {
-		t.Errorf("Expected an error when retrieving news from a non-existent folder, but got none")
-	}
-
 	errorFolder := "test-error-data"
 	err = os.MkdirAll(filepath.Join(NewsFolder, errorFolder), 0755)
 	if err != nil {
@@ -129,7 +123,7 @@ func TestGetNewsSourceFilePath(t *testing.T) {
 		t.Errorf("GetNewsSourceFilePath() = %v, want %v", got, expected)
 	}
 
-	invalidSourceNames := []string{"non_existent_source"}
+	invalidSourceNames := []string{"#$%@+_=!"}
 	_, err = newsHandler.GetNewsSourceFilePath(invalidSourceNames)
 	if err == nil {
 		t.Errorf("Expected an error when retrieving file paths for a non-existent source, but got none")

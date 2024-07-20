@@ -28,6 +28,52 @@ func CreateSourceFolder(pathToSources string) SourceManager {
 	return sourceFolder{pathToSources}
 }
 
+// CreateSource creates a new source with the provided name and URL.
+func (sourceManager sourceFolder) CreateSource(name, url string) (entity.Source, error) {
+	sources, err := readFromFile(sourceManager.path)
+	if err != nil {
+		log.Printf("Error reading from file: %v", err)
+		return entity.Source{}, err
+	}
+
+	existingSource, found := findSourceByName(sources, name)
+	if found {
+		err = updateSourceWithPath(&existingSource, url, sources, sourceManager.path)
+		if err != nil {
+			return entity.Source{}, err
+		}
+		log.Printf("Updated resource: %v", existingSource)
+		return existingSource, nil
+	}
+
+	newSource := entity.Source{
+		Name:        entity.SourceName(name),
+		PathsToFile: []entity.PathToFile{entity.PathToFile(url)},
+	}
+	sources = append(sources, newSource)
+	err = writeToFile(sourceManager.path, sources)
+	if err != nil {
+		log.Printf("Error writing to file: %v", err)
+		return entity.Source{}, err
+	}
+	log.Printf("Created new resource: %v", newSource)
+	return newSource, nil
+}
+
+// GetSource by given name from resource file.
+func (sourceManager sourceFolder) GetSource(name string) (entity.Source, error) {
+	sources, err := readFromFile(sourceManager.path)
+	if err != nil {
+		log.Printf("Error reading from file: %v", err)
+		return entity.Source{}, err
+	}
+	existingSource, found := findSourceByName(sources, name)
+	if found {
+		return existingSource, nil
+	}
+	return entity.Source{}, errors.New("no resources found for name: " + name)
+}
+
 // GetSources from source file.
 func (sourceManager sourceFolder) GetSources() ([]entity.Source, error) {
 	sources, err := readFromFile(sourceManager.path)
@@ -38,57 +84,25 @@ func (sourceManager sourceFolder) GetSources() ([]entity.Source, error) {
 	return sources, nil
 }
 
-// GetSource by given name from resource file.
-func (sourceManager sourceFolder) GetSource(name string) (entity.Source, error) {
+// UpdateSource identified by its old URL.
+func (sourceManager sourceFolder) UpdateSource(oldUrl, newUrl string) error {
 	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
-		return entity.Source{}, err
-	}
-	for _, s := range sources {
-		if string(s.Name) == name {
-			return s, nil
-		}
-	}
-	return entity.Source{}, errors.New("No resources found for name: " + name)
-}
-
-// CreateSource creates a new source with the provided name and URL.
-func (sourceManager sourceFolder) CreateSource(name, url string) (entity.Source, error) {
-	sources, err := readFromFile(sourceManager.path)
-	if err != nil {
-		log.Printf("Error reading from file: %v", err)
-		return entity.Source{}, err
+		return err
 	}
 	for i, s := range sources {
-		if string(s.Name) == name {
-			for _, path := range s.PathsToFile {
-				if string(path) == url {
-					return entity.Source{}, errors.New("resource already exists")
+		for j, path := range s.PathsToFile {
+			if string(path) == oldUrl {
+				if isPathExist(s.PathsToFile, newUrl) {
+					return errors.New("resource already exists")
 				}
+				sources[i].PathsToFile[j] = entity.PathToFile(newUrl)
+				return writeToFile(sourceManager.path, sources)
 			}
-			sources[i].PathsToFile = append(sources[i].PathsToFile, entity.PathToFile(url))
-			err = writeToFile(sourceManager.path, sources)
-			if err != nil {
-				log.Printf("Error writing to file: %v", err)
-				return entity.Source{}, err
-			}
-			log.Printf("Updated resource: %v", sources[i])
-			return sources[i], nil
 		}
 	}
-	resource := entity.Source{
-		Name:        entity.SourceName(name),
-		PathsToFile: []entity.PathToFile{entity.PathToFile(url)},
-	}
-	sources = append(sources, resource)
-	err = writeToFile(sourceManager.path, sources)
-	if err != nil {
-		log.Printf("Error writing to file: %v", err)
-		return entity.Source{}, err
-	}
-	log.Printf("Created new resource: %v", resource)
-	return resource, nil
+	return fmt.Errorf("source with URL %s not found", oldUrl)
 }
 
 // RemoveSourceByName from the resource file.
@@ -109,31 +123,34 @@ func (sourceManager sourceFolder) RemoveSourceByName(sourceName string) error {
 		log.Printf("Error writing to file: %v", err)
 		return err
 	}
-	log.Printf("Removed source with name: %sourceManager", sourceName)
+	log.Printf("Removed source with name: %s", sourceName)
 	return nil
 }
 
-// UpdateSource identified by its old URL.
-func (sourceManager sourceFolder) UpdateSource(oldUrl, newUrl string) error {
-	sources, err := readFromFile(sourceManager.path)
-	if err != nil {
-		log.Printf("Error reading from file: %v", err)
-		return err
-	}
-	for i, s := range sources {
-		for j, path := range s.PathsToFile {
-			if string(path) == oldUrl {
-				for _, p := range s.PathsToFile {
-					if string(p) == newUrl {
-						return errors.New("resource already exists")
-					}
-				}
-				sources[i].PathsToFile[j] = entity.PathToFile(newUrl)
-				return writeToFile(sourceManager.path, sources)
-			}
+func findSourceByName(sources []entity.Source, name string) (entity.Source, bool) {
+	for _, s := range sources {
+		if string(s.Name) == name {
+			return s, true
 		}
 	}
-	return fmt.Errorf("source with URL %s not found", oldUrl)
+	return entity.Source{}, false
+}
+
+func updateSourceWithPath(source *entity.Source, url string, sources []entity.Source, path string) error {
+	if isPathExist(source.PathsToFile, url) {
+		return errors.New("resource already exists")
+	}
+	source.PathsToFile = append(source.PathsToFile, entity.PathToFile(url))
+	return writeToFile(path, sources)
+}
+
+func isPathExist(paths []entity.PathToFile, url string) bool {
+	for _, path := range paths {
+		if string(path) == url {
+			return true
+		}
+	}
+	return false
 }
 
 // writeToFile sources in JSON format.
@@ -163,9 +180,10 @@ func readFromFile(path string) ([]entity.Source, error) {
 				log.Printf("Error creating new source file: %v", err)
 				return nil, err
 			}
-			defer func(file *os.File) {
-				if err := file.Close(); err != nil {
-					log.Printf("Error closing file %s: %v", file.Name(), err)
+			defer func(newFile *os.File) {
+				err := newFile.Close()
+				if err != nil {
+					log.Printf("failed to close file: %v", err)
 				}
 			}(newFile)
 			var emptySources []entity.Source
@@ -179,8 +197,9 @@ func readFromFile(path string) ([]entity.Source, error) {
 		return nil, err
 	}
 	defer func(file *os.File) {
-		if err := file.Close(); err != nil {
-			log.Printf("Error closing file %s: %v", file.Name(), err)
+		err := file.Close()
+		if err != nil {
+			log.Printf("failed to close file: %v", err)
 		}
 	}(file)
 

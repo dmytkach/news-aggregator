@@ -55,7 +55,7 @@ type MockFetch struct {
 	mock.Mock
 }
 
-func (m *MockFetch) Fetch(path string) (entity.Feed, error) {
+func (m *MockFetch) FetchFeed(path string) (entity.Feed, error) {
 	args := m.Called(path)
 	return args.Get(0).(entity.Feed), args.Error(1)
 }
@@ -77,14 +77,14 @@ func TestFetchService_UpdateNews(t *testing.T) {
 
 	mockSourceManager.On("GetSources").Return(sources, nil)
 	mockNewsManager.On("GetNewsFromFolder", "Source1").Return([]entity.News{}, nil)
-	mockFetch.On("Fetch", "file1.xml").Return(entity.Feed{
+	mockFetch.On("FetchFeed", "file1.xml").Return(entity.Feed{
 		Name: "Feed1",
 		News: []entity.News{
 			{Link: "link1"},
 			{Link: "link2"},
 		},
 	}, nil)
-	mockFetch.On("Fetch", "file2.xml").Return(entity.Feed{
+	mockFetch.On("FetchFeed", "file2.xml").Return(entity.Feed{
 		Name: "Feed2",
 		News: []entity.News{
 			{Link: "link3"},
@@ -123,7 +123,7 @@ func TestFetchService_UpdateNews_FetchError(t *testing.T) {
 	}
 
 	mockSourceManager.On("GetSources").Return(sources, nil)
-	mockFetch.On("Fetch", "file1.xml").Return(entity.Feed{}, errors.New("fetch error"))
+	mockFetch.On("FetchFeed", "file1.xml").Return(entity.Feed{}, errors.New("fetch error"))
 
 	fetchService := Fetch{
 		SourceManager: mockSourceManager,
@@ -149,7 +149,7 @@ func TestFetchService_fetchNewsFromSource_FetchError(t *testing.T) {
 		},
 	}
 
-	mockFetch.On("Fetch", "file1.xml").Return(entity.Feed{}, errors.New("fetch error"))
+	mockFetch.On("FetchFeed", "file1.xml").Return(entity.Feed{}, errors.New("fetch error"))
 
 	fetchService := Fetch{
 		SourceManager: mockSourceManager,
@@ -190,7 +190,7 @@ func TestFetchService_fetchNewsFromSource_Success(t *testing.T) {
 		},
 	}
 
-	mockFetch.On("Fetch", "file1.xml").Return(newFeed, nil)
+	mockFetch.On("FetchFeed", "file1.xml").Return(newFeed, nil)
 	mockNewsManager.On("GetNewsFromFolder", "Source1").Return(existingNews, nil)
 	mockNewsManager.On("AddNews", []entity.News{{Link: "new_link"}}, "Source1").Return(nil)
 

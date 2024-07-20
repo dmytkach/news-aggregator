@@ -37,7 +37,7 @@ func (f Fetch) UpdateNews() error {
 // fetchNewsFromSource and updates local storage if the news is not already present.
 func (f Fetch) fetchNewsFromSource(resource entity.Source) error {
 	for _, path := range resource.PathsToFile {
-		news, err := f.FeedManager.Fetch(string(path))
+		news, err := f.FeedManager.FetchFeed(string(path))
 		if err != nil {
 			log.Printf("Failed to fetch news from %s: %v", path, err)
 			continue

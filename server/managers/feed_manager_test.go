@@ -49,7 +49,7 @@ func TestUrlFeed_Fetch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := UrlFeed{}
-			_, err := f.Fetch(tt.url)
+			_, err := f.FetchFeed(tt.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UrlFeed.FeedManager() error = %v, wantErr %v", err, tt.wantErr)
 				return

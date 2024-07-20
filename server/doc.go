@@ -5,5 +5,5 @@
 // Starting the Server:
 // The server starts on port 8443 and exposes two main endpoints:
 //   - /news: Endpoint for fetching aggregated news.
-//   - /sources: Endpoint for managing news sources (add, update, delete).
+//   - /sources: Endpoint for managing news sources.
 package main

@@ -92,20 +92,21 @@ func (folder newsFolder) GetNewsFromFolder(folderName string) ([]entity.News, er
 // helping in locating where news data for each source is stored.
 func (folder newsFolder) GetNewsSourceFilePath(sourceName []string) (map[string][]string, error) {
 	resources := make(map[string][]string)
-	for _, source := range sourceName {
-		sourcePath := filepath.Join(folder.path, source)
+	for _, s := range sourceName {
+		sourcePath := filepath.Join(folder.path, s)
 		paths, err := getNewsSources(sourcePath)
 		if err != nil {
-			log.Print("Not found news source")
+			log.Print("Not found news s")
 			return nil, err
 		}
-		resources[source] = paths
+		resources[s] = paths
+		log.Printf("Found news s paths for %s", s)
 	}
 	return resources, nil
 }
 
-// AnalyzeDirectory analyzes the contents of a given directory.
-// It returns a slice of strings, each representing a full path to a file or directory.
+// getNewsSources analyzes the contents of a given directory.
+// It returns a slice of a full paths to a file .
 func getNewsSources(sourceName string) ([]string, error) {
 	_, err := os.Stat(sourceName)
 	if os.IsNotExist(err) {
@@ -129,7 +130,9 @@ func getNewsSources(sourceName string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
-
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no news files found in %s", sourceName)
+	}
 	var entries []string
 	for _, f := range files {
 		fullPath := filepath.Join(sourceName, f.Name())
@@ -143,10 +146,12 @@ func loadNewsFromFile(filePath string) ([]entity.News, error) {
 	var news []entity.News
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
+		log.Printf("Failed to read file %s: %v", filePath, err)
 		return nil, err
 	}
 	err = json.Unmarshal(jsonData, &news)
 	if err != nil {
+		log.Printf("Failed to unmarshal JSON data from file %s: %v", filePath, err)
 		return nil, err
 	}
 	return news, nil
