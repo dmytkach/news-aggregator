@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+// aggregator aggregates news data from various sources.
 type aggregator struct {
 	Resources   map[string][]string
 	Sources     string
@@ -19,6 +20,8 @@ type aggregator struct {
 	SortOptions sort.Options
 }
 
+// NewAggregator creates a new instance of an aggregator with the given resources, sources,
+// news filters, and sorting options.
 func NewAggregator(news map[string][]string, sources string, newsFilters []initializers.NewsFilter, sortParams sort.Options) Aggregate {
 	return &aggregator{
 		Resources:   news,
@@ -28,6 +31,7 @@ func NewAggregator(news map[string][]string, sources string, newsFilters []initi
 	}
 }
 
+// Aggregate aggregates news from the specified Sources and applies NewsFilters.
 type Aggregate interface {
 	Aggregate() ([]entity.News, error)
 	Print(news []entity.News, keywords string) error

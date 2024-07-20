@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"news-aggregator/internal/entity"
-	"news-aggregator/internal/initializers"
 	"os"
 	"path/filepath"
 	"time"
@@ -105,14 +104,41 @@ func (folder newsFolder) GetNewsSourceFilePath(sourceName []string) (map[string]
 	return resources, nil
 }
 
+// AnalyzeDirectory analyzes the contents of a given directory.
+// It returns a slice of strings, each representing a full path to a file or directory.
 func getNewsSources(sourceName string) ([]string, error) {
-	s, err := initializers.AnalyzeDirectory(sourceName)
-	if err != nil {
-		log.Printf("Failed to analyze source %s: %v", sourceName, err)
-		return nil, err
+	_, err := os.Stat(sourceName)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(sourceName, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+		log.Printf("Directory created: %s", sourceName)
 	}
-	return s, nil
+
+	dir, err := os.Open(sourceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open directory: %w", err)
+	}
+	defer func() {
+		if err := dir.Close(); err != nil {
+			log.Printf("failed to close directory: %v", err)
+		}
+	}()
+
+	files, err := dir.Readdir(-1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	var entries []string
+	for _, f := range files {
+		fullPath := filepath.Join(sourceName, f.Name())
+		entries = append(entries, fullPath)
+	}
+
+	return entries, nil
 }
+
 func loadNewsFromFile(filePath string) ([]entity.News, error) {
 	var news []entity.News
 	jsonData, err := os.ReadFile(filePath)
