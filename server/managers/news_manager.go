@@ -35,25 +35,32 @@ func (folder newsFolder) AddNews(newsToAdd []entity.News, newsSource string) err
 	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
 	finalFilePath := filepath.Join(folder.path, finalFileName)
 	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
+	log.Printf("Final file path: %s", finalFilePath)
 	if err != nil {
+		log.Printf("Error creating directory: %v", err)
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 	currentNews, err := loadNewsFromFile(finalFilePath)
 	if err != nil {
 		if !os.IsNotExist(err) {
+			log.Printf("Error loading current news: %v", err)
 			return fmt.Errorf("failed to load current news: %w", err)
 		}
+		log.Printf("File does not exist, сreate a new file ...")
 		currentNews = []entity.News{}
 	}
 	currentNews = append(currentNews, newsToAdd...)
 	jsonData, err := json.Marshal(currentNews)
 	if err != nil {
+		log.Printf("Error marshalling news to JSON: %v", err)
 		return fmt.Errorf("failed to marshal news to JSON: %w", err)
 	}
 	err = os.WriteFile(finalFilePath, jsonData, 0644)
 	if err != nil {
+		log.Printf("Error writing news to file: %v", err)
 		return fmt.Errorf("failed to write news to file: %w", err)
 	}
+	log.Printf("Successfully added %d news items to %s", len(newsToAdd), finalFilePath)
 	return nil
 }
 
@@ -96,11 +103,13 @@ func (folder newsFolder) GetNewsSourceFilePath(sourceName []string) (map[string]
 		sourcePath := filepath.Join(folder.path, s)
 		paths, err := getNewsSources(sourcePath)
 		if err != nil {
-			log.Print("Not found news s")
+			log.Print("Not found news")
 			return nil, err
 		}
-		resources[s] = paths
-		log.Printf("Found news s paths for %s", s)
+		if len(paths) != 0 {
+			resources[s] = paths
+			log.Printf("Found news paths for %s", s)
+		}
 	}
 	return resources, nil
 }
@@ -130,9 +139,9 @@ func getNewsSources(sourceName string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
-	if len(files) == 0 {
-		return nil, fmt.Errorf("no news files found in %s", sourceName)
-	}
+	//if len(files) == 0 {
+	//	return nil, fmt.Errorf("no news files found in %s", sourceName)
+	//}
 	var entries []string
 	for _, f := range files {
 		fullPath := filepath.Join(sourceName, f.Name())
@@ -146,7 +155,7 @@ func loadNewsFromFile(filePath string) ([]entity.News, error) {
 	var news []entity.News
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Printf("Failed to read file %s: %v", filePath, err)
+		log.Printf("Failed to read file %v", err)
 		return nil, err
 	}
 	err = json.Unmarshal(jsonData, &news)

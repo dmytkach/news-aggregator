@@ -38,12 +38,12 @@ func (sourceManager sourceFolder) CreateSource(name, url string) (entity.Source,
 
 	existingSource, found := findSourceByName(sources, name)
 	if found {
-		err = updateSourceWithPath(&existingSource, url, sources, sourceManager.path)
+		updateSource, err := updateSourceWithPath(&existingSource, url, sources, sourceManager.path)
 		if err != nil {
 			return entity.Source{}, err
 		}
 		log.Printf("Updated resource: %v", existingSource)
-		return existingSource, nil
+		return updateSource, nil
 	}
 
 	newSource := entity.Source{
@@ -136,12 +136,19 @@ func findSourceByName(sources []entity.Source, name string) (entity.Source, bool
 	return entity.Source{}, false
 }
 
-func updateSourceWithPath(source *entity.Source, url string, sources []entity.Source, path string) error {
+func updateSourceWithPath(source *entity.Source, url string, sources []entity.Source, path string) (entity.Source, error) {
 	if isPathExist(source.PathsToFile, url) {
-		return errors.New("resource already exists")
+		return entity.Source{}, errors.New("resource already exists")
 	}
-	source.PathsToFile = append(source.PathsToFile, entity.PathToFile(url))
-	return writeToFile(path, sources)
+	for i, s := range sources {
+		if s.Name == source.Name {
+			s.PathsToFile = append(s.PathsToFile, entity.PathToFile(url))
+			sources[i] = s
+			log.Printf("Updated resource: %v", s)
+			return s, writeToFile(path, sources)
+		}
+	}
+	return entity.Source{}, errors.New("resource not found")
 }
 
 func isPathExist(paths []entity.PathToFile, url string) bool {
