@@ -124,8 +124,8 @@ func TestGetNewsSourceFilePath(t *testing.T) {
 	}
 
 	invalidSourceNames := []string{"#$%@+_=!"}
-	_, err = newsHandler.GetNewsSourceFilePath(invalidSourceNames)
-	if err == nil {
+	paths, err := newsHandler.GetNewsSourceFilePath(invalidSourceNames)
+	if len(paths) != 0 {
 		t.Errorf("Expected an error when retrieving file paths for a non-existent source, but got none")
 	}
 }

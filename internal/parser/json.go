@@ -76,7 +76,7 @@ func (jsonParser *Json) CanParseFileType(ext string) bool {
 	return ext == ".json"
 }
 func cleanSourceName(filename string) string {
-	reg := regexp.MustCompile("[^a-zA-Z0-9_]+")
+	reg := regexp.MustCompile(`[^\p{L}\p{N}_]+`)
 	cleaned := reg.ReplaceAllString(filename, "_")
 	return strings.ToLower(cleaned)
 }
