@@ -3,11 +3,11 @@ version: '3'
 vars:
   cli_aggregator: ./cli/main.go
   server_aggregator: ./server/main.go
-  DOCKER_IMAGE_NAME: "dmytro-tkach/news-aggregator"
-  DOCKER_IMAGE_TAG: "v1.0"
-  DOCKERFILE_PATH: ".Dockerfile"
-  DOCKER_PORT: "8443"
-  SERVER_EXPOSE_PORT: "8443"
+  docker_image_name: "dmytkach/news-aggregator"
+  docker_image_tag: "v1.0"
+  dockerfile_path: ".Dockerfile"
+  docker_port: "8443"
+  server_expose_port: "8443"
 tasks:
   test:
     cmd: go test ./...
@@ -42,13 +42,13 @@ tasks:
     desc: "Run go mod tidy"
 
   docker_build:
-    cmd: docker build -t {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}} .
+    cmd: docker build -t {{.docker_image_name}}:{{.docker_image_tag}} .
     desc: "Build Docker image"
 
   docker_run:
-    cmd: docker run --rm -p {{.DOCKER_PORT}}:{{.SERVER_EXPOSE_PORT}} {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+    cmd: docker run --rm -p {{.docker_port}}:{{.server_expose_port}} {{.docker_image_name}}:{{.docker_image_tag}} {{.CLI_ARGS}}
     desc: "Run Docker container locally"
 
-  docker-push:
+  docker_push:
     desc: "Push the Docker image to the registry"
-    cmd: docker push {{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+    cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
