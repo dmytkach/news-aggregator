@@ -41,6 +41,10 @@ tasks:
     cmd: go mod tidy
     desc: "Run go mod tidy"
 
+  check-all:
+    desc: "Run all checks: mod tidy, fmt, vet, and tests"
+    deps: [ fmt, vet, test, mod_tidy ]
+
   docker_build:
     cmd: docker build -t {{.docker_image_name}}:{{.docker_image_tag}} .
     desc: "Build Docker image"
