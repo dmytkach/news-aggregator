@@ -58,5 +58,5 @@ jobs:
         run: |
           IMAGE_TAG=${{ env.VERSION }}
           echo "Building Docker image with tag: ${IMAGE_TAG}"
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/news-aggregator:${IMAGE_TAG} -f .Dockerfile .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/news-aggregator:${IMAGE_TAG} -f Dockerfile .
           docker push ${{ secrets.DOCKER_USERNAME }}/news-aggregator:${IMAGE_TAG}
