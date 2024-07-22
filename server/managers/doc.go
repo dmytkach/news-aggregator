@@ -1,3 +1,3 @@
-// Package managers provide functions for managing news and their sources
-// stored in JSON files.
+// Package managers provides functionality for managing news
+// sources and news data within the application.
 package managers

@@ -2,6 +2,7 @@ package initializers
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -17,9 +18,9 @@ func LoadSources(sourceFolder string) (map[string][]string, error) {
 		}
 		if !info.IsDir() {
 			resourceName := filepath.Base(filepath.Dir(path))
-
+			log.Print(resourceName)
 			pathToFile := filepath.Join(filepath.Dir(path), info.Name())
-
+			log.Print(pathToFile)
 			newsMap[resourceName] = append(newsMap[resourceName], pathToFile)
 		}
 		return nil

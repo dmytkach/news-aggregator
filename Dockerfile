@@ -6,28 +6,22 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-COPY ./certificates ./certificates
-COPY ./cli ./cli
 COPY ./internal ./internal
 COPY ./server ./server
-COPY ./server-news ./server-news
-COPY ./server-resources ./server-resources
 
 RUN go build -o /news-aggregator ./server/main.go
 
 # Second stage - Create the final image
-FROM alpine:latest
+FROM alpine:3.20
 
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 WORKDIR /root/
 
 COPY --from=build /news-aggregator .
-COPY --from=build /app/certificates ./certificates
-COPY --from=build /app/server-resources ./server-resources
-COPY --from=build /app/server-news ./server-news
+COPY --from=build /app/server/certificates ./server/certificates
 
-ENV FETCH_INTERVAL=1h0m
 EXPOSE 8443
 
-CMD ["./news-aggregator"]
+ENTRYPOINT ["./news-aggregator"]
+CMD ["./news-aggregator", "-fetch_interval=1h", "-port=:8443", "-cert=/certificates/cert.pem", "-key=/certificates/key.pem", "-path_to_source=sources.json", "-news_folder=server-news/"]
