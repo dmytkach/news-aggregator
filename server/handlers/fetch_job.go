@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// FetchJob for fetch something(todo:fix
 type FetchJob struct {
 	Service  service.Fetch
 	Interval time.Duration
