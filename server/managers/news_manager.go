@@ -5,28 +5,75 @@ import (
 	"fmt"
 	"log"
 	"news-aggregator/internal/entity"
-	"news-aggregator/internal/initializers"
-	"news-aggregator/internal/parser"
 	"os"
 	"path/filepath"
 	"time"
 )
 
-var NewsFolder = "server-news/"
-
 var timeNow = time.Now().Format("2006-01-02")
+
+// NewsManager provides API for handling news data.
+type NewsManager interface {
+	AddNews(newsToAdd []entity.News, newsSource string) error
+	GetNewsFromFolder(folderName string) ([]entity.News, error)
+	GetNewsSourceFilePath(sourceName []string) (map[string][]string, error)
+}
+
+// newsFolder implements the NewsManager for managing news data stored in folders.
+type newsFolder struct {
+	path string
+}
+
+// CreateNewsFolder with the given path.
+func CreateNewsFolder(pathToNews string) NewsManager {
+	return newsFolder{pathToNews}
+}
+
+// AddNews in JSON format in the server's news folder,
+// organized by source and timestamp.
+func (folder newsFolder) AddNews(newsToAdd []entity.News, newsSource string) error {
+	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
+	finalFilePath := filepath.Join(folder.path, finalFileName)
+	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
+	log.Printf("Final file path: %s", finalFilePath)
+	if err != nil {
+		log.Printf("Error creating directory: %v", err)
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+	currentNews, err := loadNewsFromFile(finalFilePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("Error loading current news: %v", err)
+			return fmt.Errorf("failed to load current news: %w", err)
+		}
+		log.Printf("File does not exist, сreate a new file ...")
+		currentNews = []entity.News{}
+	}
+	currentNews = append(currentNews, newsToAdd...)
+	jsonData, err := json.Marshal(currentNews)
+	if err != nil {
+		log.Printf("Error marshalling news to JSON: %v", err)
+		return fmt.Errorf("failed to marshal news to JSON: %w", err)
+	}
+	err = os.WriteFile(finalFilePath, jsonData, 0644)
+	if err != nil {
+		log.Printf("Error writing news to file: %v", err)
+		return fmt.Errorf("failed to write news to file: %w", err)
+	}
+	log.Printf("Successfully added %d news items to %s", len(newsToAdd), finalFilePath)
+	return nil
+}
 
 // GetNewsFromFolder retrieves news data from a specified folder
 // containing structured news resources.
-func GetNewsFromFolder(folderName string) ([]entity.News, error) {
-	resources, err := initializers.LoadSources(NewsFolder)
+func (folder newsFolder) GetNewsFromFolder(folderName string) ([]entity.News, error) {
+	sourcePath := filepath.Join(folder.path, folderName)
+	resources, err := getNewsSources(sourcePath)
 	if err != nil {
-		log.Printf("Error loading static resources from folder: %v", err)
 		return nil, err
 	}
-	r := resources[folderName]
 	allNews := make([]entity.News, 0)
-	for _, path := range r {
+	for _, path := range resources {
 		file, err := os.Open(path)
 		if err != nil {
 			log.Printf("Failed to open file %s: %v", path, err)
@@ -48,57 +95,72 @@ func GetNewsFromFolder(folderName string) ([]entity.News, error) {
 	return allNews, nil
 }
 
-// GetNewsFromFile using parsers.
-func GetNewsFromFile(filePath string) (entity.Feed, error) {
-	p, err := parser.GetFileParser(entity.PathToFile(filePath))
-	if err != nil {
-		log.Printf("Error getting file parser for %s: %v", filePath, err)
-		return entity.Feed{}, err
+// GetNewsSourceFilePath provides the file paths associated with each news source,
+// helping in locating where news data for each source is stored.
+func (folder newsFolder) GetNewsSourceFilePath(sourceName []string) (map[string][]string, error) {
+	resources := make(map[string][]string)
+	for _, s := range sourceName {
+		sourcePath := filepath.Join(folder.path, s)
+		paths, err := getNewsSources(sourcePath)
+		if err != nil {
+			log.Print("Not found news")
+			return nil, err
+		}
+		if len(paths) != 0 {
+			resources[s] = paths
+			log.Printf("Found news paths for %s", s)
+		}
 	}
-	f, err := p.Parse()
-	if err != nil {
-		log.Printf("Error parsing file %s: %v", filePath, err)
-		return entity.Feed{}, err
-	}
-	return f, err
+	return resources, nil
 }
 
-// AddNews in JSON format in the server's news folder,
-// organized by source and timestamp.
-func AddNews(newsToAdd []entity.News, newsSource string) error {
-	finalFileName := fmt.Sprintf("%s/%s.json", newsSource, timeNow)
-	finalFilePath := filepath.Join(NewsFolder, finalFileName)
-	err := os.MkdirAll(filepath.Dir(finalFilePath), 0755)
-	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-	currentNews, err := loadNewsFromFile(finalFilePath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return fmt.Errorf("failed to load current news: %w", err)
+// getNewsSources analyzes the contents of a given directory.
+// It returns a slice of a full paths to a file .
+func getNewsSources(sourceName string) ([]string, error) {
+	_, err := os.Stat(sourceName)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(sourceName, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
 		}
-		currentNews = []entity.News{}
+		log.Printf("Directory created: %s", sourceName)
 	}
-	currentNews = append(currentNews, newsToAdd...)
-	jsonData, err := json.Marshal(currentNews)
+
+	dir, err := os.Open(sourceName)
 	if err != nil {
-		return fmt.Errorf("failed to marshal news to JSON: %w", err)
+		return nil, fmt.Errorf("failed to open directory: %w", err)
 	}
-	err = os.WriteFile(finalFilePath, jsonData, 0644)
+	defer func() {
+		if err := dir.Close(); err != nil {
+			log.Printf("failed to close directory: %v", err)
+		}
+	}()
+
+	files, err := dir.Readdir(-1)
 	if err != nil {
-		return fmt.Errorf("failed to write news to file: %w", err)
+		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
-	return nil
+	//if len(files) == 0 {
+	//	return nil, fmt.Errorf("no news files found in %s", sourceName)
+	//}
+	var entries []string
+	for _, f := range files {
+		fullPath := filepath.Join(sourceName, f.Name())
+		entries = append(entries, fullPath)
+	}
+
+	return entries, nil
 }
 
 func loadNewsFromFile(filePath string) ([]entity.News, error) {
 	var news []entity.News
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
+		log.Printf("Failed to read file %v", err)
 		return nil, err
 	}
 	err = json.Unmarshal(jsonData, &news)
 	if err != nil {
+		log.Printf("Failed to unmarshal JSON data from file %s: %v", filePath, err)
 		return nil, err
 	}
 	return news, nil
