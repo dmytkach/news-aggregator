@@ -1,6 +1,3 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
 name: Go
 
 on:
@@ -10,13 +7,16 @@ on:
       - "**"
   push:
     branches: [ "**" ]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-jobs:
-  build:
-    runs-on: ubuntu-latest
 
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      setup-done: ${{ steps.setup.outputs.setup-done }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,65 +30,56 @@ jobs:
         run: |
           sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
-      - name: Build cli
-        run:  task build_cli
+  build:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build CLI
+        run: task build_cli
 
       - name: Build server
         run: task build_server
 
   test:
     runs-on: ubuntu-latest
-
+    needs: setup
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.22'
-
-      - name: Install Task
-        run: |
-          sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
       - name: Run tests
         run: task test
 
   static-analysis:
     runs-on: ubuntu-latest
-
+    needs: setup
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.22'
-
-      - name: Install Task
-        run: |
-          sh -ci "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-
-      - name: Run task for analyze code
+      - name: Run task for static analysis
         run: |
           task fmt
           task vet
           task mod_tidy
+
   check-formatting:
     runs-on: ubuntu-latest
     needs: static-analysis
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check formatting changes in the repository
+      - name: Verify code formatting
         run: |
-          if git diff --exit-code > /dev/null; then
-            echo "No formatting changes detected."
-          else
+          git fetch
+          git diff --exit-code > /dev/null
+          if [ $? -ne 0 ]; then
             echo "Formatting changes detected. Please run 'task fmt' locally and commit the changes."
             exit 1
+          else
+            echo "No formatting changes detected."
           fi
