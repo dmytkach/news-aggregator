@@ -86,8 +86,7 @@ jobs:
 
       - name: Check formatting changes in specified directories
         run: |
-          cd news-aggregator
-          if git diff --exit-code cli internal server > /dev/null; then
+          if git diff --exit-code news-aggregator/cli news-aggregator/internal news-aggregator/server > /dev/null; then
             echo "No formatting changes detected."
           else
             echo "Formatting changes detected in cli, internal, or server directories. Please run 'task fmt' locally and commit the changes."
