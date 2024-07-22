@@ -26,11 +26,11 @@ func (newsHandler NewsHandler) News(w http.ResponseWriter, r *http.Request) {
 	}
 	//some comment
 	sources := r.URL.Query().Get("sources")
-	keywords := r.URL.Query().Get("keywords")
+	    keywords := r.URL.Query().Get("keywords")
 	dateStart := r.URL.Query().Get("date-start")
-	dateEnd := r.URL.Query().Get("date-end")
+	       dateEnd := r.URL.Query().Get("date-end")
 	sortOrder := r.URL.Query().Get("sort-order")
-	sortBy := r.URL.Query().Get("sort-by")
+	        sortBy := r.URL.Query().Get("sort-by")
 
 	log.Printf("Received GET request with parameters - Sources: %s, Keywords: %s, DateStart: %s, DateEnd: %s, SortOrder: %s, SortBy: %s",
 		sources, keywords, dateStart, dateEnd, sortOrder, sortBy)
