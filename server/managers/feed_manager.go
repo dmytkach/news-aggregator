@@ -27,12 +27,14 @@ func (f UrlFeed) FetchFeed(path string) (entity.Feed, error) {
 		log.Println("Failed to download feed", http.StatusInternalServerError)
 		return entity.Feed{}, err
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			return
 		}
 	}(resp.Body)
+
 	tempFile, err := os.Create(tempFileName)
 	if err != nil {
 		log.Printf("Failed to create temporary file: %v", err)

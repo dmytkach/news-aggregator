@@ -1,12 +1,6 @@
 {
-  "releaseType": "go",
-  "tag-separator": "@",
-  "include_component-in-tag": true,
-  "versioningStrategy": "default",
-  "changelogPath": "CHANGELOG.md",
-  "packages":{
-    ".": {
-      "package-name": "news-aggregator"
-    }
+  "release-type": "go",
+  "packages": {
+    ".": {}
   }
 }
