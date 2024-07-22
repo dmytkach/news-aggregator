@@ -58,10 +58,12 @@ func (f Fetch) fetchNewsFromSource(resource entity.Source) error {
 				newsWithoutRepeat = append(newsWithoutRepeat, loadedNews)
 			}
 		}
-		err = f.NewsManager.AddNews(newsWithoutRepeat, string(news.Name))
-		if err != nil {
-			log.Printf("Failed to add news for %s: %v", resource.Name, err)
-			return err
+		if len(newsWithoutRepeat) > 0 {
+			err = f.NewsManager.AddNews(newsWithoutRepeat, string(news.Name))
+			if err != nil {
+				log.Printf("Failed to add news for %s: %v", resource.Name, err)
+				return err
+			}
 		}
 	}
 	return nil
