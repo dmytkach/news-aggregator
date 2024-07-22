@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/dmytkach/news-aggregator/compare/v1.0.0...v1.0.1) (2024-07-22)
+
+
+### Bug Fixes
+
+* fix for test release-please. ([7742860](https://github.com/dmytkach/news-aggregator/commit/774286032a468bc169056847704bab77ce5ce0be))
+
 ## 1.0.0 (2024-07-22)
 
 
