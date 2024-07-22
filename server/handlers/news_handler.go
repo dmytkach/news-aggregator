@@ -24,7 +24,7 @@ func (newsHandler NewsHandler) News(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
-
+	//some comment
 	sources := r.URL.Query().Get("sources")
 	keywords := r.URL.Query().Get("keywords")
 	dateStart := r.URL.Query().Get("date-start")
