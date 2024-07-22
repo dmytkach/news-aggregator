@@ -20,13 +20,13 @@ func TestAddNews(t *testing.T) {
 
 	fileData, err := os.ReadFile(finalFilePath)
 	if err != nil {
-		t.Errorf("Failed to read created file: %v", err)
+		t.Fatalf("Failed to read created file: %v", err)
 	}
 
 	var storedNews []entity.News
 	err = json.Unmarshal(fileData, &storedNews)
 	if err != nil {
-		t.Errorf("Failed to unmarshal JSON data: %v", err)
+		t.Fatalf("Failed to unmarshal JSON data: %v", err)
 	}
 
 	if !reflect.DeepEqual(storedNews, expectedNews) {
@@ -50,6 +50,86 @@ func TestAddNews(t *testing.T) {
 		t.Errorf("Expected an error when writing to a file with an invalid path, but got none")
 	}
 }
+
+func setupTestData(t *testing.T) (string, []entity.News) {
+	t.Helper()
+
+	mockTime := time.Date(2024, 7, 3, 12, 0, 0, 0, time.UTC)
+	news := []entity.News{
+		{
+			Title:       "Test News 1",
+			Description: "This is a test news article 1",
+			Link:        "https://example.com/news1",
+			Date:        mockTime,
+			Source:      "test_source",
+		},
+		{
+			Title:       "Test News 2",
+			Description: "This is a test news article 2",
+			Link:        "https://example.com/news2",
+			Date:        mockTime,
+			Source:      "test_source",
+		},
+	}
+
+	NewsFolder := "test-data"
+	newsHandler := newsFolder{path: NewsFolder}
+	err := newsHandler.AddNews(news, "test-source")
+	if err != nil {
+		t.Fatalf("AddNews() failed: %v", err)
+	}
+
+	return NewsFolder, news
+}
+
+func cleanupTestData(t *testing.T, path string) {
+	t.Helper()
+
+	err := os.RemoveAll(path)
+	if err != nil {
+		t.Errorf("Failed to clean up test data folder: %v", err)
+	}
+}
+
+//func TestAddNews(t *testing.T) {
+//	NewsFolder, expectedNews := setupTestData(t)
+//	defer cleanupTestData(t, NewsFolder)
+//
+//	finalFileName := fmt.Sprintf("test-source/%s.json", timeNow)
+//	finalFilePath := filepath.Join(NewsFolder, finalFileName)
+//
+//	fileData, err := os.ReadFile(finalFilePath)
+//	if err != nil {
+//		t.Errorf("Failed to read created file: %v", err)
+//	}
+//
+//	var storedNews []entity.News
+//	err = json.Unmarshal(fileData, &storedNews)
+//	if err != nil {
+//		t.Errorf("Failed to unmarshal JSON data: %v", err)
+//	}
+//
+//	if !reflect.DeepEqual(storedNews, expectedNews) {
+//		t.Errorf("Stored news data does not match expected data. Got: %v, Expected: %v", storedNews, expectedNews)
+//	}
+//
+//	invalidNewsHandler := newsFolder{path: string([]byte{0x00})}
+//	err = invalidNewsHandler.AddNews(expectedNews, "invalid-source")
+//	if err == nil {
+//		t.Errorf("Expected an error when creating a directory with an invalid path, but got none")
+//	}
+//
+//	invalidFilePath := filepath.Join("?'@%=", finalFileName)
+//	err = os.MkdirAll(filepath.Dir(invalidFilePath), 0755)
+//	if err == nil {
+//		t.Fatalf("Expected an error when creating a directory with an invalid path, but got none")
+//	}
+//
+//	err = os.WriteFile(invalidFilePath, []byte("test"), 0644)
+//	if err == nil {
+//		t.Errorf("Expected an error when writing to a file with an invalid path, but got none")
+//	}
+//}
 
 func TestGetNewsFromFolder(t *testing.T) {
 	NewsFolder := "../../internal/testdata"
@@ -129,42 +209,43 @@ func TestGetNewsSourceFilePath(t *testing.T) {
 		t.Errorf("Expected an error when retrieving file paths for a non-existent source, but got none")
 	}
 }
-func setupTestData(t *testing.T) (string, []entity.News) {
-	t.Helper()
 
-	mockTime := time.Date(2024, 7, 3, 12, 0, 0, 0, time.UTC)
-	news := []entity.News{
-		{
-			Title:       "Test News 1",
-			Description: "This is a test news article 1",
-			Link:        "https://example.com/news1",
-			Date:        mockTime,
-			Source:      "test_source",
-		},
-		{
-			Title:       "Test News 2",
-			Description: "This is a test news article 2",
-			Link:        "https://example.com/news2",
-			Date:        mockTime,
-			Source:      "test_source",
-		},
-	}
-
-	NewsFolder := "test-data"
-	newsHandler := newsFolder{path: NewsFolder}
-	err := newsHandler.AddNews(news, "test-source")
-	if err != nil {
-		t.Fatalf("AddNews() failed: %v", err)
-	}
-
-	return NewsFolder, news
-}
-
-func cleanupTestData(t *testing.T, path string) {
-	t.Helper()
-
-	err := os.RemoveAll(path)
-	if err != nil {
-		t.Errorf("Failed to clean up test data folder: %v", err)
-	}
-}
+//func setupTestData(t *testing.T) (string, []entity.News) {
+//	t.Helper()
+//
+//	mockTime := time.Date(2024, 7, 3, 12, 0, 0, 0, time.UTC)
+//	news := []entity.News{
+//		{
+//			Title:       "Test News 1",
+//			Description: "This is a test news article 1",
+//			Link:        "https://example.com/news1",
+//			Date:        mockTime,
+//			Source:      "test_source",
+//		},
+//		{
+//			Title:       "Test News 2",
+//			Description: "This is a test news article 2",
+//			Link:        "https://example.com/news2",
+//			Date:        mockTime,
+//			Source:      "test_source",
+//		},
+//	}
+//
+//	NewsFolder := "test-data"
+//	newsHandler := newsFolder{path: NewsFolder}
+//	err := newsHandler.AddNews(news, "test-source")
+//	if err != nil {
+//		t.Fatalf("AddNews() failed: %v", err)
+//	}
+//
+//	return NewsFolder, news
+//}
+//
+//func cleanupTestData(t *testing.T, path string) {
+//	t.Helper()
+//
+//	err := os.RemoveAll(path)
+//	if err != nil {
+//		t.Errorf("Failed to clean up test data folder: %v", err)
+//	}
+//}
