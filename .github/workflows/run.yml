@@ -76,3 +76,20 @@ jobs:
           task fmt
           task vet
           task mod_tidy
+  check-formatting:
+    runs-on: ubuntu-latest
+    needs: static-analysis
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check formatting changes in specified directories
+        run: |
+          cd news-aggregator
+          if git diff --exit-code cli internal server > /dev/null; then
+            echo "No formatting changes detected."
+          else
+            echo "Formatting changes detected in cli, internal, or server directories. Please run 'task fmt' locally and commit the changes."
+            exit 1
+          fi
