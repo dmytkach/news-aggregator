@@ -84,11 +84,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check formatting changes in specified directories
+      - name: Check formatting changes in the repository
         run: |
-          if git diff --exit-code news-aggregator/cli news-aggregator/internal news-aggregator/server > /dev/null; then
+          if git diff --exit-code > /dev/null; then
             echo "No formatting changes detected."
           else
-            echo "Formatting changes detected in cli, internal, or server directories. Please run 'task fmt' locally and commit the changes."
+            echo "Formatting changes detected. Please run 'task fmt' locally and commit the changes."
             exit 1
           fi
