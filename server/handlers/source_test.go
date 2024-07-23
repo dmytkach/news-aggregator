@@ -3,24 +3,16 @@ package handlers
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"news-aggregator/internal/entity"
+	"news-aggregator/server/managers/mocks"
 	"testing"
 )
 
-type MockFeedManager struct {
-	mock.Mock
-}
-
-func (m *MockFeedManager) FetchFeed(path string) (entity.Feed, error) {
-	args := m.Called(path)
-	return args.Get(0).(entity.Feed), args.Error(1)
-}
 func TestSourcesGet(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -41,8 +33,8 @@ func TestSourcesGet(t *testing.T) {
 	assert.JSONEq(t, `[{"Name":"bbc_news","PathsToFile":null}]`, rr.Body.String(), "Response body does not match expected")
 }
 func TestGetSourcesEmpty(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -63,8 +55,8 @@ func TestGetSourcesEmpty(t *testing.T) {
 }
 
 func TestDownloadSource(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -87,8 +79,8 @@ func TestDownloadSource(t *testing.T) {
 	assert.JSONEq(t, `{"Name":"test_feed","PathsToFile":["http://example.com/feed"]}`, rr.Body.String(), "Response body does not match expected")
 }
 func TestDownloadSourceError(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -108,8 +100,8 @@ func TestDownloadSourceError(t *testing.T) {
 }
 
 func TestDownloadSourceMissingURL(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -127,8 +119,8 @@ func TestDownloadSourceMissingURL(t *testing.T) {
 }
 
 func TestDownloadSourceCreationError(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -149,8 +141,8 @@ func TestDownloadSourceCreationError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Expected status Internal Server Error")
 }
 func TestUpdateSource(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -169,8 +161,8 @@ func TestUpdateSource(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Expected status OK")
 }
 func TestRemoveSource(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -189,8 +181,8 @@ func TestRemoveSource(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Expected status OK")
 }
 func TestUpdateSourceError(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -210,8 +202,8 @@ func TestUpdateSourceError(t *testing.T) {
 }
 
 func TestRemoveSourceMissingName(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -229,8 +221,8 @@ func TestRemoveSourceMissingName(t *testing.T) {
 }
 
 func TestRemoveSourceError(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
@@ -250,8 +242,8 @@ func TestRemoveSourceError(t *testing.T) {
 }
 
 func TestSourcesMethodNotAllowed(t *testing.T) {
-	mockSourceManager := new(MockSourceManager)
-	mockFeedManager := new(MockFeedManager)
+	mockSourceManager := new(mocks.MockSourceManager)
+	mockFeedManager := new(mocks.MockFeedManager)
 
 	sourceHandler := SourceHandler{
 		SourceManager: mockSourceManager,
