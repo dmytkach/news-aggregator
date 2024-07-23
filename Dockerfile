@@ -23,5 +23,4 @@ COPY --from=build /app/server/certificates ./server/certificates
 
 EXPOSE 8443
 
-ENTRYPOINT ["./news-aggregator"]
-CMD ["./news-aggregator", "-fetch_interval=1h", "-port=:8443", "-cert=/certificates/cert.pem", "-key=/certificates/key.pem", "-path_to_source=sources.json", "-news_folder=server-news/"]
+ENTRYPOINT ["./news-aggregator", "-fetch_interval=3h", "-port=:8443", "-cert=./server/certificates/cert.pem", "-key=./server/certificates/key.pem", "-path_to_source=sources.json", "-news_folder=server-news/"]
