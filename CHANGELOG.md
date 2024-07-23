@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/dmytkach/news-aggregator/compare/v1.0.2...v1.0.3) (2024-07-23)
+
+
+### Bug Fixes
+
+* fix bug with version on IMAGE_TAG. ([21f2520](https://github.com/dmytkach/news-aggregator/commit/21f252007304233b7a9b8ebbe874b1f992f9dc47))
+
 ## [1.0.2](https://github.com/dmytkach/news-aggregator/compare/v1.0.1...v1.0.2) (2024-07-23)
 
 
