@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/dmytkach/news-aggregator/compare/v1.0.1...v1.0.2) (2024-07-23)
+
+
+### Bug Fixes
+
+* Use `steps.create-version.outputs.version` directly in other steps instead of environment var. ([5697d7b](https://github.com/dmytkach/news-aggregator/commit/5697d7bf6188ab978de794d303fc4b7f9bb946de))
+
 ## [1.0.1](https://github.com/dmytkach/news-aggregator/compare/v1.0.0...v1.0.1) (2024-07-22)
 
 
