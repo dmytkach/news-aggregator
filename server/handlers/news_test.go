@@ -8,61 +8,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"news-aggregator/internal/entity"
+	"news-aggregator/server/managers/mocks"
 	"testing"
 	"time"
 )
 
-type MockNewsManager struct {
-	mock.Mock
-}
-
-func (m *MockNewsManager) AddNews(newsToAdd []entity.News, newsSource string) error {
-	args := m.Called(newsToAdd, newsSource)
-	return args.Error(0)
-}
-
-func (m *MockNewsManager) GetNewsFromFolder(folderName string) ([]entity.News, error) {
-	args := m.Called(folderName)
-	return args.Get(0).([]entity.News), args.Error(1)
-}
-
-func (m *MockNewsManager) GetNewsSourceFilePath(sourceNames []string) (map[string][]string, error) {
-	args := m.Called(sourceNames)
-	return args.Get(0).(map[string][]string), args.Error(1)
-}
-
-type MockSourceManager struct {
-	mock.Mock
-}
-
-func (m *MockSourceManager) CreateSource(name, url string) (entity.Source, error) {
-	args := m.Called(name, url)
-	return args.Get(0).(entity.Source), args.Error(1)
-}
-
-func (m *MockSourceManager) GetSource(name string) (entity.Source, error) {
-	args := m.Called(name)
-	return args.Get(0).(entity.Source), args.Error(1)
-}
-
-func (m *MockSourceManager) GetSources() ([]entity.Source, error) {
-	args := m.Called()
-	return args.Get(0).([]entity.Source), args.Error(1)
-}
-
-func (m *MockSourceManager) UpdateSource(oldUrl, newUrl string) error {
-	args := m.Called(oldUrl, newUrl)
-	return args.Error(0)
-}
-
-func (m *MockSourceManager) RemoveSourceByName(sourceName string) error {
-	args := m.Called(sourceName)
-	return args.Error(0)
-}
-
-func setupNewsHandlerTest() (*NewsHandler, *MockNewsManager, *MockSourceManager) {
-	mockNewsManager := new(MockNewsManager)
-	mockSourceManager := new(MockSourceManager)
+func setupNewsHandlerTest() (*NewsHandler, *mocks.MockNewsManager, *mocks.MockSourceManager) {
+	mockNewsManager := new(mocks.MockNewsManager)
+	mockSourceManager := new(mocks.MockSourceManager)
 	handler := &NewsHandler{
 		NewsManager:   mockNewsManager,
 		SourceManager: mockSourceManager,
