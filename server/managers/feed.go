@@ -7,9 +7,10 @@ import (
 	"news-aggregator/internal/entity"
 	"news-aggregator/internal/parser"
 	"os"
+	"strings"
 )
 
-const tempFileName = "tempfile.xml"
+const fileName = "file"
 
 // FeedManager for fetching news feeds.
 type FeedManager interface {
@@ -33,6 +34,9 @@ func (f UrlFeed) FetchFeed(path string) (entity.Feed, error) {
 			return
 		}
 	}(resp.Body)
+	contentType := resp.Header.Get("Content-Type")
+	ext := getContentExt(contentType)
+	tempFileName := fileName + ext
 	tempFile, err := os.Create(tempFileName)
 	if err != nil {
 		log.Printf("Failed to create temporary file: %v", err)
@@ -74,4 +78,17 @@ func getFeedFromFile(filePath string) (entity.Feed, error) {
 		return entity.Feed{}, err
 	}
 	return f, err
+}
+
+// getContentExt returns the corresponding file extension based on the content type
+func getContentExt(contentType string) string {
+	if strings.Contains(contentType, "application/json") {
+		return ".json"
+	} else if strings.Contains(contentType, "application/rss+xml") ||
+		strings.Contains(contentType, "text/xml") {
+		return ".xml"
+	} else if strings.Contains(contentType, "text/html") {
+		return ".html"
+	}
+	return ""
 }
