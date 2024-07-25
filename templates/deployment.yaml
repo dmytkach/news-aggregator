@@ -17,6 +17,13 @@ spec:
     spec:
       containers:
         - name: news-aggregator
-          image: dmytkach/news-aggregator:v1.0
+          image: dmytkach/news-aggregator:1.0.4
           ports:
             - containerPort: 8443
+          args:
+            - "-fetch_interval=30s"
+            - "-port=:8443"
+            - "-cert=./server/certificates/cert.pem"
+            - "-key=./server/certificates/key.pem"
+            - "-path_to_source=sources.json"
+            - "-news_folder=server-news/"

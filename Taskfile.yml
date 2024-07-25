@@ -4,11 +4,13 @@ vars:
   cli_aggregator: ./cli/main.go
   server_aggregator: ./server/main.go
   docker_image_name: "dmytkach/news-aggregator"
-  docker_image_tag: "v1.0"
+  docker_image_tag: "1.0.4"
   dockerfile_path: ".Dockerfile"
   docker_port: "8443"
   server_expose_port: "8443"
   namespace_name: "news-aggregator"
+  deployment_file: "templates/deployment.yaml"
+  service_file: "templates/service.yaml"
 tasks:
   test:
     cmd: go test ./...
@@ -61,14 +63,14 @@ tasks:
   deploy:
     desc: "Deploys news-aggregator app on Kubernetes cluster"
     cmds:
-      - kubectl apply -f templates/deployment.yaml
-      - kubectl apply -f templates/service.yaml
+      - kubectl apply -f {{.deployment_file}}
+      - kubectl apply -f {{.service_file}}
 
   undeploy:
     desc: "Removes news-aggregator app from Kubernetes cluster"
     cmds:
-      - kubectl delete -f templates/deployment.yaml
-      - kubectl delete -f templates/service.yaml
+      - kubectl delete -f {{.deployment_file}}
+      - kubectl delete -f {{.service_file}}
   create_ns:
     cmd: kubectl create namespace {{.namespace_name}}
     desc: "Create a Kubernetes namespace"
