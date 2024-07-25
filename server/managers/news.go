@@ -139,9 +139,6 @@ func getNewsSources(sourceName string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
-	//if len(files) == 0 {
-	//	return nil, fmt.Errorf("no news files found in %s", sourceName)
-	//}
 	var entries []string
 	for _, f := range files {
 		fullPath := filepath.Join(sourceName, f.Name())
