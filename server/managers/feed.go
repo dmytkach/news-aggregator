@@ -13,6 +13,8 @@ import (
 const fileName = "file"
 
 // FeedManager for fetching news feeds.
+//
+//go:generate mockgen -source=feed.go -destination=mock_managers/mock_feed.go
 type FeedManager interface {
 	FetchFeed(path string) (entity.Feed, error)
 }
