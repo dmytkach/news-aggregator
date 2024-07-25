@@ -19,11 +19,11 @@ func (d dateEndValidator) Validate() bool {
 	if d.dateEnd != "" {
 		date, err := time.Parse(DateFormat, d.dateEnd)
 		if err != nil {
-			log.Print("Invalid end date format. Please use YYYY-MM-DD.")
+			log.Println("Invalid end date format. Please use YYYY-MM-DD.")
 			return false
 		}
 		if date.Before(time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)) {
-			println("News for this period is not available.")
+			log.Println("News for this period is not available.")
 			return false
 		}
 	}

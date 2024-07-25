@@ -46,8 +46,6 @@ func (newsHandler NewsHandler) News(w http.ResponseWriter, r *http.Request) {
 	for _, source := range s {
 		availableSources = append(availableSources, string(source.Name))
 	}
-	log.Printf("Available sources: %v", availableSources)
-
 	resources, err := newsHandler.NewsManager.GetNewsSourceFilePath(availableSources)
 	if err != nil {
 		log.Printf("Error getting news source file paths: %v", err)
@@ -69,7 +67,6 @@ func (newsHandler NewsHandler) News(w http.ResponseWriter, r *http.Request) {
 
 	v := validator.NewValidator(config)
 	if !v.Validate() {
-		log.Printf("Invalid query parameters: %v", config)
 		http.Error(w, "Invalid query parameters", http.StatusBadRequest)
 		return
 	}

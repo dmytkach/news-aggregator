@@ -1,6 +1,9 @@
 package validator
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 // dateStartValidator checks the start date format.
 type dateStartValidator struct {
@@ -13,11 +16,11 @@ func (d dateStartValidator) Validate() bool {
 	if d.dateStart != "" {
 		startDate, err := time.Parse(DateFormat, d.dateStart)
 		if err != nil {
-			println("Invalid start date format. Please use YYYY-MM-DD.")
+			log.Println("Invalid start date format. Please use YYYY-MM-DD.")
 			return false
 		}
 		if startDate.After(time.Now()) {
-			println("News for this period is not available.")
+			log.Println("News for this period is not available.")
 			return false
 		}
 	}

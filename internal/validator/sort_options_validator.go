@@ -1,6 +1,9 @@
 package validator
 
-import "strings"
+import (
+	"log"
+	"strings"
+)
 
 type sortOptionsValidator struct {
 	baseValidator
@@ -14,13 +17,13 @@ type sortOptionsValidator struct {
 func (v sortOptionsValidator) Validate() bool {
 	if v.criterion != "" {
 		if !strings.EqualFold(v.criterion, "date") && !strings.EqualFold(v.criterion, "source") {
-			println("Invalid sort criterion. Please use `date` or `source`")
+			log.Println("Invalid sort criterion. Please use `date` or `source`")
 			return false
 		}
 	}
 	if v.order != "" {
 		if !strings.EqualFold(v.order, "desc") && !strings.EqualFold(v.order, "asc") {
-			println("Invalid order criterion. Please use `asc` or `desc`")
+			log.Println("Invalid order criterion. Please use `asc` or `desc`")
 			return false
 		}
 	}
