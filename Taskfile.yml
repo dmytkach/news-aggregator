@@ -8,6 +8,7 @@ vars:
   dockerfile_path: ".Dockerfile"
   docker_port: "8443"
   server_expose_port: "8443"
+  namespace_name: "news-aggregator"
 tasks:
   test:
     cmd: go test ./...
@@ -56,3 +57,22 @@ tasks:
   docker_push:
     desc: "Push the Docker image to the registry"
     cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
+
+  deploy:
+    desc: "Deploys news-aggregator app on Kubernetes cluster"
+    cmds:
+      - kubectl apply -f templates/deployment.yaml
+      - kubectl apply -f templates/service.yaml
+
+  undeploy:
+    desc: "Removes news-aggregator app from Kubernetes cluster"
+    cmds:
+      - kubectl delete -f templates/deployment.yaml
+      - kubectl delete -f templates/service.yaml
+  create_ns:
+    cmd: kubectl create namespace {{.namespace_name}}
+    desc: "Create a Kubernetes namespace"
+
+  delete_ns:
+    cmd: kubectl delete namespace {{.namespace_name}}
+    desc: "Delete a Kubernetes namespace"
