@@ -68,13 +68,17 @@ tasks:
 
   undeploy:
     desc: "Removes news-aggregator app from Kubernetes cluster"
-    deps: [ delete_ns ]
     cmds:
       - kubectl delete -f {{.k8s_folder}}
 
   create_ns:
-    cmd: kubectl create namespace {{.namespace_name}}
-    desc: "Create a Kubernetes namespace"
+    cmd: |
+      if ! kubectl get namespace {{.namespace_name}} >/dev/null 2>&1; then
+        kubectl create namespace {{.namespace_name}}
+      else
+        echo "Namespace {{.namespace_name}} already exists"
+      fi
+    desc: "Create a Kubernetes namespace if it does not exist"
 
   delete_ns:
     cmd: kubectl delete namespace {{.namespace_name}}
