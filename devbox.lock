@@ -144,6 +144,25 @@
           "store_path": "/nix/store/3v17dij8rvg7q99009swxg52995r7s22-go-1.22.5"
         }
       }
+    },
+    "kubectl": {
+      "resolved": "github:NixOS/nixpkgs/75a52265bda7fd25e06e3a67dee3f0354e73243c#kubectl",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "man",
+              "path": "/nix/store/n591fkha0bzh2vikpwzvqp34ffvw5r4g-kubectl-1.28.3-man",
+              "default": true
+            },
+            {
+              "path": "/nix/store/k3bhqxjgpxzlb6i28cyaxp84p13ky5q8-kubectl-1.28.3",
+              "default": true
+            }
+          ]
+        }
+      }
     }
   }
 }
