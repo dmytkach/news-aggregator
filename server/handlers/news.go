@@ -66,8 +66,9 @@ func (newsHandler NewsHandler) News(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v := validator.NewValidator(config)
-	if !v.Validate() {
-		http.Error(w, "Invalid query parameters", http.StatusBadRequest)
+	err = v.Validate()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

@@ -35,11 +35,11 @@ func NewValidator(config Config) ValidatingComponent {
 
 // ValidatingComponent defines the contract for components responsible for performing validation.
 type ValidatingComponent interface {
-	Validate() bool
+	Validate() error
 }
 
 // Validate all implementations with the chain of responsibility pattern.
-func (v validator) Validate() bool {
+func (v validator) Validate() error {
 	sourceValidator := &sourceValidator{sources: v.Sources, availableSources: v.AvailableSources}
 	dateStartValidator := &dateStartValidator{dateStart: v.DateStart}
 	dateEndValidator := &dateEndValidator{dateEnd: v.DateEnd}
