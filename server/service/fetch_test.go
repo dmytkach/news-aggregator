@@ -31,7 +31,7 @@ func TestFetchService_UpdateNews(t *testing.T) {
 	mockSourceManager.EXPECT().GetSources().Return(sources, nil).Times(1)
 	mockNewsManager.EXPECT().GetNewsFromFolder("Source1").Return([]entity.News{
 		{Link: "link1"},
-	}, nil).Times(2) // Expect twice because it is called for each path in fetchNewsFromSource
+	}, nil).Times(2)
 	mockFeedManager.EXPECT().FetchFeed("file1.xml").Return(entity.Feed{
 		Name: "Feed1",
 		News: []entity.News{
