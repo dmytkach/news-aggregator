@@ -44,11 +44,6 @@ func (f UrlFeed) FetchFeed(path string) (entity.Feed, error) {
 		log.Printf("Failed to create temporary file: %v", err)
 		return entity.Feed{}, err
 	}
-	defer func() {
-		if err := os.Remove(tempFileName); err != nil {
-			log.Printf("Error removing temporary file %s: %v", tempFileName, err)
-		}
-	}()
 	if _, err := io.Copy(tempFile, resp.Body); err != nil {
 		log.Printf("Failed to write response to file: %v", err)
 		return entity.Feed{}, err
@@ -62,6 +57,11 @@ func (f UrlFeed) FetchFeed(path string) (entity.Feed, error) {
 	feed, err := getFeedFromFile(tempFileName)
 	if err != nil {
 		log.Printf("Failed to parse feed from file: %v", err)
+		return entity.Feed{}, err
+	}
+	err = os.Remove(tempFileName)
+	if err != nil {
+		log.Printf("Error removing temporary file %s: %v", tempFileName, err)
 		return entity.Feed{}, err
 	}
 	return feed, nil
