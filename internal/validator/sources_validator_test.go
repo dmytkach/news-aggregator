@@ -1,18 +1,21 @@
 package validator
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestSourceValidator_Validate(t *testing.T) {
 	tests := []struct {
 		name             string
 		sources          string
 		availableSources []string
-		expected         bool
+		expected         error
 	}{
-		{"No sources", "", []string{}, false},
-		{"Valid source", "source1", []string{"source1"}, true},
-		{"Invalid source", "source2", []string{"source1"}, false},
-		{"Mixed sources", "source1.source2", []string{"source1"}, false},
+		{"No sources", "", []string{}, errors.New("not found available sources")},
+		{"Valid source", "source1", []string{"source1"}, nil},
+		{"Invalid source", "source2", []string{"source1"}, errors.New("source not available: source2")},
+		{"Mixed sources", "source1.source2", []string{"source1"}, errors.New("source not available: source1.source2")},
 	}
 
 	for _, tt := range tests {
@@ -22,8 +25,10 @@ func TestSourceValidator_Validate(t *testing.T) {
 				availableSources: tt.availableSources,
 			}
 			result := validator.Validate()
-			if result != tt.expected {
-				t.Errorf("Expected %v, but got %v", tt.expected, result)
+			if tt.expected != nil {
+				if result == nil || result.Error() != tt.expected.Error() {
+					t.Errorf("Expected %v, but got %v", tt.expected, result)
+				}
 			}
 		})
 	}

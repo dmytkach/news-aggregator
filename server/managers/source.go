@@ -10,6 +10,8 @@ import (
 )
 
 // SourceManager provides API for handling news sources.
+//
+//go:generate mockgen -source=source.go -destination=mock_managers/mock_source.go
 type SourceManager interface {
 	CreateSource(name, url string) (entity.Source, error)
 	GetSource(name string) (entity.Source, error)

@@ -44,8 +44,9 @@ func main() {
 	}
 
 	v := validator.NewValidator(config)
-	if !v.Validate() {
-		log.Println("Invalid parameters")
+	err = v.Validate()
+	if err != nil {
+		log.Println(err)
 		return
 	}
 	a := internal.NewAggregator(

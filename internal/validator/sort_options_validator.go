@@ -1,6 +1,9 @@
 package validator
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 type sortOptionsValidator struct {
 	baseValidator
@@ -11,17 +14,17 @@ type sortOptionsValidator struct {
 // Validate checks if the provided sorting criterion and order are valid.
 // If a criterion is specified, it must be either "date" or "source".
 // If an order is specified, it must be either "asc" or "desc".
-func (v sortOptionsValidator) Validate() bool {
+func (v sortOptionsValidator) Validate() error {
 	if v.criterion != "" {
 		if !strings.EqualFold(v.criterion, "date") && !strings.EqualFold(v.criterion, "source") {
-			println("Invalid sort criterion. Please use `date` or `source`")
-			return false
+			//log.Println("Invalid sort criterion. Please use `date` or `source`")
+			return errors.New("invalid sort criterion. Please use `date` or `source`")
 		}
 	}
 	if v.order != "" {
 		if !strings.EqualFold(v.order, "desc") && !strings.EqualFold(v.order, "asc") {
-			println("Invalid order criterion. Please use `asc` or `desc`")
-			return false
+			//log.Println("Invalid order criterion. Please use `asc` or `desc`")
+			return errors.New("invalid order criterion. Please use `asc` or `desc`")
 		}
 	}
 	return v.baseValidator.Validate()

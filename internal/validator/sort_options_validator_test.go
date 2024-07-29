@@ -1,6 +1,9 @@
 package validator
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func Test_sortOptionsValidator_Validate(t *testing.T) {
 	type fields struct {
@@ -11,7 +14,7 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   bool
+		want   error
 	}{
 		{
 			name: "Valid sort options - date asc",
@@ -19,7 +22,7 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 				criterion: "date",
 				order:     "asc",
 			},
-			want: true,
+			want: nil,
 		},
 		{
 			name: "Valid sort options - source desc",
@@ -27,7 +30,7 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 				criterion: "source",
 				order:     "desc",
 			},
-			want: true,
+			want: nil,
 		},
 		{
 			name: "Invalid sort criterion",
@@ -35,7 +38,7 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 				criterion: "invalid",
 				order:     "asc",
 			},
-			want: false,
+			want: errors.New("invalid sort criterion. Please use `date` or `source`"),
 		},
 		{
 			name: "Invalid sort order",
@@ -43,7 +46,7 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 				criterion: "date",
 				order:     "invalid",
 			},
-			want: false,
+			want: errors.New("invalid order criterion. Please use `asc` or `desc`"),
 		},
 		{
 			name: "Valid sort options - empty criterion and order",
@@ -51,7 +54,7 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 				criterion: "",
 				order:     "",
 			},
-			want: true,
+			want: nil,
 		},
 		{
 			name: "Invalid sort criterion and order",
@@ -59,7 +62,7 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 				criterion: "invalid",
 				order:     "invalid",
 			},
-			want: false,
+			want: errors.New("invalid sort criterion. Please use `date` or `source`"),
 		},
 	}
 	for _, tt := range tests {
@@ -69,8 +72,11 @@ func Test_sortOptionsValidator_Validate(t *testing.T) {
 				criterion:     tt.fields.criterion,
 				order:         tt.fields.order,
 			}
-			if got := v.Validate(); got != tt.want {
-				t.Errorf("Validate() = %v, want %v", got, tt.want)
+			result := v.Validate()
+			if tt.want != nil {
+				if result == nil || result.Error() != tt.want.Error() {
+					t.Errorf("Expected %v, but got %v", tt.want, result)
+				}
 			}
 		})
 	}

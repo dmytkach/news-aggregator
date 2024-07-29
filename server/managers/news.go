@@ -13,6 +13,8 @@ import (
 var timeNow = time.Now().Format("2006-01-02")
 
 // NewsManager provides API for handling news data.
+//
+//go:generate mockgen -source=news.go -destination=mock_managers/mock_news.go
 type NewsManager interface {
 	AddNews(newsToAdd []entity.News, newsSource string) error
 	GetNewsFromFolder(folderName string) ([]entity.News, error)

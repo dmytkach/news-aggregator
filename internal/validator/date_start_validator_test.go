@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -8,13 +9,13 @@ func TestDateStartValidator_Validate(t *testing.T) {
 	tests := []struct {
 		name      string
 		dateStart string
-		expected  bool
+		expected  error
 	}{
-		{"Valid start date", "2023-01-01", true},
-		{"Empty start date", "", true},
-		{"Invalid start date format", "01-01-2023", false},
-		{"Invalid start date string", "invalid-date", false},
-		{"Future start date", "2999-12-31", false},
+		{"Valid start date", "2023-01-01", nil},
+		{"Empty start date", "", nil},
+		{"Invalid start date format", "01-01-2023", errors.New("invalid start date format. Please use YYYY-MM-DD")},
+		{"Invalid start date string", "invalid-date", errors.New("invalid start date format. Please use YYYY-MM-DD")},
+		{"Future start date", "2999-12-31", errors.New("news for this period is not available")},
 	}
 
 	for _, tt := range tests {
@@ -23,8 +24,10 @@ func TestDateStartValidator_Validate(t *testing.T) {
 				dateStart: tt.dateStart,
 			}
 			result := validator.Validate()
-			if result != tt.expected {
-				t.Errorf("Expected %v, but got %v", tt.expected, result)
+			if tt.expected != nil {
+				if result == nil || result.Error() != tt.expected.Error() {
+					t.Errorf("Expected %v, but got %v", tt.expected, result)
+				}
 			}
 		})
 	}

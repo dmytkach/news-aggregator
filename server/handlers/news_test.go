@@ -3,39 +3,44 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"news-aggregator/internal/entity"
-	"news-aggregator/server/managers/mocks"
+	"news-aggregator/server/managers/mock_managers"
 	"testing"
 	"time"
 )
 
-func setupNewsHandlerTest() (*NewsHandler, *mocks.MockNewsManager, *mocks.MockSourceManager) {
-	mockNewsManager := new(mocks.MockNewsManager)
-	mockSourceManager := new(mocks.MockSourceManager)
+func setupNewsHandlerTest(ctrl *gomock.Controller) (*NewsHandler, *mock_managers.MockNewsManager, *mock_managers.MockSourceManager) {
+	mockNewsManager := mock_managers.NewMockNewsManager(ctrl)
+	mockSourceManager := mock_managers.NewMockSourceManager(ctrl)
 	handler := &NewsHandler{
 		NewsManager:   mockNewsManager,
 		SourceManager: mockSourceManager,
 	}
 	return handler, mockNewsManager, mockSourceManager
 }
+
 func TestNewsHandler(t *testing.T) {
-	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest(ctrl)
 
 	mockSources := []entity.Source{
 		{Name: "bbc_news"},
 	}
-	mockSourceManager.On("GetSources").Return(mockSources, nil)
+	mockSourceManager.EXPECT().GetSources().Return(mockSources, nil)
 
-	mockNewsManager.On("GetNewsSourceFilePath", []string{"bbc_news"}).Return(map[string][]string{
-		"bbc_news": {"../../internal/testdata/bbc_news/ready_news.json"},
-	}, nil)
+	mockNewsManager.EXPECT().GetNewsSourceFilePath([]string{"bbc_news"}).
+		Return(map[string][]string{
+			"bbc_news": {"../../internal/testdata/bbc_news/ready_news.json"},
+		}, nil)
 
 	req, err := http.NewRequest("GET", "/news?sources=bbc_news&keywords=England", nil)
-	assert.Nil(t, err, "Expected no error creating request")
+	assert.NoError(t, err, "Expected no error creating request")
 
 	rr := httptest.NewRecorder()
 	httpHandler := http.HandlerFunc(handler.News)
@@ -55,20 +60,24 @@ func TestNewsHandler(t *testing.T) {
 	}
 	var actual []entity.News
 	err = json.NewDecoder(rr.Body).Decode(&actual)
-	assert.Nil(t, err, "Expected no error decoding response body")
+	assert.NoError(t, err, "Expected no error decoding response body")
 	assert.ElementsMatch(t, expected, actual, "Expected response body to match")
 }
+
 func TestNewsHandlerInvalidSource(t *testing.T) {
-	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest(ctrl)
 
 	var mockSources []entity.Source
-	mockSourceManager.On("GetSources").Return(mockSources, nil)
+	mockSourceManager.EXPECT().GetSources().Return(mockSources, nil)
 
-	mockNewsManager.On("GetNewsSourceFilePath", mock.Anything).Return(map[string][]string{}, errors.New("error getting news source file paths"))
-	handler.NewsManager = mockNewsManager
+	mockNewsManager.EXPECT().GetNewsSourceFilePath(gomock.Any()).
+		Return(map[string][]string{}, errors.New("error getting news source file paths"))
 
 	req, err := http.NewRequest("GET", "/news?sources=invalid_source", nil)
-	assert.Nil(t, err, "Expected no error creating request")
+	assert.NoError(t, err, "Expected no error creating request")
 
 	rr := httptest.NewRecorder()
 	httpHandler := http.HandlerFunc(handler.News)
@@ -77,15 +86,19 @@ func TestNewsHandlerInvalidSource(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code, "Expected status Bad Request")
 }
+
 func TestNewsHandlerErrorGettingSources(t *testing.T) {
-	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	mockSourceManager.On("GetSources").Return([]entity.Source{}, errors.New("error getting sources"))
+	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest(ctrl)
 
-	mockNewsManager.On("GetNewsSourceFilePath", mock.Anything).Return(map[string][]string{}, nil)
+	mockSourceManager.EXPECT().GetSources().Return(nil, errors.New("error getting sources"))
+
+	mockNewsManager.EXPECT().GetNewsSourceFilePath(gomock.Any()).Return(nil, nil).Times(0)
 
 	req, err := http.NewRequest("GET", "/news?sources=invalid_source", nil)
-	assert.Nil(t, err, "Expected no error creating request")
+	assert.NoError(t, err, "Expected no error creating request")
 
 	rr := httptest.NewRecorder()
 	httpHandler := http.HandlerFunc(handler.News)
@@ -96,30 +109,37 @@ func TestNewsHandlerErrorGettingSources(t *testing.T) {
 }
 
 func TestNewsHandlerErrorGettingNewsSourceFilePath(t *testing.T) {
-	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	handler, mockNewsManager, mockSourceManager := setupNewsHandlerTest(ctrl)
 
 	mockSources := []entity.Source{
 		{Name: "bbc_news"},
 	}
-	mockSourceManager.On("GetSources").Return(mockSources, nil)
-	mockNewsManager.On("GetNewsSourceFilePath", []string{"bbc_news"}).Return(map[string][]string{}, errors.New("error getting news source file paths"))
+	mockSourceManager.EXPECT().GetSources().Return(mockSources, nil)
+	mockNewsManager.EXPECT().GetNewsSourceFilePath([]string{"bbc_news"}).
+		Return(map[string][]string{}, errors.New("error getting news source file paths"))
 
 	req, err := http.NewRequest("GET", "/news?sources=bbc_news", nil)
-	assert.Nil(t, err, "Expected no error creating request")
+	assert.NoError(t, err, "Expected no error creating request")
 
 	rr := httptest.NewRecorder()
 	httpHandler := http.HandlerFunc(handler.News)
 
 	httpHandler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code, "Expected status Internal Server Error")
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Expected status Bad Request")
 }
 
 func TestNewsHandlerInvalidMethod(t *testing.T) {
-	handler, _, _ := setupNewsHandlerTest()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	handler, _, _ := setupNewsHandlerTest(ctrl)
 
 	req, err := http.NewRequest("POST", "/news", nil)
-	assert.Nil(t, err, "Expected no error creating request")
+	assert.NoError(t, err, "Expected no error creating request")
 
 	rr := httptest.NewRecorder()
 	httpHandler := http.HandlerFunc(handler.News)

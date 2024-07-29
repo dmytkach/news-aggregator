@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -13,20 +14,20 @@ type sourceValidator struct {
 }
 
 // Validate checks that the given sources exist.
-func (v sourceValidator) Validate() bool {
+func (v sourceValidator) Validate() error {
 	sourcesList := strings.Split(v.sources, ",")
-	if len(sourcesList) == 0 {
-		println("Please provide at least one source using the --sources flag.")
-		return false
-	}
 	if len(v.availableSources) == 0 {
-		println("Not found available sources.")
-		return false
+		//log.Println("Not found available sources.")
+		return errors.New("not found available sources")
 	}
 	for _, source := range sourcesList {
+		if strings.TrimSpace(source) == "" {
+			//log.Println("Please provide at least one source.")
+			return errors.New("please provide at least one source")
+		}
 		if !v.exist(source) {
-			fmt.Println("Source not available:", source)
-			return false
+			//log.Println("Source not available:", source)
+			return fmt.Errorf("source not available: %s", source)
 		}
 	}
 	return v.baseValidator.Validate()
