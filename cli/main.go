@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
+	"log"
 	"news-aggregator/internal"
-	"news-aggregator/internal/filters"
+	"news-aggregator/internal/initializers"
 	"news-aggregator/internal/sort"
 	"news-aggregator/internal/validator"
 )
@@ -22,27 +23,36 @@ func main() {
 		flag.Usage()
 		return
 	}
+	resources, err := initializers.LoadSources("server-news/")
+	if err != nil {
+		return
+	}
+	availableSources := make([]string, 0)
+	for sourceName := range resources {
+		availableSources = append(availableSources, sourceName)
+	}
 	sortOptions := sort.Options{
 		Criterion: *sortBy,
 		Order:     *sortOrder,
 	}
-	resources := initializeDefaultResource()
 	config := validator.Config{
 		Sources:          *sources,
-		AvailableSources: resources,
+		AvailableSources: availableSources,
 		DateStart:        *dateStart,
 		DateEnd:          *dateEnd,
 		SortOptions:      sortOptions,
 	}
 
 	v := validator.NewValidator(config)
-	if !v.Validate() {
+	err = v.Validate()
+	if err != nil {
+		log.Println(err)
 		return
 	}
 	a := internal.NewAggregator(
 		resources,
 		*sources,
-		filters.InitializeFilters(keywords, dateStart, dateEnd),
+		initializers.InitializeFilters(keywords, dateStart, dateEnd),
 		sortOptions)
 	news, err := a.Aggregate()
 	if err != nil {
@@ -51,16 +61,7 @@ func main() {
 	}
 	err = a.Print(news, *keywords)
 	if err != nil {
-		print(err)
+		log.Println(err)
 		return
-	}
-}
-func initializeDefaultResource() map[string]string {
-	return map[string]string{
-		"bbc":        "resources/bbc-world-category-19-05-24.xml",
-		"nbc":        "resources/nbc-news.json",
-		"abc":        "resources/abcnews-international-category-19-05-24.xml",
-		"washington": "resources/washingtontimes-world-category-19-05-24.xml",
-		"usatoday":   "resources/usatoday-world-news.html",
 	}
 }
