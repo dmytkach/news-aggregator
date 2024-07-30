@@ -26,5 +26,17 @@ spec:
             - "-port=:8443"
             - "-cert=./server/certificates/cert.pem"
             - "-key=./server/certificates/key.pem"
-            - "-path_to_source=sources.json"
-            - "-news_folder=server-news/"
+            - "-path_to_source=/mnt/sources/sources.json"
+            - "-news_folder=/mnt/news"
+          volumeMounts:
+            - name: news-volume
+              mountPath: /mnt/news
+            - name: sources-volume
+              mountPath: /mnt/sources
+      volumes:
+        - name: news-volume
+          persistentVolumeClaim:
+            claimName: news-aggregator-news-pvc
+        - name: sources-volume
+          persistentVolumeClaim:
+            claimName: news-aggregator-sources-pvc
