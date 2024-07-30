@@ -16,7 +16,7 @@ func main() {
 	port := flag.String("port", ":8443", "Specify the port on which the server should listen. Default is :8443.")
 	serverCert := flag.String("cert", "server/certificates/cert.pem", "Path to the server's certificate file. Default is 'server/certificates/cert.pem'.")
 	serverKey := flag.String("key", "server/certificates/key.pem", "Path to the server's key file. Default is 'server/certificates/key.pem'.")
-	fetchInterval := flag.String("fetch_interval", "20s", "Set the interval for fetching news updates. The default is 1 hour.")
+	fetchInterval := flag.String("fetch_interval", "1h", "Set the interval for fetching news updates. The default is 1 hour.")
 	pathToSourcesFile := flag.String("path_to_source", "server/sources.json", "Path to the file containing news sources. Default is 'server/sources.json'.")
 	pathToNews := flag.String("news_folder", "server-news/", "Path to the folder where news files are stored. Default is 'server-news/'.")
 
