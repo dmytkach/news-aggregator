@@ -3,6 +3,7 @@
   "packages": [
     "go@1.22",
     "docker@24.0.9",
-    "go-task@3.38.0"
+    "go-task@3.38.0",
+    "kubectl"
   ]
 }

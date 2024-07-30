@@ -4,10 +4,13 @@ vars:
   cli_aggregator: ./cli/main.go
   server_aggregator: ./server/main.go
   docker_image_name: "dmytkach/news-aggregator"
-  docker_image_tag: "v1.0"
+  docker_image_tag: "1.0.4"
   dockerfile_path: ".Dockerfile"
   docker_port: "8443"
   server_expose_port: "8443"
+  namespace_name: "news-aggregator"
+  k8s_folder: "templates"
+
 tasks:
   test:
     cmd: go test ./...
@@ -56,3 +59,27 @@ tasks:
   docker_push:
     desc: "Push the Docker image to the registry"
     cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
+
+  deploy:
+    desc: "Deploys news-aggregator app on Kubernetes cluster"
+    deps: [ create_ns ]
+    cmds:
+      - kubectl apply -f {{.k8s_folder}}
+
+  undeploy:
+    desc: "Removes news-aggregator app from Kubernetes cluster"
+    cmds:
+      - kubectl delete -f {{.k8s_folder}}
+
+  create_ns:
+    cmd: |
+      if ! kubectl get namespace {{.namespace_name}} >/dev/null 2>&1; then
+        kubectl create namespace {{.namespace_name}}
+      else
+        echo "Namespace {{.namespace_name}} already exists"
+      fi
+    desc: "Create a Kubernetes namespace if it does not exist"
+
+  delete_ns:
+    cmd: kubectl delete namespace {{.namespace_name}}
+    desc: "Delete a Kubernetes namespace"
