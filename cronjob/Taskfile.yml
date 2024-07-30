@@ -1,0 +1,54 @@
+version: '3'
+
+vars:
+  cronjob_aggregator: ./main.go
+  docker_image_name: "dmytkach/news-aggregator-cronjob"
+  cronjob_image_tag: "1.0.0"
+  dockerfile_path: "Dockerfile"
+  namespace_name: "news-aggregator"
+  k8s_folder: "cronjob"
+
+tasks:
+  build:
+    cmd: go build -o ./bin/fetch-news {{.cronjob_aggregator}}
+    desc: "Build the CronJob application"
+
+  run:
+    cmd: ./bin/fetch-news
+    desc: "Run the CronJob application locally"
+
+  docker_build:
+    cmd: docker build -t {{.docker_image_name}}:{{.cronjob_image_tag}} -f Dockerfile .
+    desc: "Build Docker image for the CronJob"
+
+  docker_run:
+    cmd: docker run --rm {{.docker_image_name}}:{{.cronjob_image_tag}}
+    desc: "Run Docker container for the CronJob locally"
+
+  docker_push:
+    desc: "Push the Docker image to the registry"
+    cmd: docker push {{.docker_image_name}}:{{.cronjob_image_tag}}
+
+  deploy:
+    desc: "Deploys CronJob on Kubernetes cluster"
+    deps: [ create_ns ]
+    cmds:
+      - kubectl apply -f {{.k8s_folder}}
+
+  undeploy:
+    desc: "Removes CronJob from Kubernetes cluster"
+    cmds:
+      - kubectl delete -f {{.k8s_folder}}
+
+  create_ns:
+    cmd: |
+      if ! kubectl get namespace {{.namespace_name}} >/dev/null 2>&1; then
+        kubectl create namespace {{.namespace_name}}
+      else
+        echo "Namespace {{.namespace_name}} already exists"
+      fi
+    desc: "Create a Kubernetes namespace if it does not exist"
+
+  delete_ns:
+    cmd: kubectl delete namespace {{.namespace_name}}
+    desc: "Delete a Kubernetes namespace"

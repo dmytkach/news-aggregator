@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: news-aggregator-cronjob
+  namespace: news-aggregator
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: fetch-news
+              image: dmytkach/news-aggregator-cronjob:1.0.0
+              volumeMounts:
+                - name: news-volume
+                  mountPath: /mnt/news
+                - name: sources-volume
+                  mountPath: /mnt/sources
+              args:
+                - -path_to_source=/mnt/sources/sources.json
+                - -news_folder=/mnt/news
+          restartPolicy: OnFailure
+          volumes:
+            - name: news-volume
+              persistentVolumeClaim:
+                claimName: news-aggregator-news-pvc
+            - name: sources-volume
+              persistentVolumeClaim:
+                claimName: news-aggregator-sources-pvc
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
