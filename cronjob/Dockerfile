@@ -5,12 +5,16 @@ RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
-COPY ../go.mod ../go.sum ./
+COPY cronjob/go.mod cronjob/go.sum ./
+COPY cronjob/ ./cronjob/
+COPY server/ ./server/
+COPY internal/ ./internal/
+
+WORKDIR /app/cronjob
+
 RUN go mod download
 
-COPY . .
-
-RUN go build -o /fetch-news ./main.go
+RUN go build -o /cronjob ./main.go
 
 # Second stage - Create the final image
 FROM alpine:3.20
@@ -19,6 +23,6 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 WORKDIR /root/
 
-COPY --from=build /fetch-news .
+COPY --from=build /cronjob .
 
-ENTRYPOINT ["/fetch-news"]
+ENTRYPOINT ["/cronjob"]

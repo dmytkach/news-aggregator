@@ -14,7 +14,7 @@ tasks:
     desc: "Build the CronJob application"
 
   run:
-    cmd: ./bin/fetch-news
+    cmd: go run {{.cronjob_aggregator}} {{.CLI_ARGS}}
     desc: "Run the CronJob application locally"
 
   docker_build:
