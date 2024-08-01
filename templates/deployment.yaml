@@ -29,9 +29,9 @@ spec:
             - "-news_folder=/mnt/news"
           volumeMounts:
             - name: news-volume
-              mountPath: /mnt/news
+              mountPath: "/mnt/news"
             - name: sources-volume
-              mountPath: /mnt/sources
+              mountPath: "/mnt/sources"
       volumes:
         - name: news-volume
           persistentVolumeClaim:

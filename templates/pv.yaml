@@ -9,8 +9,8 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/test/path/news"
-  storageClassName: manual
+    path: "/mnt/news"
+#  storageClassName: manual
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -23,5 +23,5 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/test/path/sources"
-  storageClassName: manual
+    path: "/mnt/sources"
+#  storageClassName: manual
