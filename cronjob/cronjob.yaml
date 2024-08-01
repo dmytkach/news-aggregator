@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: news-aggregator-cronjob
+  name: news-fetcher
   namespace: news-aggregator
 spec:
   schedule: "0 12 * * *"
@@ -13,7 +13,7 @@ spec:
         spec:
           containers:
             - name: news-fetcher
-              image: dmytkach/news-aggregator-fetcher:1.0.1
+              image: dmytkach/news-fetcher:1.0.1
               volumeMounts:
                 - name: news-volume
                   mountPath: /mnt/news

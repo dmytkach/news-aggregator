@@ -36,19 +36,3 @@ func main() {
 	log.Println("Starting server on", *port)
 	log.Fatal(http.ListenAndServeTLS(*port, *serverCert, *serverKey, nil))
 }
-
-//fetchInterval := flag.String("fetch_interval", "20s", "Set the interval for fetching news updates. The default is 1 hour.")
-//
-//interval, err := time.ParseDuration(*fetchInterval)
-//if err != nil || interval <= 0 {
-//	log.Println("Failed to parse FETCH_INTERVAL:", *fetchInterval, err)
-//	return
-//}
-//log.Println("FeedManager interval set to", *fetchInterval)
-//job := handlers.FetchJob{Service: service.Fetch{
-//	SourceManager: sourceFolder,
-//	NewsManager:   newsFolder,
-//	FeedManager:   urlFeed},
-//	Interval: interval}
-//
-//go job.Fetch()
