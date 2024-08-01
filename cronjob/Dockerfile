@@ -19,10 +19,6 @@ RUN go build -o /cronjob ./main.go
 # Second stage - Create the final image
 FROM alpine:3.20
 
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-WORKDIR /root/
-
 COPY --from=build /cronjob .
 
 ENTRYPOINT ["/cronjob"]

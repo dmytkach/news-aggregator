@@ -9,7 +9,7 @@ import (
 
 func main() {
 	pathToSourcesFile := flag.String("path_to_source", "../sources.json", "Path to the file containing news sources. Default is 'server/sources.json'.")
-	pathToNews := flag.String("news_folder", "server-news/", "Path to the folder where news files are stored. Default is 'server-news/'.")
+	pathToNews := flag.String("news_folder", "../server-news/", "Path to the folder where news files are stored. Default is 'server-news/'.")
 
 	flag.Parse()
 
@@ -26,4 +26,5 @@ func main() {
 	if err != nil {
 		log.Printf("Error fetching news: %v", err)
 	}
+
 }

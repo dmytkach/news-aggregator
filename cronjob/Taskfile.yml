@@ -6,7 +6,7 @@ vars:
   cronjob_image_tag: "1.0.0"
   dockerfile_path: "Dockerfile"
   namespace_name: "news-aggregator"
-  k8s_folder: "cronjob"
+  k8s_folder: "cronjob.yaml"
 
 tasks:
   build:
@@ -18,7 +18,7 @@ tasks:
     desc: "Run the CronJob application locally"
 
   docker_build:
-    cmd: docker build -t {{.docker_image_name}}:{{.cronjob_image_tag}} -f Dockerfile .
+    cmd: cd .. && docker build -t dmytkach/news-aggregator-cronjob:1.0.0 -f cronjob/Dockerfile .
     desc: "Build Docker image for the CronJob"
 
   docker_run:
