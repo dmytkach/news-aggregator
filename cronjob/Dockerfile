@@ -1,4 +1,3 @@
-# First stage - Build the CronJob application
 FROM golang:1.22-alpine AS build
 
 RUN apk add --no-cache ca-certificates
@@ -14,11 +13,10 @@ WORKDIR /app/cronjob
 
 RUN go mod download
 
-RUN go build -o /cronjob ./main.go
+RUN go build -o /news-fetcher ./main.go
 
-# Second stage - Create the final image
 FROM alpine:3.20
 
-COPY --from=build /cronjob .
+COPY --from=build /news-fetcher /news-fetcher
 
-ENTRYPOINT ["/cronjob"]
+ENTRYPOINT ["/news-fetcher"]

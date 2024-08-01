@@ -4,7 +4,7 @@ metadata:
   name: news-aggregator-cronjob
   namespace: news-aggregator
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "0 12 * * *"
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
   jobTemplate:
@@ -12,8 +12,8 @@ spec:
       template:
         spec:
           containers:
-            - name: cronjob
-              image: dmytkach/news-aggregator-cronjob:1.0.0
+            - name: news-fetcher
+              image: dmytkach/news-aggregator-fetcher:1.0.1
               volumeMounts:
                 - name: news-volume
                   mountPath: /mnt/news
