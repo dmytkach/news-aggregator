@@ -10,7 +10,6 @@ spec:
     - ReadWriteOnce
   hostPath:
     path: "/mnt/news"
-#  storageClassName: manual
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -24,4 +23,3 @@ spec:
     - ReadWriteOnce
   hostPath:
     path: "/mnt/sources"
-#  storageClassName: manual
