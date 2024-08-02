@@ -72,27 +72,20 @@ If you have a different key file, specify its path here.
 
 **Usage**:`go run server/main.go --key=/path/to/your/key.pem`
 
-5. --fetch_interval:
-
-Sets the interval for fetching news updates. The default value is 1h (1 hour).
-You can specify a different interval using valid time units (e.g., 30s for 30 seconds, 5m for 5 minutes).
-
-**Usage**: `go run server/main.go --fetch_interval=30s`
-
-6. --path_to_source:
+5. --path-to-source:
 
 Specifies the path to the source file containing news sources.
 The default path is server/sources.json.
 If your sources file is located elsewhere, provide its path here.
 
-**Usage**: `go run server/main.go --path_to_source=/path/to/your/sources.json`
+**Usage**: `go run server/main.go --path-to-source=/path/to/your/sources.json`
 
-7. --news_folder:
+6. --news-folder:
 
 Specifies the folder where news files are stored. The default folder is server-news/.
 If your news folder is located elsewhere, provide its path here.
 
-**Usage**: `go run server/main.go --news_folder=/path/to/your/news_folder`
+**Usage**: `go run server/main.go --news-folder=/path/to/your/news_folder`
 
 ## Docker Instructions
 
@@ -125,11 +118,11 @@ docker build -t news-aggregator:v1.0 .
 To run the Docker container, use the following command:
 
 ```
-docker run --rm -p 8443:8443 news-aggregator:v1.0 -fetch_interval=30s 
+docker run --rm -p 8443:8443 news-aggregator:v1.0
     -cert=/path/to/your/cert.pem \
     -key=/path/to/your/key.pem \
-    -path_to_source=sources.json \
-    -news_folder=server-news/
+    -path-to-source=sources.json \
+    -news-folder=server-news/
 ```
 
 ## Instructions for starting the server from CLI:
@@ -142,9 +135,9 @@ To start the server via CLI, use the following command variations:
 go run server/main.go 
     --port=:8080
     --cert=/path/to/your/cert.pem
-    --key=/path/to/your/key.pem --fetch_interval=30s
-    --path_to_source=/path/to/your/sources.json
-    --news_folder=/path/to/your/news_folder
+    --key=/path/to/your/key.pem
+    --path-to-source=/path/to/your/sources.json
+    --news-folder=/path/to/your/news_folder
 ```
 
 ### Default settings:

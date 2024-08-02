@@ -23,7 +23,7 @@ tasks:
   build_cli:
     cmd: go build -o ./bin/news-aggregator-cli {{.cli_aggregator}}
     desc: "Build cli version"
-# Usage: task run_server -- --fetch_interval=30s
+# Usage: task run_server -- --port=:443
   run_server:
     cmd: go run {{.server_aggregator}} {{.CLI_ARGS}}
     desc: "Run the web-server locally"
