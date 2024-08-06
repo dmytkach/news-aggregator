@@ -1,0 +1,8 @@
+apiVersion: aggregator.com.teamdev/v1
+kind: Feed
+metadata:
+  name: bbc-news
+  namespace: news-feed
+spec:
+  name: bbc-news
+  link: http://feeds.bbci.co.uk/news/rss.xml
