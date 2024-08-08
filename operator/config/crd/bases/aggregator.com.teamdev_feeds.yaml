@@ -39,15 +39,19 @@ spec:
           spec:
             description: FeedSpec defines the desired state of Feed
             properties:
-              link:
-                description: Link to the news source
-                type: string
               name:
                 description: Name of the news source
                 type: string
+              newUrl:
+                description: NewUrl to the news sources
+                type: string
+              previousUrl:
+                description: PreviousURL to the news sources
+                type: string
             required:
-            - link
             - name
+            - newUrl
+            - previousUrl
             type: object
           status:
             description: FeedStatus defines the observed state of Feed
@@ -55,7 +59,32 @@ spec:
               conditions:
                 description: Conditions represent the latest available observations
                   of an object's state
-                type: string
+                items:
+                  description: Condition represents the state of a Feed at a certain
+                    point.
+                  properties:
+                    lastUpdateTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: If status is False, the message should be populated
+                      type: string
+                    reason:
+                      description: If status is False, the reason should be populated
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of the condition, e.g., Added, Updated, Deleted.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
             type: object
         type: object
     served: true

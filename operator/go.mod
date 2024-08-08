@@ -9,7 +9,6 @@ require (
 	k8s.io/client-go v0.30.1
 	sigs.k8s.io/controller-runtime v0.18.4
 )
-require news-aggregator v0.0.0
 require (
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -94,5 +93,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace news-aggregator => ..

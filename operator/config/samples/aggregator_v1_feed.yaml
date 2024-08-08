@@ -4,5 +4,6 @@ metadata:
   name: bbc-news
   namespace: news-feed
 spec:
-  name: bbc-news
-  link: http://feeds.bbci.co.uk/news/rss.xml
+  name: bbc_news
+  previousUrl: http://feeds.bbci.co.uk/news/rss.xml
+  newUrl: https://feeds.bbci.co.uk/news/world/europe/rss.xml

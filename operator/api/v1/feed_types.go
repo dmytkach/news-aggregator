@@ -8,14 +8,42 @@ import (
 type FeedSpec struct {
 	// Name of the news source
 	Name string `json:"name"`
-	// Link to the news source
-	Link string `json:"link"`
+	// PreviousURL to the news sources
+	PreviousURL string `json:"previousUrl"`
+	// NewUrl to the news sources
+	NewUrl string `json:"newUrl"`
+}
+
+// ConditionType represents a condition type for a Feed
+type ConditionType string
+
+const (
+	// ConditionAdded indicates that the feed has been successfully added
+	ConditionAdded ConditionType = "Added"
+	// ConditionUpdated indicates that the feed has been successfully updated
+	ConditionUpdated ConditionType = "Updated"
+	// ConditionDeleted indicates that the feed has been successfully deleted
+	ConditionDeleted ConditionType = "Deleted"
+)
+
+// Condition represents the state of a Feed at a certain point.
+type Condition struct {
+	// Type of the condition, e.g., Added, Updated, Deleted.
+	Type ConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status metav1.ConditionStatus `json:"status"`
+	// If status is False, the reason should be populated
+	Reason string `json:"reason,omitempty"`
+	// If status is False, the message should be populated
+	Message string `json:"message,omitempty"`
+	// Last time the condition transitioned from one status to another.
+	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
 }
 
 // FeedStatus defines the observed state of Feed
 type FeedStatus struct {
 	// Conditions represent the latest available observations of an object's state
-	Status string `json:"conditions,omitempty"`
+	Conditions []Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
