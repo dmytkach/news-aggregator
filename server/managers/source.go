@@ -7,6 +7,7 @@ import (
 	"log"
 	"news-aggregator/internal/entity"
 	"os"
+	_ "slices"
 )
 
 // SourceManager provides API for handling news sources.
@@ -16,7 +17,7 @@ type SourceManager interface {
 	CreateSource(name, url string) (entity.Source, error)
 	GetSource(name string) (entity.Source, error)
 	GetSources() ([]entity.Source, error)
-	UpdateSource(oldUrl, newUrl string) error
+	UpdateSource(name, newUrl string) error
 	RemoveSourceByName(sourceName string) error
 }
 
@@ -37,20 +38,14 @@ func (sourceManager sourceFolder) CreateSource(name, url string) (entity.Source,
 		log.Printf("Error reading from file: %v", err)
 		return entity.Source{}, err
 	}
-
-	existingSource, found := findSourceByName(sources, name)
-	if found {
-		updateSource, err := updateSourceWithPath(&existingSource, url, sources, sourceManager.path)
-		if err != nil {
-			return entity.Source{}, err
+	for _, source := range sources {
+		if string(source.Name) == name {
+			return entity.Source{}, errors.New(fmt.Sprintf("Source with name %s already exists", name))
 		}
-		log.Printf("Updated resource: %v", existingSource)
-		return updateSource, nil
 	}
-
 	newSource := entity.Source{
-		Name:        entity.SourceName(name),
-		PathsToFile: []entity.PathToFile{entity.PathToFile(url)},
+		Name:       entity.SourceName(name),
+		PathToFile: entity.PathToFile(url),
 	}
 	sources = append(sources, newSource)
 	err = writeToFile(sourceManager.path, sources)
@@ -69,9 +64,10 @@ func (sourceManager sourceFolder) GetSource(name string) (entity.Source, error) 
 		log.Printf("Error reading from file: %v", err)
 		return entity.Source{}, err
 	}
-	existingSource, found := findSourceByName(sources, name)
-	if found {
-		return existingSource, nil
+	for _, source := range sources {
+		if string(source.Name) == name {
+			return source, nil
+		}
 	}
 	return entity.Source{}, errors.New("no resources found for name: " + name)
 }
@@ -87,24 +83,19 @@ func (sourceManager sourceFolder) GetSources() ([]entity.Source, error) {
 }
 
 // UpdateSource identified by its old URL.
-func (sourceManager sourceFolder) UpdateSource(oldUrl, newUrl string) error {
+func (sourceManager sourceFolder) UpdateSource(name, newUrl string) error {
 	sources, err := readFromFile(sourceManager.path)
 	if err != nil {
 		log.Printf("Error reading from file: %v", err)
 		return err
 	}
-	for i, s := range sources {
-		for j, path := range s.PathsToFile {
-			if string(path) == oldUrl {
-				if isPathExist(s.PathsToFile, newUrl) {
-					return errors.New("resource already exists")
-				}
-				sources[i].PathsToFile[j] = entity.PathToFile(newUrl)
-				return writeToFile(sourceManager.path, sources)
-			}
+	for i, source := range sources {
+		if string(source.Name) == name {
+			sources[i].PathToFile = entity.PathToFile(newUrl)
+			return writeToFile(sourceManager.path, sources)
 		}
 	}
-	return fmt.Errorf("source with URL %s not found", oldUrl)
+	return fmt.Errorf("source with name %s not found", name)
 }
 
 // RemoveSourceByName from the resource file.
@@ -127,39 +118,6 @@ func (sourceManager sourceFolder) RemoveSourceByName(sourceName string) error {
 	}
 	log.Printf("Removed source with name: %s", sourceName)
 	return nil
-}
-
-func findSourceByName(sources []entity.Source, name string) (entity.Source, bool) {
-	for _, s := range sources {
-		if string(s.Name) == name {
-			return s, true
-		}
-	}
-	return entity.Source{}, false
-}
-
-func updateSourceWithPath(source *entity.Source, url string, sources []entity.Source, path string) (entity.Source, error) {
-	if isPathExist(source.PathsToFile, url) {
-		return entity.Source{}, errors.New("resource already exists")
-	}
-	for i, s := range sources {
-		if s.Name == source.Name {
-			s.PathsToFile = append(s.PathsToFile, entity.PathToFile(url))
-			sources[i] = s
-			log.Printf("Updated resource: %v", s)
-			return s, writeToFile(path, sources)
-		}
-	}
-	return entity.Source{}, errors.New("resource not found")
-}
-
-func isPathExist(paths []entity.PathToFile, url string) bool {
-	for _, path := range paths {
-		if string(path) == url {
-			return true
-		}
-	}
-	return false
 }
 
 // writeToFile sources in JSON format.

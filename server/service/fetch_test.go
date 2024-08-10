@@ -10,7 +10,7 @@ import (
 	"news-aggregator/server/managers/mock_managers"
 )
 
-func TestFetchService_UpdateNews(t *testing.T) {
+func TestFetch_UpdateNews(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -20,36 +20,21 @@ func TestFetchService_UpdateNews(t *testing.T) {
 
 	sources := []entity.Source{
 		{
-			Name: "Source1",
-			PathsToFile: []entity.PathToFile{
-				"file1.xml",
-				"file2.xml",
-			},
+			Name:       "Source1",
+			PathToFile: entity.PathToFile("file1.xml"),
 		},
 	}
 
 	mockSourceManager.EXPECT().GetSources().Return(sources, nil).Times(1)
 	mockNewsManager.EXPECT().GetNewsFromFolder("Source1").Return([]entity.News{
 		{Link: "link1"},
-	}, nil).Times(2)
-	mockFeedManager.EXPECT().FetchFeed("file1.xml").Return(entity.Feed{
-		Name: "Feed1",
-		News: []entity.News{
-			{Link: "link2"},
-		},
 	}, nil).Times(1)
-	mockFeedManager.EXPECT().FetchFeed("file2.xml").Return(entity.Feed{
-		Name: "Feed2",
-		News: []entity.News{
-			{Link: "link3"},
-		},
+	mockFeedManager.EXPECT().FetchFeed("file1.xml").Return([]entity.News{
+		{Link: "link2"},
 	}, nil).Times(1)
 	mockNewsManager.EXPECT().AddNews([]entity.News{
 		{Link: "link2"},
-	}, "Feed1").Return(nil).Times(1)
-	mockNewsManager.EXPECT().AddNews([]entity.News{
-		{Link: "link3"},
-	}, "Feed2").Return(nil).Times(1)
+	}, "Source1").Return(nil).Times(1)
 
 	fetchService := Fetch{
 		SourceManager: mockSourceManager,
@@ -60,8 +45,7 @@ func TestFetchService_UpdateNews(t *testing.T) {
 	err := fetchService.UpdateNews()
 	assert.NoError(t, err)
 }
-
-func TestFetchService_UpdateNews_FetchError(t *testing.T) {
+func TestFetch_UpdateNews_FetchError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -71,15 +55,15 @@ func TestFetchService_UpdateNews_FetchError(t *testing.T) {
 
 	sources := []entity.Source{
 		{
-			Name: "Source1",
-			PathsToFile: []entity.PathToFile{
-				"file1.xml",
-			},
+			Name:       "Source1",
+			PathToFile: entity.PathToFile("file1.xml"),
 		},
 	}
 
 	mockSourceManager.EXPECT().GetSources().Return(sources, nil).Times(1)
-	mockFeedManager.EXPECT().FetchFeed("file1.xml").Return(entity.Feed{}, errors.New("fetch error")).Times(1)
+	mockFeedManager.EXPECT().FetchFeed("file1.xml").Return(nil, errors.New("fetch error")).Times(1)
+
+	// Не ожидать вызова GetNewsFromFolder, потому что FetchFeed возвращает ошибку
 
 	fetchService := Fetch{
 		SourceManager: mockSourceManager,
@@ -88,10 +72,9 @@ func TestFetchService_UpdateNews_FetchError(t *testing.T) {
 	}
 
 	err := fetchService.UpdateNews()
-	assert.NoError(t, err, "Expected no error from UpdateNews")
+	assert.Error(t, err, "fetch error")
 }
-
-func TestFetchService_fetchNewsFromSource_FetchError(t *testing.T) {
+func TestFetch_fetchNewsFromSource_FetchError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -100,13 +83,11 @@ func TestFetchService_fetchNewsFromSource_FetchError(t *testing.T) {
 	mockFeedManager := mock_managers.NewMockFeedManager(ctrl)
 
 	resource := entity.Source{
-		Name: "Source1",
-		PathsToFile: []entity.PathToFile{
-			"file1.xml",
-		},
+		Name:       "Source1",
+		PathToFile: entity.PathToFile("file1.xml"),
 	}
 
-	mockFeedManager.EXPECT().FetchFeed("file1.xml").Return(entity.Feed{}, errors.New("fetch error")).Times(1)
+	mockFeedManager.EXPECT().FetchFeed("file1.xml").Return(nil, errors.New("fetch error")).Times(1)
 
 	fetchService := Fetch{
 		SourceManager: mockSourceManager,
@@ -115,10 +96,10 @@ func TestFetchService_fetchNewsFromSource_FetchError(t *testing.T) {
 	}
 
 	err := fetchService.fetchNewsFromSource(resource)
-	assert.NoError(t, err, "Expected no error from fetchNewsFromSource due to continue on fetch error")
+	assert.Error(t, err, "fetch error")
 }
 
-func TestFetchService_fetchNewsFromSource_Success(t *testing.T) {
+func TestFetch_fetchNewsFromSource_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -127,10 +108,8 @@ func TestFetchService_fetchNewsFromSource_Success(t *testing.T) {
 	mockFeedManager := mock_managers.NewMockFeedManager(ctrl)
 
 	resource := entity.Source{
-		Name: "Source1",
-		PathsToFile: []entity.PathToFile{
-			"file1.xml",
-		},
+		Name:       "Source1",
+		PathToFile: entity.PathToFile("file1.xml"),
 	}
 
 	existingNews := []entity.News{
@@ -139,12 +118,9 @@ func TestFetchService_fetchNewsFromSource_Success(t *testing.T) {
 		},
 	}
 
-	newFeed := entity.Feed{
-		Name: "Source1",
-		News: []entity.News{
-			{
-				Link: "new_link",
-			},
+	newFeed := []entity.News{
+		{
+			Link: "new_link",
 		},
 	}
 

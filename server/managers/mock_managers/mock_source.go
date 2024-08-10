@@ -94,15 +94,15 @@ func (mr *MockSourceManagerMockRecorder) RemoveSourceByName(sourceName interface
 }
 
 // UpdateSource mocks base method.
-func (m *MockSourceManager) UpdateSource(oldUrl, newUrl string) error {
+func (m *MockSourceManager) UpdateSource(name, newUrl string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSource", oldUrl, newUrl)
+	ret := m.ctrl.Call(m, "UpdateSource", name, newUrl)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateSource indicates an expected call of UpdateSource.
-func (mr *MockSourceManagerMockRecorder) UpdateSource(oldUrl, newUrl interface{}) *gomock.Call {
+func (mr *MockSourceManagerMockRecorder) UpdateSource(name, newUrl interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSource", reflect.TypeOf((*MockSourceManager)(nil).UpdateSource), oldUrl, newUrl)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSource", reflect.TypeOf((*MockSourceManager)(nil).UpdateSource), name, newUrl)
 }

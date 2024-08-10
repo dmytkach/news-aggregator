@@ -20,15 +20,13 @@ func (f Fetch) UpdateNews() error {
 		return err
 	}
 	for _, s := range sources {
-		for _, link := range s.PathsToFile {
-			err := f.fetchNewsFromSource(entity.Source{
-				Name:        s.Name,
-				PathsToFile: []entity.PathToFile{link},
-			})
-			if err != nil {
-				log.Printf("Error fetching news from resource %s: %v", s, err)
-				return err
-			}
+		err := f.fetchNewsFromSource(entity.Source{
+			Name:       s.Name,
+			PathToFile: s.PathToFile,
+		})
+		if err != nil {
+			log.Printf("Error fetching news from resource %s: %v", s, err)
+			return err
 		}
 	}
 	return nil
@@ -36,34 +34,32 @@ func (f Fetch) UpdateNews() error {
 
 // fetchNewsFromSource and updates local storage if the news is not already present.
 func (f Fetch) fetchNewsFromSource(resource entity.Source) error {
-	for _, path := range resource.PathsToFile {
-		news, err := f.FeedManager.FetchFeed(string(path))
-		if err != nil {
-			log.Printf("Failed to fetch news from %s: %v", path, err)
-			continue
-		}
-		allNews, err := f.NewsManager.GetNewsFromFolder(string(resource.Name))
-		if err != nil {
-			log.Printf("Failed to get existing news for %s: %v", resource.Name, err)
-			return err
-		}
-		allNewsLink := make([]entity.Link, 0)
-		for _, n := range allNews {
-			allNewsLink = append(allNewsLink, n.Link)
-		}
+	news, err := f.FeedManager.FetchFeed(string(resource.PathToFile))
+	if err != nil {
+		log.Printf("Failed to fetch news from %s: %v", resource.PathToFile, err)
+		return err
+	}
+	allNews, err := f.NewsManager.GetNewsFromFolder(string(resource.Name))
+	if err != nil {
+		log.Printf("Failed to get existing news for %s: %v", resource.Name, err)
+		return err
+	}
+	allNewsLink := make([]entity.Link, 0)
+	for _, n := range allNews {
+		allNewsLink = append(allNewsLink, n.Link)
+	}
 
-		newsWithoutRepeat := make([]entity.News, 0)
-		for _, loadedNews := range news.News {
-			if !articleExists(allNewsLink, loadedNews) {
-				newsWithoutRepeat = append(newsWithoutRepeat, loadedNews)
-			}
+	newsWithoutRepeat := make([]entity.News, 0)
+	for _, loadedNews := range news {
+		if !articleExists(allNewsLink, loadedNews) {
+			newsWithoutRepeat = append(newsWithoutRepeat, loadedNews)
 		}
-		if len(newsWithoutRepeat) > 0 {
-			err = f.NewsManager.AddNews(newsWithoutRepeat, string(news.Name))
-			if err != nil {
-				log.Printf("Failed to add news for %s: %v", resource.Name, err)
-				return err
-			}
+	}
+	if len(newsWithoutRepeat) > 0 {
+		err = f.NewsManager.AddNews(newsWithoutRepeat, string(resource.Name))
+		if err != nil {
+			log.Printf("Failed to add news for %s: %v", resource.Name, err)
+			return err
 		}
 	}
 	return nil

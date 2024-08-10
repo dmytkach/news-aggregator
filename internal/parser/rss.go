@@ -18,10 +18,10 @@ func (rssParser *Rss) CanParseFileType(ext string) bool {
 }
 
 // Parse - implementation of a parser for files in RSS format.
-func (rssParser *Rss) Parse() (entity.Feed, error) {
+func (rssParser *Rss) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(rssParser.FilePath))
 	if err != nil {
-		return entity.Feed{}, err
+		return nil, err
 	}
 	defer func(file *os.File) {
 		closeErr := file.Close()
@@ -34,25 +34,21 @@ func (rssParser *Rss) Parse() (entity.Feed, error) {
 	fp := gofeed.NewParser()
 	feed, err := fp.Parse(file)
 	if err != nil {
-		return entity.Feed{}, err
+		return nil, err
 	}
 
 	var allNews []entity.News
-	resourceName := cleanSourceName(feed.Title)
 	for _, item := range feed.Items {
 		allNews = append(allNews, entity.News{
 			Title:       entity.Title(item.Title),
 			Description: entity.Description(item.Description),
 			Link:        entity.Link(item.Link),
 			Date:        *item.PublishedParsed,
-			Source:      resourceName,
+			Source:      feed.Title,
 		})
 	}
 	if len(allNews) == 0 {
-		return entity.Feed{}, errors.New("no news found")
+		return nil, errors.New("no news found")
 	}
-	return entity.Feed{
-		Name: entity.SourceName(resourceName),
-		News: allNews,
-	}, nil
+	return allNews, nil
 }
