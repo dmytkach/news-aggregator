@@ -145,6 +145,20 @@
         }
       }
     },
+    "helm": {
+      "resolved": "github:NixOS/nixpkgs/75a52265bda7fd25e06e3a67dee3f0354e73243c#helm",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/gllj5c99n192dkh12gdf85ngsik3z289-helm-0.9.0",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
     "kubectl": {
       "resolved": "github:NixOS/nixpkgs/75a52265bda7fd25e06e3a67dee3f0354e73243c#kubectl",
       "source": "nixpkg",
@@ -158,6 +172,20 @@
             {
               "name": "man",
               "path": "/nix/store/n591fkha0bzh2vikpwzvqp34ffvw5r4g-kubectl-1.28.3-man",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
+    "kustomize": {
+      "resolved": "github:NixOS/nixpkgs/75a52265bda7fd25e06e3a67dee3f0354e73243c#kustomize",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/acpd3mkb4z1h3i0s1fmc82c8gqg18590-kustomize-5.2.1",
               "default": true
             }
           ]
