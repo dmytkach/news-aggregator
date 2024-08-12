@@ -39,21 +39,11 @@ type Condition struct {
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
 }
 
-// AddCondition to the FeedStatus.
+// AddCondition adds a new condition to the FeedStatus and updates all conditions' LastUpdateTime.
 func (f *FeedStatus) AddCondition(condition Condition) {
 	f.Conditions = append(f.Conditions, condition)
 	f.updateConditions()
 	log.Printf("Added condition: %v", condition)
-}
-
-// GetCondition retrieves the condition of a specific type.
-func (f *FeedStatus) GetCondition(conditionType ConditionType) *Condition {
-	for _, condition := range f.Conditions {
-		if condition.Type == conditionType {
-			return &condition
-		}
-	}
-	return nil
 }
 
 // Contains checks if a condition of the specified type with the given status
@@ -67,22 +57,11 @@ func (f *FeedStatus) Contains(conditionType ConditionType, status bool) bool {
 	return false
 }
 
-// updateConditions updates the LastUpdateTime for all conditions.
+// updateConditions updates the LastUpdateTime for all conditions in FeedStatus.
 func (f *FeedStatus) updateConditions() {
 	for i := range f.Conditions {
 		f.Conditions[i].LastUpdateTime = metav1.Now()
 	}
-}
-
-// RemoveCondition of a specific type.
-func (f *FeedStatus) RemoveCondition(conditionType ConditionType) {
-	var updatedConditions []Condition
-	for _, condition := range f.Conditions {
-		if condition.Type != conditionType {
-			updatedConditions = append(updatedConditions, condition)
-		}
-	}
-	f.Conditions = updatedConditions
 }
 
 // FeedStatus defines the observed state of Feed

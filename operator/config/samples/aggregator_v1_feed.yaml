@@ -3,5 +3,5 @@ kind: Feed
 metadata:
   name: bbc
 spec:
-  name: abc
+  name: bbc
   link: https://feeds.bbci.co.uk/news/world/asia/rss.xml

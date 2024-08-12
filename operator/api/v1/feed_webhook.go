@@ -1,19 +1,3 @@
-/*
-Copyright 2024.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package v1
 
 import (
@@ -31,7 +15,7 @@ import (
 
 var k8sClient client.Client
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager configures the manager to handle webhooks for the Feed type.
 func (r *Feed) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	k8sClient = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -52,30 +36,30 @@ func (r *Feed) Default() {
 
 var _ webhook.Validator = &Feed{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate validates the Feed object during creation.
 func (r *Feed) ValidateCreate() (admission.Warnings, error) {
-	log.Print("validate create", "name", r.Name)
+	log.Print("validate create ", "name", r.Name)
 
 	return r.validateFeed()
 
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate validates the Feed object during updates.
 func (r *Feed) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	log.Print("validate update", "name", r.Name)
+	log.Print("validate update ", "name", r.Name)
 
 	return r.validateFeed()
 
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete validates the Feed object during deletion. No validation is performed in this case.
 func (r *Feed) ValidateDelete() (admission.Warnings, error) {
-	log.Print("validate delete", "name", r.Name)
+	log.Print("validate delete ", "name", r.Name)
 
 	return nil, nil
 }
 
-// validateFeed implements the common validation logic for both create and update operations.
+// validateFeed performs common validation logic for Feed creation and updates.
 func (r *Feed) validateFeed() (admission.Warnings, error) {
 	var errorsList field.ErrorList
 	specPath := field.NewPath("spec")
@@ -107,13 +91,13 @@ func (r *Feed) validateFeed() (admission.Warnings, error) {
 	return nil, nil
 }
 
-// isValidURL checks if the given string is a valid URL.
+// isValidURL checks if the provided string is a valid URL.
 func isValidURL(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
-// checkNameUniqueness queries the Kubernetes API to ensure that no other Feed with the same name exists in the same namespace.
+// checkNameUniqueness ensures that no other Feed with the same name exists in the same namespace.
 func checkNameUniqueness(feed *Feed) error {
 	feedList := &FeedList{}
 	listOpts := client.ListOptions{Namespace: feed.Namespace}
