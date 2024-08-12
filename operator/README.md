@@ -1,8 +1,11 @@
 # operator
-// TODO(user): Add simple overview of use/purpose
-
+Operator API is designed to manage and automate the lifecycle of "Feed" resources within a Kubernetes cluster.
+It handles tasks such as creating, updating, and deleting feeds, ensuring that the state of these resources is consistent with the desired configuration.
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Operator API integrates with Kubernetes to provide robust management capabilities for News Feed resources.
+It utilizes custom controllers and webhooks to enforce validation rules, handle updates, and maintain resource consistency.
+With this operator, users can easily deploy and manage feeds, ensuring their configurations are correct and their lifecycle is properly maintained. 
+It also provides mechanisms for validation, defaulting, and cleanup to ensure resource integrity and compliance with specified rules.
 
 ## Getting Started
 
@@ -32,7 +35,7 @@ make install
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
 
 ```sh
-make deploy IMG=<some-registry>/operator:tag
+make deploy IMG=dmytkach/news-aggregator-operator:v2
 ```
 
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
@@ -73,7 +76,7 @@ Following are the steps to build the installer and distribute this project to us
 1. Build the installer for the image built and published in the registry:
 
 ```sh
-make build-installer IMG=<some-registry>/operator:tag
+make build-installer IMG=dmytkach/news-aggregator-operator:v2
 ```
 
 NOTE: The makefile target mentioned above generates an 'install.yaml'
