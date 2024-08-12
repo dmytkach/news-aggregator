@@ -1,84 +1,314 @@
-/*
-Copyright 2024.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controller
 
 import (
-	"context"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"bytes"
 	aggregatorv1 "com.teamdev/news-aggregator/api/v1"
+	controller "com.teamdev/news-aggregator/internal/controller/mock_aggregator"
+	"context"
+	"fmt"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"testing"
 )
 
-var _ = Describe("Feed Controller", func() {
-	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
+func TestFeedReconcile(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = aggregatorv1.AddToScheme(scheme)
 
-		ctx := context.Background()
+	initialFeed := &aggregatorv1.Feed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-feed",
+			Namespace: "default",
+		},
+		Spec: aggregatorv1.FeedSpec{
+			Name: "TestFeed",
+			Link: "https://example.com/feed",
+		},
+		Status: aggregatorv1.FeedStatus{
+			Conditions: []aggregatorv1.Condition{},
+		},
+	}
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initialFeed).Build()
 
-		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
-		}
-		feed := &aggregatorv1.Feed{}
+	feed := &aggregatorv1.Feed{}
+	err := client.Get(context.Background(), types.NamespacedName{
+		Name:      "test-feed",
+		Namespace: "default",
+	}, feed)
+	assert.NoError(t, err, "initial Feed object should be found")
 
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind Feed")
-			err := k8sClient.Get(ctx, typeNamespacedName, feed)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &aggregatorv1.Feed{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
-					},
-					// TODO(user): Specify other spec details if needed.
-				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockHTTPClient := controller.NewMockHttpClient(ctrl)
+
+	mockHTTPClient.EXPECT().
+		Post("https://news-aggregator-service.news-aggregator.svc.cluster.local:443/sources?name=TestFeed&url=https://example.com/feed",
+			"application/json", gomock.Any()).
+		Return(&http.Response{
+			StatusCode: http.StatusCreated,
+			Body:       io.NopCloser(bytes.NewBufferString("")),
+		}, nil)
+
+	r := &FeedReconciler{
+		Client:        client,
+		Scheme:        scheme,
+		HttpClient:    mockHTTPClient,
+		FeedFinalizer: "feed.finalizers.news.teamdev.com",
+		ServiceURL:    "https://news-aggregator-service.news-aggregator.svc.cluster.local:443/sources",
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "test-feed",
+			Namespace: "default",
+		},
+	}
+
+	res, err := r.Reconcile(context.Background(), req)
+	assert.False(t, res.Requeue)
+
+	err = client.Get(context.Background(), req.NamespacedName, feed)
+	assert.NoError(t, err, "Feed object should be found after reconciliation")
+
+	if !assert.Contains(t, feed.Finalizers, "feed.finalizers.news.teamdev.com", "Finalizer should be added") {
+		t.Logf("Finalizers found: %v", feed.Finalizers)
+	}
+}
+func TestFeedReconciler_addFeed(t *testing.T) {
+	tests := []struct {
+		name             string
+		feed             aggregatorv1.Feed
+		mockPostResponse *http.Response
+		mockPostError    error
+		expectedError    bool
+	}{
+		{
+			name: "Success request",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockPostResponse: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString("")),
+			},
+			mockPostError: nil,
+			expectedError: false,
+		},
+		{
+			name: "HTTP error from POST request",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockPostResponse: nil,
+			mockPostError:    fmt.Errorf("network error"),
+			expectedError:    true,
+		},
+		{
+			name: "Non-200 status code",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockPostResponse: &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
+			},
+			mockPostError: nil,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHttpClient := controller.NewMockHttpClient(ctrl)
+
+			mockHttpClient.EXPECT().
+				Post(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(tt.mockPostResponse, tt.mockPostError)
+
+			reconciler := &FeedReconciler{
+				HttpClient: mockHttpClient,
+				ServiceURL: "http://mock-server/create-feed",
+			}
+
+			err := reconciler.createFeed(tt.feed)
+
+			if (err != nil) != tt.expectedError {
+				t.Errorf("createFeed() error = %v, expectedError %v", err, tt.expectedError)
 			}
 		})
+	}
+}
 
-		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &aggregatorv1.Feed{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
+func TestFeedReconciler_deleteFeed(t *testing.T) {
+	tests := []struct {
+		name               string
+		feed               aggregatorv1.Feed
+		mockDeleteResponse *http.Response
+		mockDeleteError    error
+		expectedError      bool
+	}{
+		{
+			name: "Success delete request",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockDeleteResponse: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString("")),
+			},
+			mockDeleteError: nil,
+			expectedError:   false,
+		},
+		{
+			name: "Failed delete request with error",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockDeleteResponse: nil,
+			mockDeleteError:    fmt.Errorf("delete request failed"),
+			expectedError:      true,
+		},
+		{
+			name: "Failed delete request with non-OK status code",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockDeleteResponse: &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
+			},
+			mockDeleteError: nil,
+			expectedError:   true,
+		},
+	}
 
-			By("Cleanup the specific resource instance Feed")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
-		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-			controllerReconciler := &FeedReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHttpClient := controller.NewMockHttpClient(ctrl)
+
+			mockHttpClient.EXPECT().
+				Do(gomock.Any()).
+				Return(tt.mockDeleteResponse, tt.mockDeleteError).
+				Times(1)
+
+			reconciler := &FeedReconciler{
+				HttpClient: mockHttpClient,
+				ServiceURL: "http://mock-server/delete-feed",
 			}
 
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+			err := reconciler.deleteFeed(tt.feed)
+			if (err != nil) != tt.expectedError {
+				t.Errorf("deleteFeed() error = %v, expectedError %v", err, tt.expectedError)
+			}
 		})
-	})
-})
+	}
+}
+func TestFeedReconciler_updateFeed(t *testing.T) {
+	tests := []struct {
+		name            string
+		feed            aggregatorv1.Feed
+		mockPutResponse *http.Response
+		mockPutError    error
+		expectedError   bool
+	}{
+		{
+			name: "Success update request",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockPutResponse: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString("")),
+			},
+			mockPutError:  nil,
+			expectedError: false,
+		},
+		{
+			name: "Failed update request with error",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockPutResponse: nil,
+			mockPutError:    fmt.Errorf("update request failed"),
+			expectedError:   true,
+		},
+		{
+			name: "Failed update request with non-OK status code",
+			feed: aggregatorv1.Feed{
+				Spec: aggregatorv1.FeedSpec{
+					Name: "TestFeed",
+					Link: "http://example.com/feed",
+				},
+			},
+			mockPutResponse: &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
+			},
+			mockPutError:  nil,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHttpClient := controller.NewMockHttpClient(ctrl)
+
+			mockHttpClient.EXPECT().
+				Do(gomock.Any()).
+				Return(tt.mockPutResponse, tt.mockPutError).
+				Times(1)
+
+			reconciler := &FeedReconciler{
+				HttpClient: mockHttpClient,
+				ServiceURL: "http://mock-server/update-feed",
+			}
+
+			err := reconciler.updateFeed(tt.feed)
+			if (err != nil) != tt.expectedError {
+				t.Errorf("updateFeed() error = %v, expectedError %v", err, tt.expectedError)
+			}
+		})
+	}
+}

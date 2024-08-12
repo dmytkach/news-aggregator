@@ -1,47 +1,189 @@
-/*
-Copyright 2024.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package v1
 
 import (
-	. "github.com/onsi/ginkgo/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-var _ = Describe("Feed Webhook", func() {
+func TestValidateFeedName(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = AddToScheme(scheme)
 
-	Context("When creating Feed under Defaulting Webhook", func() {
-		It("Should fill in the default value if a required field is empty", func() {
+	k8sClient = fake.NewClientBuilder().WithScheme(scheme).Build()
 
-			// TODO(user): Add your logic here
+	tests := []struct {
+		name      string
+		feed      *Feed
+		expectErr bool
+	}{
+		{
+			name: "valid name",
+			feed: &Feed{
+				Spec: FeedSpec{
+					Name: "TestFeed",
+					Link: "https://example.com",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "empty name",
+			feed: &Feed{
+				Spec: FeedSpec{Name: ""},
+			},
+			expectErr: true,
+		},
+		{
+			name: "name too long",
+			feed: &Feed{
+				Spec: FeedSpec{Name: "TestFeedTestFeedTestFeedTestFeedTestFeedTestFeedTestFeedTestFeedTestFeed"},
+			},
+			expectErr: true,
+		},
+		{
+			name: "name with invalid characters",
+			feed: &Feed{
+				Spec: FeedSpec{Name: "Test!Feed"},
+			},
+			expectErr: true,
+		},
+	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.feed.validateFeed()
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
-	})
+	}
+}
 
-	Context("When creating Feed under Validating Webhook", func() {
-		It("Should deny if a required field is empty", func() {
+// TestValidateFeedLink тестирует валидацию поля Link в Feed.
+func TestValidateFeedLink(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = AddToScheme(scheme)
 
-			// TODO(user): Add your logic here
+	k8sClient = fake.NewClientBuilder().WithScheme(scheme).Build()
 
+	tests := []struct {
+		name      string
+		feed      *Feed
+		expectErr bool
+	}{
+		{
+			name: "valid link",
+			feed: &Feed{
+				Spec: FeedSpec{
+					Link: "http://example.com",
+					Name: "TestFeed",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "invalid link",
+			feed: &Feed{
+				Spec: FeedSpec{
+					Link: "invalid-link",
+					Name: "TestFeed",
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "empty link",
+			feed: &Feed{
+				Spec: FeedSpec{
+					Link: "",
+					Name: "TestFeed",
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.feed.validateFeed()
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
+	}
+}
 
-		It("Should admit if all required fields are provided", func() {
+func TestCheckNameUniqueness(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = AddToScheme(scheme)
 
-			// TODO(user): Add your logic here
+	existingFeed := &Feed{
+		Spec: FeedSpec{
+			Name: "existing-feed",
+			Link: "https://example.com",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			UID:       "existing-uid",
+		},
+	}
+	existingFeedList := &FeedList{
+		Items: []Feed{*existingFeed},
+	}
 
+	k8sClient = fake.NewClientBuilder().WithScheme(scheme).WithLists(existingFeedList).Build()
+
+	tests := []struct {
+		name      string
+		feed      *Feed
+		expectErr bool
+	}{
+		{
+			name: "unique name",
+			feed: &Feed{
+				Spec: FeedSpec{
+					Name: "new-feed",
+					Link: "https://example.com",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: existingFeed.Namespace,
+					UID:       "new-uid",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "duplicate name",
+			feed: &Feed{
+				Spec: FeedSpec{
+					Name: "existing-feed",
+					Link: "https://example.com",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: existingFeed.Namespace,
+					UID:       "new-uid",
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := checkNameUniqueness(tt.feed)
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
-	})
-
-})
+	}
+}

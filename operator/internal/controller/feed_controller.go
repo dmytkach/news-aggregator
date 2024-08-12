@@ -17,11 +17,17 @@ import (
 	aggregatorv1 "com.teamdev/news-aggregator/api/v1"
 )
 
+//go:generate mockgen -source=feed_controller.go -destination=mock_aggregator/mock_http_client.go -package=controller  news-aggregator/operator/internal/controller HttpClient
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+	Post(url, contentType string, body io.Reader) (*http.Response, error)
+}
+
 // FeedReconciler is a k8s controller that manages Feed resources.
 type FeedReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
-	HttpClient    http.Client
+	HttpClient    HttpClient
 	ServiceURL    string
 	FeedFinalizer string
 }
@@ -82,6 +88,7 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 		return ctrl.Result{}, nil
 	}
+	log.Printf("Current Feed Status Conditions: %v", feed.Status.Conditions)
 	if feed.Status.Contains(aggregatorv1.ConditionAdded, true) {
 		if err := r.updateFeed(feed); err != nil {
 			feed.Status.AddCondition(aggregatorv1.Condition{
