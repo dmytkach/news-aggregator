@@ -17,6 +17,9 @@ import (
 	aggregatorv1 "com.teamdev/news-aggregator/api/v1"
 )
 
+// HttpClient defines methods for executing HTTP requests.
+// It is used by FeedReconciler to communicate with a news aggregator service.
+//
 //go:generate mockgen -source=feed_controller.go -destination=mock_aggregator/mock_http_client.go -package=controller  news-aggregator/operator/internal/controller HttpClient
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -24,6 +27,8 @@ type HttpClient interface {
 }
 
 // FeedReconciler is a k8s controller that manages Feed resources.
+// It uses the Client to interact with the Kubernetes API
+// and HttpClient to communicate with an external news aggregator service.
 type FeedReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
@@ -36,8 +41,10 @@ type FeedReconciler struct {
 // +kubebuilder:rbac:groups=aggregator.com.teamdev,resources=feeds/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=aggregator.com.teamdev,resources=feeds/finalizers,verbs=update
 
-// Reconcile reconciles a Feed object.
-// This function is called when a change is made to a Feed resource.
+// Reconcile is triggered whenever a Feed resource changes.
+// It manages the resource's state by handling creation, updates, and deletion processes.
+// Additionally, it manages finalizers to ensure that any necessary
+// cleanup tasks are performed before the resource is deleted.
 func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log.Printf("Starting reconciliation for Feed %s/%s", req.Namespace, req.Name)
 
