@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: dmytkach/news-aggregator-operator
-  newTag: 1.0.0
+  newTag: v2

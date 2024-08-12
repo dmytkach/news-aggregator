@@ -2,20 +2,16 @@ package controller
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
-	"k8s.io/client-go/util/retry"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"slices"
 
 	aggregatorv1 "com.teamdev/news-aggregator/api/v1"
@@ -24,13 +20,11 @@ import (
 // FeedReconciler is a k8s controller that manages Feed resources.
 type FeedReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme        *runtime.Scheme
+	HttpClient    http.Client
+	ServiceURL    string
+	FeedFinalizer string
 }
-
-const (
-	newsAggregatorServiceUrl = "https://news-aggregator-service.news-aggregator.svc.cluster.local:443/sources"
-	feedFinalizer            = "feeds.finalizers.teamdev.com"
-)
 
 // +kubebuilder:rbac:groups=aggregator.com.teamdev,resources=feeds,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=aggregator.com.teamdev,resources=feeds/status,verbs=get;update;patch
@@ -42,187 +36,117 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	log.Printf("Starting reconciliation for Feed %s/%s", req.Namespace, req.Name)
 
 	var feed aggregatorv1.Feed
-
 	if err := r.Client.Get(ctx, req.NamespacedName, &feed); err != nil {
 		if errors.IsNotFound(err) {
-			log.Printf("Feed %s/%s not found, returning", req.Namespace, req.Name)
+			log.Print("Reconcile: Feed was not found. Error ignored")
 			return ctrl.Result{}, nil
 		}
-		log.Printf("Failed to get Feed %s/%s: %v", req.Namespace, req.Name, err)
+		log.Printf("Error retrieving Feed %s/%s from k8s Cluster: %v", req.Namespace, req.Name, err)
 		return ctrl.Result{}, err
+	}
+
+	if !slices.Contains(feed.ObjectMeta.Finalizers, r.FeedFinalizer) {
+		feed.ObjectMeta.Finalizers = append(feed.ObjectMeta.Finalizers, r.FeedFinalizer)
+		if err := r.Client.Update(ctx, &feed); err != nil {
+			log.Printf("Error adding finalizer to Feed %s/%s: %v", req.Namespace, req.Name, err)
+			return ctrl.Result{}, err
+		}
 	}
 
 	if !feed.ObjectMeta.DeletionTimestamp.IsZero() {
-		if slices.Contains(feed.ObjectMeta.Finalizers, feedFinalizer) {
-			log.Printf("Finalizer 'feeds.finalizers.teamdev.com' present for Feed %s/%s, handling deletion", req.Namespace, req.Name)
-
-			if _, err := r.handleDelete(feed); err != nil {
-				log.Printf("Failed to handle deletion for Feed %s/%s: %v", req.Namespace, req.Name, err)
+		if slices.Contains(feed.ObjectMeta.Finalizers, r.FeedFinalizer) {
+			log.Printf("Handling deletion of Feed %s/%s", req.Namespace, req.Name)
+			if err := r.deleteFeed(feed); err != nil {
+				feed.Status.AddCondition(aggregatorv1.Condition{
+					Type:    aggregatorv1.ConditionDeleted,
+					Status:  false,
+					Message: "Failed to delete feed",
+					Reason:  err.Error(),
+				})
+				if err := r.Client.Status().Update(ctx, &feed); err != nil {
+					log.Printf("Error updating status of Feed %s/%s after failed deletion: %v", req.Namespace, req.Name, err)
+					return ctrl.Result{}, err
+				}
 				return ctrl.Result{}, err
 			}
-
-			retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				if err := r.Client.Get(ctx, req.NamespacedName, &feed); err != nil {
-					return err
-				}
-
-				feed.ObjectMeta.Finalizers = removeString(feed.ObjectMeta.Finalizers, feedFinalizer)
-				return r.Client.Update(ctx, &feed)
+			feed.Status.AddCondition(aggregatorv1.Condition{
+				Type:    aggregatorv1.ConditionDeleted,
+				Status:  true,
+				Message: "Feed deleted successfully",
 			})
-
-			if retryErr != nil {
-				log.Printf("Failed to remove finalizer for Feed %s/%s: %v", req.Namespace, req.Name, retryErr)
-				return ctrl.Result{}, retryErr
+			feed.ObjectMeta.Finalizers = removeString(feed.ObjectMeta.Finalizers, r.FeedFinalizer)
+			if err := r.Client.Update(ctx, &feed); err != nil {
+				log.Printf("Error removing finalizer from Feed %s/%s: %v", req.Namespace, req.Name, err)
+				return ctrl.Result{}, err
 			}
-			log.Printf("Finalizer removed from Feed %s/%s", req.Namespace, req.Name)
 		}
 		return ctrl.Result{}, nil
 	}
-	if _, err := r.handleCreate(feed); err != nil {
-		log.Printf("Failed to сreate Feed %s/%s: %v. Try to update feed.", feed.Namespace, feed.Name, err)
-
-		if _, err := r.handleUpdate(feed); err != nil {
-			log.Printf("Failed to handle update for Feed %s/%s: %v", feed.Namespace, feed.Name, err)
+	if feed.Status.Contains(aggregatorv1.ConditionAdded, true) {
+		if err := r.updateFeed(feed); err != nil {
+			feed.Status.AddCondition(aggregatorv1.Condition{
+				Type:    aggregatorv1.ConditionUpdated,
+				Status:  false,
+				Reason:  err.Error(),
+				Message: "Feed didn't update successfully",
+			})
+			if err := r.Client.Status().Update(ctx, &feed); err != nil {
+				log.Printf("Error updating status of Feed %s/%s after failed update: %v", req.Namespace, req.Name, err)
+				return ctrl.Result{}, err
+			}
 			return ctrl.Result{}, err
 		}
-
-		log.Printf("Successfully handled update for Feed %s/%s after failed creation", feed.Namespace, feed.Name)
-		return ctrl.Result{}, nil
-	}
-
-	log.Printf("Successfully handled creation for Feed %s/%s", feed.Namespace, feed.Name)
-	return ctrl.Result{}, nil
-}
-
-// handleCreate handles the creation of a new Feed.
-// It sends a POST request to the news aggregator service to add the new news source.
-func (r *FeedReconciler) handleCreate(feed aggregatorv1.Feed) (ctrl.Result, error) {
-	log.Printf("Handling create for Feed %s with URLs %s", feed.Name, feed.Spec.NewUrl)
-	if feed.Spec.PreviousURL != "" {
-		return ctrl.Result{}, fmt.Errorf("error creating feed %s, try to update", feed.Spec.Name)
-	}
-	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-	log.Printf("Start creating resource with url %s:", feed.Spec.NewUrl)
-	reqURL := fmt.Sprintf("%s?url=%s", newsAggregatorServiceUrl, feed.Spec.NewUrl)
-
-	resp, err := httpClient.Post(reqURL, "application/json", nil)
-	if err != nil {
-		log.Printf("Failed to make POST request: %v", err)
-		return ctrl.Result{}, err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("Failed to close response body: %v", err)
-		}
-	}(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to create source, status code: %d, response: %s", resp.StatusCode, string(body))
-		return ctrl.Result{}, fmt.Errorf("failed to create source, status code: %d", resp.StatusCode)
-	}
-	for _, condition := range feed.Status.Conditions {
-		if condition.Type == aggregatorv1.ConditionAdded {
-			err = r.updateFeedStatus(&feed, aggregatorv1.ConditionUpdated, metav1.ConditionTrue, "Link for Source successfully created", "")
-			if err != nil {
-				log.Print("Failed to add link for existing Source")
+		feed.Status.AddCondition(aggregatorv1.Condition{
+			Type:    aggregatorv1.ConditionUpdated,
+			Status:  true,
+			Message: "Feed updated successfully",
+		})
+	} else {
+		if err := r.createFeed(feed); err != nil {
+			feed.Status.AddCondition(aggregatorv1.Condition{
+				Type:    aggregatorv1.ConditionAdded,
+				Status:  false,
+				Reason:  err.Error(),
+				Message: "Feed didn't add successfully",
+			})
+			if err := r.Client.Status().Update(ctx, &feed); err != nil {
+				log.Printf("Error updating status of Feed %s/%s: %v", req.Namespace, req.Name, err)
 				return ctrl.Result{}, err
 			}
-			log.Printf("Link for existing source %s added successfully", feed.Name)
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, err
 		}
+		feed.Status.AddCondition(aggregatorv1.Condition{
+			Type:    aggregatorv1.ConditionAdded,
+			Status:  true,
+			Message: "Feed added successfully",
+		})
 	}
-	err = r.updateFeedStatus(&feed, aggregatorv1.ConditionAdded, metav1.ConditionTrue, "Source successfully created", "")
-	if err != nil {
-		log.Print("Failed to  create successfully")
+
+	if err := r.Client.Status().Update(ctx, &feed); err != nil {
+		log.Printf("Error updating status of Feed %s/%s: %v", req.Namespace, req.Name, err)
 		return ctrl.Result{}, err
 	}
-	log.Print("Source create successfully")
-	feed.ObjectMeta.Finalizers = append(feed.ObjectMeta.Finalizers, feedFinalizer)
-	if err := r.Client.Update(context.Background(), &feed); err != nil {
-		log.Printf("Failed to add finalizer to Feed %s: %v", feed.Name, err)
-		return ctrl.Result{}, err
-	}
-	log.Printf("Finalizer added to Feed %s", feed.Name)
+
+	log.Printf("Successfully updated Feed %s/%s. Feed Name: %s, Feed Link: %s", req.Namespace, req.Name, feed.Spec.Name, feed.Spec.Link)
 	return ctrl.Result{}, nil
 }
 
-// handleUpdate handles the update of an existing Feed.
-// It sends a PUT request to the news aggregator service to update the source.
-func (r *FeedReconciler) handleUpdate(feed aggregatorv1.Feed) (ctrl.Result, error) {
-	log.Printf("Handling update for Feed %s with URL%s", feed.Name, feed.Spec.PreviousURL)
-
-	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
-	reqURL := fmt.Sprintf("%s?oldUrl=%s&newUrl=%s", newsAggregatorServiceUrl, feed.Spec.PreviousURL, feed.Spec.NewUrl)
-
-	req, err := http.NewRequest(http.MethodPut, reqURL, nil)
-	if err != nil {
-		log.Printf("Failed to create PUT request: %v", err)
-		return ctrl.Result{}, err
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		log.Printf("Failed to make PUT request: %v", err)
-		return ctrl.Result{}, err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("Failed to close response body: %v", err)
-		}
-	}(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to update source, status code: %d, response: %s", resp.StatusCode, string(body))
-		return ctrl.Result{}, fmt.Errorf("failed to update source, status code: %d", resp.StatusCode)
-	}
-
-	err = r.updateFeedStatus(&feed, aggregatorv1.ConditionUpdated, metav1.ConditionTrue, "Source successfully updated", "")
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	log.Printf("Source %s updated successfully", feed.Name)
-	return ctrl.Result{}, nil
-}
-
-// handleDelete handles the deletion of a Feed.
+// deleteFeed handles the deletion of a Feed.
 // It sends a DELETE request to the news aggregator service to delete the source.
-func (r *FeedReconciler) handleDelete(feed aggregatorv1.Feed) (ctrl.Result, error) {
+func (r *FeedReconciler) deleteFeed(feed aggregatorv1.Feed) error {
 	log.Printf("Handling deletion for Feed %s", feed.Name)
 
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
 	req, err := http.NewRequest(http.MethodDelete,
-		fmt.Sprintf("%s?name=%s", newsAggregatorServiceUrl, feed.Spec.Name), nil)
+		fmt.Sprintf("%s?name=%s", r.ServiceURL, feed.Spec.Name), nil)
 	if err != nil {
 		log.Printf("Failed to create DELETE request: %v", err)
-		return ctrl.Result{}, err
+		return err
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := r.HttpClient.Do(req)
 	if err != nil {
 		log.Printf("Failed to make DELETE request: %v", err)
-		return ctrl.Result{}, err
+		return err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -234,54 +158,72 @@ func (r *FeedReconciler) handleDelete(feed aggregatorv1.Feed) (ctrl.Result, erro
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		log.Printf("Failed to delete source, status code: %d, response: %s", resp.StatusCode, string(body))
-		return ctrl.Result{}, fmt.Errorf("failed to delete source, status code: %d", resp.StatusCode)
-	}
-
-	err = r.updateFeedStatus(&feed, aggregatorv1.ConditionDeleted, metav1.ConditionTrue, "Source successfully deleted", "")
-	if err != nil {
-		return ctrl.Result{}, err
+		return fmt.Errorf("failed to delete source, status code: %d", resp.StatusCode)
 	}
 
 	log.Printf("Source %s deleted successfully", feed.Spec.Name)
-	return ctrl.Result{}, nil
+	return nil
 }
 
-// updateFeedStatus updates the status of a Feed resource.
-// It modifies the status conditions and updates the resource.
-func (r *FeedReconciler) updateFeedStatus(feed *aggregatorv1.Feed, conditionType aggregatorv1.ConditionType, status metav1.ConditionStatus, reason, message string) error {
-	log.Printf("Updating status of Feed %s to conditionType %s with status %s", feed.Name, conditionType, status)
+// createFeed handles the creation of a new Feed.
+// It sends a POST request to the news aggregator service to add the new news source.
+func (r *FeedReconciler) createFeed(feed aggregatorv1.Feed) error {
+	log.Printf("Create Feed %s with URLs %s", feed.Spec.Name, feed.Spec.Link)
 
-	var conditionUpdated bool
-	for i, condition := range feed.Status.Conditions {
-		if condition.Type == conditionType {
-			feed.Status.Conditions[i] = aggregatorv1.Condition{
-				Type:           conditionType,
-				Status:         status,
-				Reason:         reason,
-				Message:        message,
-				LastUpdateTime: metav1.Now(),
-			}
-			conditionUpdated = true
-			break
-		}
-	}
+	reqURL := fmt.Sprintf("%s?name=%s&url=%s", r.ServiceURL, feed.Spec.Name, feed.Spec.Link)
 
-	if !conditionUpdated {
-		newCondition := aggregatorv1.Condition{
-			Type:           conditionType,
-			Status:         status,
-			Reason:         reason,
-			Message:        message,
-			LastUpdateTime: metav1.Now(),
-		}
-		feed.Status.Conditions = append(feed.Status.Conditions, newCondition)
-	}
-
-	if err := r.Client.Status().Update(context.Background(), feed); err != nil {
-		log.Printf("Failed to update status for Feed %s: %v", feed.Name, err)
+	resp, err := r.HttpClient.Post(reqURL, "application/json", nil)
+	if err != nil {
+		log.Printf("Failed to make POST request: %v", err)
 		return err
 	}
-	log.Printf("Status for Feed %s updated successfully", feed.Name)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("Failed to create source, status code: %d, response: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("failed to create source, status code: %d", resp.StatusCode)
+	}
+	log.Print("Successfully created feed")
+	return nil
+}
+
+// updateFeed handles the updating of an existing Feed.
+// It sends a PUT request to the news aggregator service to update the news source.
+func (r *FeedReconciler) updateFeed(feed aggregatorv1.Feed) error {
+	log.Printf("Updating Feed %s with URLs %s", feed.Spec.Name, feed.Spec.Link)
+
+	reqURL := fmt.Sprintf("%s?newUrl=%s&name=%s", r.ServiceURL, feed.Spec.Link, feed.Spec.Name)
+
+	req, err := http.NewRequest(http.MethodPut, reqURL, nil)
+	if err != nil {
+		log.Printf("Failed to create PUT request: %v", err)
+		return err
+	}
+
+	resp, err := r.HttpClient.Do(req)
+	if err != nil {
+		log.Printf("Failed to make PUT request: %v", err)
+		return err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("Failed to update source, status code: %d, response: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("failed to update source, status code: %d", resp.StatusCode)
+	}
+	log.Print("Successfully updated feed")
 	return nil
 }
 
@@ -291,8 +233,17 @@ func (r *FeedReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	log.Printf("Setting up FeedReconciler with manager")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&aggregatorv1.Feed{}).
-		WithEventFilter(predicate.GenerationChangedPredicate{}).
-		Complete(r)
+		WithEventFilter(predicate.Funcs{
+			CreateFunc: func(e event.CreateEvent) bool {
+				return true
+			},
+			DeleteFunc: func(e event.DeleteEvent) bool {
+				return !e.DeleteStateUnknown
+			},
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				return e.ObjectNew.GetGeneration() != e.ObjectOld.GetGeneration()
+			},
+		}).Complete(r)
 }
 
 // removeString removes a string from a slice

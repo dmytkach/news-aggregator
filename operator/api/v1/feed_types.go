@@ -2,16 +2,15 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 )
 
 // FeedSpec defines the desired state of Feed
 type FeedSpec struct {
 	// Name of the news source
 	Name string `json:"name"`
-	// PreviousURL to the news sources
-	PreviousURL string `json:"previousUrl"`
-	// NewUrl to the news sources
-	NewUrl string `json:"newUrl"`
+	// Link of the news sources
+	Link string `json:"link"`
 }
 
 // ConditionType represents a condition type for a Feed
@@ -30,14 +29,60 @@ const (
 type Condition struct {
 	// Type of the condition, e.g., Added, Updated, Deleted.
 	Type ConditionType `json:"type"`
-	// Status of the condition, one of True, False, Unknown.
-	Status metav1.ConditionStatus `json:"status"`
+	// Status of the condition, one of True, False.
+	Status bool `json:"status"`
 	// If status is False, the reason should be populated
 	Reason string `json:"reason,omitempty"`
 	// If status is False, the message should be populated
 	Message string `json:"message,omitempty"`
 	// Last time the condition transitioned from one status to another.
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
+}
+
+// AddCondition to the FeedStatus.
+func (f *FeedStatus) AddCondition(condition Condition) {
+	f.Conditions = append(f.Conditions, condition)
+	f.updateConditions()
+	log.Printf("Added condition: %v", condition)
+}
+
+// GetCondition retrieves the condition of a specific type.
+func (f *FeedStatus) GetCondition(conditionType ConditionType) *Condition {
+	for _, condition := range f.Conditions {
+		if condition.Type == conditionType {
+			return &condition
+		}
+	}
+	return nil
+}
+
+// Contains checks if a condition of the specified type with the given status
+// exists in the FeedStatus conditions
+func (f *FeedStatus) Contains(conditionType ConditionType, status bool) bool {
+	for _, condition := range f.Conditions {
+		if condition.Type == conditionType && condition.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+// updateConditions updates the LastUpdateTime for all conditions.
+func (f *FeedStatus) updateConditions() {
+	for i := range f.Conditions {
+		f.Conditions[i].LastUpdateTime = metav1.Now()
+	}
+}
+
+// RemoveCondition of a specific type.
+func (f *FeedStatus) RemoveCondition(conditionType ConditionType) {
+	var updatedConditions []Condition
+	for _, condition := range f.Conditions {
+		if condition.Type != conditionType {
+			updatedConditions = append(updatedConditions, condition)
+		}
+	}
+	f.Conditions = updatedConditions
 }
 
 // FeedStatus defines the observed state of Feed

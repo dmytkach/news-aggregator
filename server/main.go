@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"news-aggregator/server/handlers"
 	"news-aggregator/server/managers"
-	"news-aggregator/server/service"
-	"time"
 )
 
 // main initializes and starts the news aggregator server.
@@ -25,27 +23,10 @@ func main() {
 		flag.Usage()
 		return
 	}
-	interval, err := time.ParseDuration("30s")
-	if err != nil || interval <= 0 {
-		log.Println("Failed to parse FETCH_INTERVAL:", err)
-		return
-	}
 	sourceFolder := managers.CreateSourceFolder(*pathToSourcesFile)
 	newsFolder := managers.CreateNewsFolder(*pathToNews)
-	urlFeed := managers.UrlFeed{}
 	sourceHandler := handlers.SourceHandler{SourceManager: sourceFolder}
 	newsHandler := handlers.NewsHandler{NewsManager: newsFolder, SourceManager: sourceFolder}
-	job := handlers.FetchJob{
-		Service: service.Fetch{
-			SourceManager: sourceFolder,
-			NewsManager:   newsFolder,
-			FeedManager:   urlFeed,
-		},
-		Interval: interval,
-	}
-
-	go job.Fetch()
-
 	http.HandleFunc("/news", newsHandler.News)
 	http.HandleFunc("/sources", sourceHandler.Sources)
 

@@ -39,19 +39,15 @@ spec:
           spec:
             description: FeedSpec defines the desired state of Feed
             properties:
+              link:
+                description: Link of the news sources
+                type: string
               name:
                 description: Name of the news source
                 type: string
-              newUrl:
-                description: NewUrl to the news sources
-                type: string
-              previousUrl:
-                description: PreviousURL to the news sources
-                type: string
             required:
+            - link
             - name
-            - newUrl
-            - previousUrl
             type: object
           status:
             description: FeedStatus defines the observed state of Feed
@@ -75,8 +71,8 @@ spec:
                       description: If status is False, the reason should be populated
                       type: string
                     status:
-                      description: Status of the condition, one of True, False, Unknown.
-                      type: string
+                      description: Status of the condition, one of True, False.
+                      type: boolean
                     type:
                       description: Type of the condition, e.g., Added, Updated, Deleted.
                       type: string

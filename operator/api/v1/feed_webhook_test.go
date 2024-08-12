@@ -14,19 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package v1
 
 import (
-	"fmt"
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
-// Run e2e tests using the Ginkgo runner.
-func TestE2E(t *testing.T) {
-	RegisterFailHandler(Fail)
-	_, _ = fmt.Fprintf(GinkgoWriter, "Starting operator suite\n")
-	RunSpecs(t, "e2e suite")
-}
+var _ = Describe("Feed Webhook", func() {
+
+	Context("When creating Feed under Defaulting Webhook", func() {
+		It("Should fill in the default value if a required field is empty", func() {
+
+			// TODO(user): Add your logic here
+
+		})
+	})
+
+	Context("When creating Feed under Validating Webhook", func() {
+		It("Should deny if a required field is empty", func() {
+
+			// TODO(user): Add your logic here
+
+		})
+
+		It("Should admit if all required fields are provided", func() {
+
+			// TODO(user): Add your logic here
+
+		})
+	})
+
+})
