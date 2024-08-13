@@ -2,7 +2,6 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 )
 
 // FeedSpec defines the desired state of Feed
@@ -43,7 +42,6 @@ type Condition struct {
 func (f *FeedStatus) AddCondition(condition Condition) {
 	f.Conditions = append(f.Conditions, condition)
 	f.updateConditions()
-	log.Printf("Added condition: %v", condition)
 }
 
 // Contains checks if a condition of the specified type with the given status
