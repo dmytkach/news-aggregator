@@ -30,3 +30,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - aggregator.com.teamdev
+  resources:
+  - hotnews
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - aggregator.com.teamdev
+  resources:
+  - hotnews/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - aggregator.com.teamdev
+  resources:
+  - hotnews/status
+  verbs:
+  - get
+  - patch
+  - update
