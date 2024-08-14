@@ -1,0 +1,20 @@
+apiVersion: aggregator.com.teamdev/v1
+kind: HotNews
+metadata:
+  name: paris
+spec:
+    keywords:
+      - "Paris"
+    dateStart: ""
+    # end date, can be empty
+    dateEnd: ""
+    # all feed names in the current namespace, if empty — will watch ALL available feeds.
+    feeds:
+    # Available sections of feeds from `feed-group-source` ConfigMap
+    feedGroups:
+      - "world"
+    # configure how status will show the summary of observed hot new
+    # more fields can be added if needed
+    summaryConfig:
+      titlesCount: 10
+

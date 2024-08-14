@@ -1,7 +1,15 @@
 apiVersion: aggregator.com.teamdev/v1
 kind: Feed
 metadata:
+  name: abc
+spec:
+  name: abc
+  link: https://abcnews.go.com/abcnews/topstories
+---
+apiVersion: aggregator.com.teamdev/v1
+kind: Feed
+metadata:
   name: bbc
 spec:
   name: bbc
-  link: https://feeds.bbci.co.uk/news/world/asia/rss.xml
+  link: http://feeds.bbci.co.uk/news/rss.xml
