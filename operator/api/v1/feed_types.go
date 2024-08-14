@@ -89,6 +89,13 @@ type FeedList struct {
 	Items           []Feed `json:"items"`
 }
 
+func (fl *FeedList) GetAllFeedNames() []string {
+	feeds := make([]string, 0)
+	for _, feed := range fl.Items {
+		feeds = append(feeds, feed.Name)
+	}
+	return feeds
+}
 func init() {
 	SchemeBuilder.Register(&Feed{}, &FeedList{})
 }

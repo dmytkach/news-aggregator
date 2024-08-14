@@ -73,6 +73,11 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		return ctrl.Result{}, nil
 	}
+	var feeds aggregatorv1.FeedList
+	if err := r.List(ctx, &feeds, client.InNamespace(req.Namespace)); err != nil {
+		log.Printf("Error listing Feed resources: %v", err)
+		return ctrl.Result{}, err
+	}
 	var feedNames []string
 	if len(hotNews.Spec.Feeds) > 0 {
 		feedNames = hotNews.Spec.Feeds
@@ -88,21 +93,16 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		feedNames = r.getFeedNamesFromFeedGroups(hotNews.Spec.FeedGroups, feedGroupConfigMap)
 	} else {
+		feedNames = feeds.GetAllFeedNames()
 		return ctrl.Result{}, fmt.Errorf("no feeds or feed groups provided in HotNews spec")
 	}
 
-	// Fetch Feed resources
-	var feeds aggregatorv1.FeedList
-	if err := r.List(ctx, &feeds, client.InNamespace(req.Namespace)); err != nil {
-		log.Printf("Error listing Feed resources: %v", err)
-		return ctrl.Result{}, err
-	}
 	sources := r.getNewsSourcesFromFeeds(feedNames, feeds)
 
 	log.Printf("Final list of news names: %v", sources)
 	log.Printf("Final list of feedNames: %v", feedNames)
 	// Process feeds and update HotNews
-	status, err := r.processFeeds(sources, hotNews.Spec)
+	status, err := r.fetchNewsData(sources, hotNews.Spec)
 	if err != nil {
 		if err := r.Client.Update(ctx, &hotNews); err != nil {
 			log.Printf("Error updating Feed %s/%s: %v", req.Namespace, req.Name, err)
@@ -123,16 +123,22 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return reconcile.Result{}, nil
 }
 
-// processFeeds processes the feeds based on the provided HotNews and ConfigMap
-func (r *HotNewsReconciler) processFeeds(sources []string, hotNews aggregatorv1.HotNewsSpec) (aggregatorv1.HotNewsStatus, error) {
+// fetchNewsData constructs a request URL using the provided sources and HotNews specifications,
+// then sends a request to the news service to retrieve news data. It returns the status of the HotNews
+// with the fetched articles or an error if the process fails.
+func (r *HotNewsReconciler) fetchNewsData(sources []string, hotNews aggregatorv1.HotNewsSpec) (aggregatorv1.HotNewsStatus, error) {
+	log.Printf("Starting fetchNewsData with sources: %v, keywords: %v, dateStart: %s, dateEnd: %s", sources, hotNews.Keywords, hotNews.DateStart, hotNews.DateEnd)
 	reqURL, err := buildRequestURL(r.ServiceURL, sources, hotNews.Keywords, hotNews.DateStart, hotNews.DateEnd)
 	if err != nil {
+		log.Print()
 		return aggregatorv1.HotNewsStatus{}, err
 	}
 	status, err := r.makeRequest(reqURL, hotNews.SummaryConfig.TitlesCount)
 	if err != nil {
+		log.Printf("Error making request: %v", err)
 		return aggregatorv1.HotNewsStatus{}, err
 	}
+	log.Printf("Request completed successfully, received status: %+v", status)
 
 	return status, nil
 }
@@ -244,7 +250,35 @@ func (r *HotNewsReconciler) makeRequest(reqURL string, titleCount int) (aggregat
 func (r *HotNewsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&aggregatorv1.HotNews{}).
-		Watches(&v1.ConfigMap{}, &handler.EnqueueRequestForObject{}).
-		Watches(&aggregatorv1.Feed{}, &handler.EnqueueRequestForObject{}).
+		Watches(
+			&aggregatorv1.Feed{},
+			handler.EnqueueRequestsFromMapFunc(r.updateHotNews),
+		).
+		Watches(
+			&v1.ConfigMap{},
+			handler.EnqueueRequestsFromMapFunc(r.updateHotNews),
+		).
 		Complete(r)
+}
+
+// updateHotNews is a handler function that is triggered when relevant changes
+// occur to resources that the controller watches.
+func (r *HotNewsReconciler) updateHotNews(context.Context, client.Object) []reconcile.Request {
+	var hotNewsList aggregatorv1.HotNewsList
+	if err := r.List(context.TODO(), &hotNewsList); err != nil {
+		log.Printf("Failed to list HotNews resources %v", err)
+		return nil
+	}
+
+	var requests []ctrl.Request
+	for _, hotNews := range hotNewsList.Items {
+		requests = append(requests, ctrl.Request{
+			NamespacedName: client.ObjectKey{
+				Name:      hotNews.Name,
+				Namespace: hotNews.Namespace,
+			},
+		})
+	}
+
+	return requests
 }

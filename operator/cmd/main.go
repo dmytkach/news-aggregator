@@ -124,6 +124,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Feed")
 			os.Exit(1)
 		}
+		if err = (&aggregatorv1.HotNews{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "HotNews")
+			os.Exit(1)
+		}
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
