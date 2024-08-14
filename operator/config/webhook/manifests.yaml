@@ -25,6 +25,27 @@ webhooks:
     resources:
     - feeds
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-aggregator-com-teamdev-v1-hotnews
+  failurePolicy: Fail
+  name: mhotnews.kb.io
+  rules:
+  - apiGroups:
+    - aggregator.com.teamdev
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - hotnews
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -51,4 +72,25 @@ webhooks:
     - DELETE
     resources:
     - feeds
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-aggregator-com-teamdev-v1-hotnews
+  failurePolicy: Fail
+  name: vhotnews.kb.io
+  rules:
+  - apiGroups:
+    - aggregator.com.teamdev
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - hotnews
   sideEffects: None
