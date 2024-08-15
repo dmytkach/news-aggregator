@@ -15,11 +15,11 @@ import (
 
 const DateFormat = "2006-01-02"
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
-func (r *HotNews) SetupWebhookWithManager(mgr ctrl.Manager) error {
+// SetupWebhookWithManager configures the webhook for the HotNews resource with the provided manager.
+func (h *HotNews) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	k8sClient = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(h).
 		Complete()
 }
 
@@ -27,27 +27,23 @@ func (r *HotNews) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &HotNews{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *HotNews) Default() {
-	if r.Spec.SummaryConfig.TitlesCount == 0 {
-		r.Spec.SummaryConfig.TitlesCount = 10
+// Default implements webhook.Defaulter and sets default values for the HotNews resource.
+func (h *HotNews) Default() {
+	if h.Spec.SummaryConfig.TitlesCount == 0 {
+		h.Spec.SummaryConfig.TitlesCount = 10
 	}
 
-	if len(r.Spec.Feeds) == 0 && len(r.Spec.FeedGroups) == 0 {
+	if len(h.Spec.Feeds) == 0 && len(h.Spec.FeedGroups) == 0 {
 		feedList := &FeedList{}
-		listOpts := client.ListOptions{Namespace: r.Namespace}
+		listOpts := client.ListOptions{Namespace: h.Namespace}
 		err := k8sClient.List(context.Background(), feedList, &listOpts)
 		if err != nil {
 			log.Printf("validateFeeds: failed to list feeds: %v", err)
 		}
-		var feedNameList []string
-		for _, feed := range feedList.Items {
-			feedNameList = append(feedNameList, feed.Name)
-		}
-		r.Spec.Feeds = feedNameList
+		h.Spec.Feeds = feedList.GetAllFeedNames()
 	}
 
-	log.Print("default ", "name ", r.Name)
+	log.Print("default ", "name ", h.Name)
 
 }
 
@@ -55,41 +51,43 @@ func (r *HotNews) Default() {
 
 var _ webhook.Validator = &HotNews{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *HotNews) ValidateCreate() (admission.Warnings, error) {
-	log.Print("validate create ", "name ", r.Name)
-	return r.validateHotNews()
+// ValidateCreate validates the HotNews resource during creation.
+func (h *HotNews) ValidateCreate() (admission.Warnings, error) {
+	log.Print("validate create ", "name ", h.Name)
+	return h.validate()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *HotNews) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	log.Print("validate update", "name", r.Name)
+// ValidateUpdate validates the HotNews resource during updates.
+func (h *HotNews) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	log.Print("validate update", "name", h.Name)
 
-	return r.validateHotNews()
+	return h.validate()
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *HotNews) ValidateDelete() (admission.Warnings, error) {
-	log.Print("validate delete ", "name ", r.Name)
+// ValidateDelete validates the HotNews resource during deletion.
+func (h *HotNews) ValidateDelete() (admission.Warnings, error) {
+	log.Print("validate delete ", "name ", h.Name)
 
 	return nil, nil
 }
 
-func (r *HotNews) validateHotNews() (admission.Warnings, error) {
+// validate the HotNews resource.
+// It checks the validity of keywords, dates, and feeds and returns any errors found.
+func (h *HotNews) validate() (admission.Warnings, error) {
 	var errorsList field.ErrorList
 	specPath := field.NewPath("spec")
 
-	err := r.validateKeywords()
+	err := h.validateKeywords()
 	if err != nil {
 		errorsList = append(errorsList, field.Required(specPath.Child("keywords"), err.Error()))
 	}
-	err = r.validateDate()
+	err = h.validateDate()
 
 	if err != nil {
 		errorsList = append(errorsList, field.Required(specPath.Child("dateStart"), err.Error()),
 			field.Required(specPath.Child("dateEnd"), err.Error()))
 	}
-	err = r.validateFeeds()
+	err = h.validateFeeds()
 	if err != nil {
 		errorsList = append(errorsList, field.Required(specPath.Child("feeds"), err.Error()))
 	}
@@ -104,16 +102,20 @@ func (r *HotNews) validateHotNews() (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (r *HotNews) validateKeywords() error {
-	if len(r.Spec.Keywords) == 0 {
+// validateKeywords ensures that at least one keyword is specified in the HotNews resource.
+// Returns an error if no keywords are provided.
+func (h *HotNews) validateKeywords() error {
+	if len(h.Spec.Keywords) == 0 {
 		return fmt.Errorf("keywords is required")
 	}
 	return nil
 }
 
-func (r *HotNews) validateFeeds() error {
+// validateFeeds verifies that the feeds listed in the HotNews resource exist in the namespace.
+// Returns an error if any of the specified feeds do not exist.
+func (h *HotNews) validateFeeds() error {
 	feedList := &FeedList{}
-	listOpts := client.ListOptions{Namespace: r.Namespace}
+	listOpts := client.ListOptions{Namespace: h.Namespace}
 	err := k8sClient.List(context.Background(), feedList, &listOpts)
 	if err != nil {
 		return fmt.Errorf("validateFeeds: failed to list feeds: %v", err)
@@ -123,17 +125,19 @@ func (r *HotNews) validateFeeds() error {
 	for _, feed := range feedList.Items {
 		existingFeeds[feed.Name] = true
 	}
-	for _, feedName := range r.Spec.Feeds {
+	for _, feedName := range h.Spec.Feeds {
 		if !existingFeeds[feedName] {
-			return fmt.Errorf("validateFeeds: feed %s does not exist in namespace %s", feedName, r.Namespace)
+			return fmt.Errorf("validateFeeds: feed %s does not exist in namespace %s", feedName, h.Namespace)
 		}
 	}
 	return nil
 }
 
-func (r *HotNews) validateDate() error {
-	if r.Spec.DateStart != "" {
-		startDate, err := time.Parse(DateFormat, r.Spec.DateStart)
+// validateDate ensures that the start and end dates in the HotNews resource are valid.
+// Checks include proper formatting, non-future dates, and that the end date is after the start date.
+func (h *HotNews) validateDate() error {
+	if h.Spec.DateStart != "" {
+		startDate, err := time.Parse(DateFormat, h.Spec.DateStart)
 		if err != nil {
 			return fmt.Errorf("invalid start date format. Please use YYYY-MM-DD")
 		}
@@ -145,8 +149,8 @@ func (r *HotNews) validateDate() error {
 		}
 	}
 
-	if r.Spec.DateEnd != "" {
-		endDate, err := time.Parse(DateFormat, r.Spec.DateEnd)
+	if h.Spec.DateEnd != "" {
+		endDate, err := time.Parse(DateFormat, h.Spec.DateEnd)
 		if err != nil {
 			return fmt.Errorf("invalid end date format. Please use YYYY-MM-DD")
 		}
@@ -156,8 +160,8 @@ func (r *HotNews) validateDate() error {
 		if endDate.Before(time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)) {
 			return fmt.Errorf("end date is too old. Please use a more recent date")
 		}
-		if r.Spec.DateStart != "" {
-			startDate, _ := time.Parse(DateFormat, r.Spec.DateStart)
+		if h.Spec.DateStart != "" {
+			startDate, _ := time.Parse(DateFormat, h.Spec.DateStart)
 			if endDate.Before(startDate) {
 				return fmt.Errorf("end date must be after start date")
 			}

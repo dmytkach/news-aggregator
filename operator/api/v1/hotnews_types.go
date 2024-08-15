@@ -4,6 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// HotNewsSpec defines the desired state of HotNews.
 type HotNewsSpec struct {
 	Keywords      []string      `json:"keywords"`
 	DateStart     string        `json:"dateStart,omitempty"`
@@ -13,10 +14,12 @@ type HotNewsSpec struct {
 	SummaryConfig SummaryConfig `json:"summaryConfig,omitempty"`
 }
 
+// SummaryConfig defines the configuration for summarizing news articles.
 type SummaryConfig struct {
 	TitlesCount int `json:"titlesCount,omitempty"`
 }
 
+// HotNewsStatus defines the observed state of HotNews.
 type HotNewsStatus struct {
 	ArticlesCount  int      `json:"articlesCount,omitempty"`
 	NewsLink       string   `json:"newsLink,omitempty"`
@@ -26,7 +29,7 @@ type HotNewsStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// HotNews is the Schema for the hotnews API
+// HotNews represents resource and includes its specification and status.
 type HotNews struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -37,7 +40,7 @@ type HotNews struct {
 
 // +kubebuilder:object:root=true
 
-// HotNewsList contains a list of HotNews
+// HotNewsList contains a list of HotNews resources.
 type HotNewsList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

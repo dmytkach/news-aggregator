@@ -45,7 +45,8 @@ func main() {
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	serviceUrl := flag.String("service-url", "https://news-aggregator-service.news-aggregator.svc.cluster.local:443/", "The URL of the news aggregator service that the controller will interact with.")
 	feedFinalizer := flag.String("feed-finalizer", "feeds.finalizers.teamdev.com", "The finalizer name used to ensure that Feed resources are properly cleaned up before they are deleted.")
-	newsFinalizer := flag.String("news-finalizer", "news.finalizers.teamdev.com", "The finalizer name used to ensure that News resources are properly cleaned up before they are deleted.")
+	newsFinalizer := flag.String("news-finalizer", "news.finalizers.teamdev.com", "The finalizer name used to ensure that HotNews resources are properly cleaned up before they are deleted.")
+	configMapName := flag.String("config-map-name", "feed-group-source", "The name of the ConfigMap to use for feed groups")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false, "Enable leader election for controller manager.")
 	flag.BoolVar(&secureMetrics, "metrics-secure", true, "If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false, "If set, HTTP/2 will be enabled for the metrics and webhook servers")
@@ -115,6 +116,7 @@ func main() {
 		HttpClient: httpClient,
 		ServiceURL: *serviceUrl + "news",
 		Finalizer:  *newsFinalizer,
+		ConfigMap:  *configMapName,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HotNews")
 		os.Exit(1)

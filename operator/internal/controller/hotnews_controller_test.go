@@ -7,6 +7,7 @@ import (
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"net/http"
 	"strings"
 	"testing"
@@ -23,9 +24,8 @@ import (
 
 func TestHotNewsReconciler_Reconcile(t *testing.T) {
 	scheme := runtime.NewScheme()
-	if err := aggregatorv1.AddToScheme(scheme); err != nil {
-		t.Fatalf("Failed to add aggregatorv1 types to scheme: %v", err)
-	}
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = aggregatorv1.AddToScheme(scheme)
 	initialFeed := &aggregatorv1.Feed{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-feed",
@@ -142,7 +142,7 @@ func TestGetFeedNamesFromFeedGroups(t *testing.T) {
 		},
 	}
 
-	sources := r.getFeedNamesFromFeedGroups([]string{"group1", "group2"}, configMap)
+	sources := r.extractFeedsFromGroups([]string{"group1", "group2"}, configMap)
 
 	expectedSources := []string{"feed1", "feed2", "feed3"}
 	assert.ElementsMatch(t, expectedSources, sources)

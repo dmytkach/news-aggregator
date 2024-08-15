@@ -41,7 +41,7 @@ func TestValidateHotNewsKeywords(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.hotNews.validateHotNews()
+			_, err := tt.hotNews.validate()
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
@@ -93,7 +93,7 @@ func TestValidateHotNewsFeeds(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.hotNews.validateHotNews()
+			_, err := tt.hotNews.validate()
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
@@ -151,7 +151,7 @@ func TestValidateHotNewsDates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.hotNews.validateHotNews()
+			_, err := tt.hotNews.validate()
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
