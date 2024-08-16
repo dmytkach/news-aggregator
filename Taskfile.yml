@@ -11,7 +11,7 @@ vars:
   namespace_name: "news-aggregator"
   k8s_folder: "templates"
   chart_name: "aggregator-chart"
-  release_name: "news-aggregator-release"
+  release_name: "news-aggregator-chart"
 
 
 tasks:
@@ -26,11 +26,11 @@ tasks:
   build_cli:
     cmd: go build -o ./bin/news-aggregator-cli {{.cli_aggregator}}
     desc: "Build cli version"
-# Usage: task run_server -- --port=:443
+  # Usage: task run_server -- --port=:443
   run_server:
     cmd: go run {{.server_aggregator}} {{.CLI_ARGS}}
     desc: "Run the web-server locally"
-# Usage:task run_cli -- --sources=bbc_news --keywords=president
+  # Usage:task run_cli -- --sources=bbc_news --keywords=president
   run_cli:
     desc: "Run cli locally"
     cmd: go run {{.cli_aggregator}} {{.CLI_ARGS}}
@@ -63,21 +63,18 @@ tasks:
     desc: "Push the Docker image to the registry"
     cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
 
-  installChart:
+  createChart:
+    desc: "Creates a Helm chart for news-aggregator"
+    cmd: helm create $HELM_CHART_NAME
+
+  chart_install:
     desc: "Installs the Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
-    cmds:
-      - helm install --generate-name ./$chart_name --namespace {{.namespace_name}}
+    cmd: helm install {{.release_name}} ./aggregator-chart -n {{.namespace_name}}
 
-  helm_upgrade:
-    desc: "Upgrade the existing release with the latest changes"
-    cmds:
-      - helm upgrade {{.release_name}} ./{{.helm_chart_name}} --namespace {{.namespace_name}}
-
-  helm_uninstall:
+  chart_uninstall:
     desc: "Remove news-aggregator app from Kubernetes cluster"
-    cmds:
-      - helm uninstall {{.release_name}} --namespace {{.namespace_name}}
+    cmd: helm uninstall {{.release_name}} -n {{.namespace_name}}
 
   create_ns:
     cmd: |
