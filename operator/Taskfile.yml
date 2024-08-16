@@ -1,0 +1,97 @@
+version: '3'
+
+vars:
+  docker_image_name: "dmytkach/news-aggregator-operator"
+  docker_image_tag: "v2"
+  KUBECTL: "kubectl"
+  KUSTOMIZE_VERSION: "v5.4.2"
+  ignore_not_found: "false"
+  LOCALBIN: "$(pwd)/bin"
+  CONTROLLER_GEN: "{{.LOCALBIN}}/controller-gen"
+
+tasks:
+  help:
+    desc: "List all tasks with their descriptions"
+    cmd: task --list
+
+  manifests:
+    desc: Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+    cmd: '{{.CONTROLLER_GEN}} rbac:roleName=manager-role crd webhook paths=./... output:crd:artifacts:config=config/crd/bases'
+
+  generate:
+    desc: Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+    deps: [install-tools]
+    cmd: '{{.CONTROLLER_GEN}} object:headerFile="hack/boilerplate.go.txt" paths="./..."'
+
+  fmt:
+    desc: Run go fmt against code.
+    cmd: go fmt ./...
+
+  vet:
+    desc: Run go vet against code.
+    cmd: go vet ./...
+
+  test:
+    cmd: go test ./.../...
+    desc: "Run tests"
+
+  build:
+    desc: Build manager binary.
+    cmd: go build -o bin/manager cmd/main.go
+
+  run:
+    desc: Run a controller from your host.
+    cmd: go run ./cmd/main.go
+
+  docker-build:
+    desc: Build docker image with the manager.
+    cmd: docker build -t {{.docker_image_name}}:{{.docker_image_tag}} .
+
+  docker_push:
+    desc: "Push the Docker image to the registry"
+    cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
+
+  kustomize:
+    desc: "Download kustomize locally if necessary."
+    cmd: |
+        LOCALBIN=$(pwd)/bin
+        if [ ! -f "$LOCALBIN/kustomize-{{.KUSTOMIZE_VERSION}}" ]; then \
+          echo "Downloading kustomize"; \
+          rm -f "$LOCALBIN/kustomize" || true; \
+          GOBIN=$LOCALBIN go install sigs.k8s.io/kustomize/kustomize/v5@{{.KUSTOMIZE_VERSION}}; \
+          mv $LOCALBIN/kustomize $LOCALBIN/kustomize-{{.KUSTOMIZE_VERSION}}; \
+        fi
+        ln -sf $LOCALBIN/kustomize-{{.KUSTOMIZE_VERSION}} $LOCALBIN/kustomize
+  install:
+    desc: "Install CRDs into the K8s cluster specified in ~/.kube/config."
+    deps: [ manifests, kustomize ]
+    cmd: |
+        LOCALBIN=$(pwd)/bin
+        KUSTOMIZE=$LOCALBIN/kustomize
+        $KUSTOMIZE build config/crd | {{.KUBECTL}} apply -f -
+
+  uninstall:
+    desc: "Uninstall CRDs from the K8s cluster specified in ~/.kube/config."
+    deps: [ kustomize ]
+    cmd: |
+      LOCALBIN=$(pwd)/bin
+      KUSTOMIZE=$LOCALBIN/kustomize
+      $KUSTOMIZE build config/crd | {{.KUBECTL}} delete --ignore-not-found={{.ignore_not_found}} -f -
+
+  deploy:
+    desc: "Deploy controller to the K8s cluster specified in ~/.kube/config."
+    deps: [manifests,kustomize]
+    cmd: |
+        LOCALBIN=$(pwd)/bin
+        KUSTOMIZE=$LOCALBIN/kustomize
+        cd config/manager && $KUSTOMIZE edit set image controller={{.docker_image_name}}:{{.docker_image_tag}}
+        cd - 
+        $KUSTOMIZE build config/default | {{.KUBECTL}} apply -f -
+
+  undeploy:
+    desc: "Undeploy controller from the K8s cluster specified in ~/.kube/config."
+    deps: [kustomize]
+    cmd: |
+        LOCALBIN=$(pwd)/bin
+        KUSTOMIZE=$LOCALBIN/kustomize
+        $KUSTOMIZE build config/default | {{.KUBECTL}} delete --ignore-not-found={{.ignore_not_found}} -f -
