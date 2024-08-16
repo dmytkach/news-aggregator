@@ -10,6 +10,9 @@ vars:
   server_expose_port: "8443"
   namespace_name: "news-aggregator"
   k8s_folder: "templates"
+  chart_name: "aggregator-chart"
+  release_name: "news-aggregator-release"
+
 
 tasks:
   test:
@@ -60,16 +63,21 @@ tasks:
     desc: "Push the Docker image to the registry"
     cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
 
-  deploy:
-    desc: "Deploys news-aggregator app on Kubernetes cluster"
+  installChart:
+    desc: "Installs the Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
     cmds:
-      - kubectl apply -f {{.k8s_folder}}
+      - helm install --generate-name ./$chart_name --namespace {{.namespace_name}}
 
-  undeploy:
-    desc: "Removes news-aggregator app from Kubernetes cluster"
+  helm_upgrade:
+    desc: "Upgrade the existing release with the latest changes"
     cmds:
-      - kubectl delete -f {{.k8s_folder}}
+      - helm upgrade {{.release_name}} ./{{.helm_chart_name}} --namespace {{.namespace_name}}
+
+  helm_uninstall:
+    desc: "Remove news-aggregator app from Kubernetes cluster"
+    cmds:
+      - helm uninstall {{.release_name}} --namespace {{.namespace_name}}
 
   create_ns:
     cmd: |
