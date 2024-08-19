@@ -1,10 +1,12 @@
-# operator
-Operator API is designed to manage and automate the lifecycle of "Feed" resources within a Kubernetes cluster.
-It handles tasks such as creating, updating, and deleting feeds, ensuring that the state of these resources is consistent with the desired configuration.
+# Operator
+Operator API is designed to manage and automate the lifecycle of "Feed" and "HotNews" resources within a Kubernetes cluster.
+It handles tasks such as creating, updating, and deleting these resources, ensuring that the state of these resources 
+is consistent with the desired configuration.
 ## Description
-Operator API integrates with Kubernetes to provide robust management capabilities for News Feed resources.
+Operator API integrates with Kubernetes to provide robust management capabilities for News Feed and HotNews resources.
 It utilizes custom controllers and webhooks to enforce validation rules, handle updates, and maintain resource consistency.
-With this operator, users can easily deploy and manage feeds, ensuring their configurations are correct and their lifecycle is properly maintained. 
+With this operator, users can easily deploy and manage both feeds and hot news, ensuring their configurations are correct 
+and their lifecycles are properly maintained.
 It also provides mechanisms for validation, defaulting, and cleanup to ensure resource integrity and compliance with specified rules.
 
 ## Getting Started
@@ -48,7 +50,42 @@ You can apply the samples (examples) from the config/sample:
 kubectl apply -k config/samples/
 ```
 
+### Example of Feed resource
+```
+apiVersion: teamdev.com/v1
+kind: Feed
+metadata:
+  name: <your-feed-name>
+spec:
+  name: "TechNews"
+  url: "https://technews.example.com/rss"
+```
+ 
+### Example of HotNews resource
+
+```
+apiVersion: teamdev.com/v1
+kind: HotNews
+metadata:
+  name: <your-hot-news-name>
+spec:
+  keywords:
+    - "k8s"
+    - "cloud"
+  dateStart: "2024-01-01"
+  dateEnd: "2024-12-31"
+  feeds:
+    - <your-feed-name1>
+    - <your-feed-name2>
+  # Available sections of feeds from `feed-group-source` ConfigMap
+  feedGroups:
+    - <your-configmap-group>
+  summaryConfig:
+    titlesCount: 10
+```
+
 >**NOTE**: Ensure that the samples has default values to test it out.
+
 
 ### To Uninstall
 **Delete the instances (CRs) from the cluster:**
