@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: {{ .Values.deployment.name }}
   namespace: {{ .Values.namespace }}
-  labels:
-    app: {{ .Values.app.name }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -16,22 +14,6 @@ spec:
         app: {{ .Values.app.name }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
-      containers:
-        - name: {{ .Values.app.name }}
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          ports:
-              - containerPort: {{ .Values.containerPort }}
-          args:
-            - "-port=:{{ .Values.containerPort }}"
-            - "-cert=./server/certificates/cert.pem"
-            - "-key=./server/certificates/key.pem"
-            - "-path-to-source=/mnt/sources/sources.json"
-            - "-news-folder=/mnt/news"
-          volumeMounts:
-            - name: news-volume
-              mountPath: "/mnt/news"
-            - name: sources-volume
-              mountPath: "/mnt/sources"
       volumes:
         - name: news-volume
           persistentVolumeClaim:
@@ -39,3 +21,33 @@ spec:
         - name: sources-volume
           persistentVolumeClaim:
             claimName: {{ .Values.persistentVolumeClaim.sources }}
+        - name: tls-certificates
+          secret:
+            secretName: {{ .Values.certManager.tlsSecretName }}
+      containers:
+        - name: {{ .Values.app.name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args:
+            - "-port=:{{ .Values.containerPort }}"
+            - "-path-to-source={{ .Values.persistentVolume.sourcesPath }}/sources.json"
+            - "-news-folder={{ .Values.persistentVolume.newsPath }}"
+            - "-tls-cert={{ .Values.certManager.tlsCertPath }}"
+            - "-tls-key={{ .Values.certManager.tlsKeyPath }}"
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          volumeMounts:
+            - name: news-volume
+              mountPath: {{ .Values.persistentVolume.newsPath }}
+            - name: sources-volume
+              mountPath: {{ .Values.persistentVolume.sourcesPath }}
+            - name: tls-certificates
+              mountPath: {{ .Values.certManager.tlsMountPath }}
+              readOnly: true
+          resources:
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}

@@ -19,8 +19,7 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 WORKDIR /root/
 
 COPY --from=build /news-aggregator .
-COPY --from=build /app/server/certificates ./server/certificates
 
 EXPOSE 8443
 
-ENTRYPOINT ["./news-aggregator","-port=:8443", "-cert=./server/certificates/cert.pem", "-key=./server/certificates/key.pem", "-path-to-source=sources.json", "-news-folder=server-news/"]
+ENTRYPOINT ["./news-aggregator", "-port=:8443", "-path-to-source=/mnt/sources/sources.json", "-news-folder=/mnt/news", "-tls-cert=/etc/tls/certs/tls.crt", "-tls-key=/etc/tls/certs/tls.key"]
