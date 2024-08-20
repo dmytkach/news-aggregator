@@ -4,7 +4,7 @@ vars:
   cli_aggregator: ./cli/main.go
   server_aggregator: ./server/main.go
   docker_image_name: "dmytkach/news-aggregator"
-  docker_image_tag: "1.0.4"
+  docker_image_tag: "1.0.5"
   dockerfile_path: ".Dockerfile"
   docker_port: "8443"
   server_expose_port: "8443"
