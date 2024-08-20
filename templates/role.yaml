@@ -4,6 +4,6 @@ metadata:
   namespace: news-aggregator
   name: news-aggregator-role
 rules:
-  - apiGroups: [""]
-    resources: ["services"]
-    verbs: ["get","list"]
+  - apiGroups: [ "" ]
+    resources: [ "persistentvolumeclaims" ]
+    verbs: [ "get", "list", "watch" ]
