@@ -5,10 +5,5 @@ metadata:
   name: news-aggregator-role
 rules:
   - apiGroups: [""]
-    resources: ["pods","services","configmaps"]
-    verbs: ["get","create", "delete", "patch"]
-  - apiGroups: ["apps/v1"]
-    resources: ["deployments"]
-    verbs: [ "get","create", "delete", "patch"]
-
-
+    resources: ["services"]
+    verbs: ["get","list"]
