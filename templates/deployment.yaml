@@ -18,7 +18,7 @@ spec:
       serviceAccountName: news-aggregator-sa
       containers:
         - name: news-aggregator
-          image: dmytkach/news-aggregator:1.0.5
+          image: dmytkach/news-aggregator:1.0.6
           ports:
             - containerPort: 8443
           args:
