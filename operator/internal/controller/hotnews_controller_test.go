@@ -4,6 +4,7 @@ import (
 	"bytes"
 	controller "com.teamdev/news-aggregator/internal/controller/mock_aggregator"
 	"context"
+	"fmt"
 	"io"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,7 +79,7 @@ func TestHotNewsReconciler_Reconcile(t *testing.T) {
 		Client:     client,
 		Scheme:     scheme,
 		HttpClient: mockHTTPClient,
-		ServiceURL: "https://news-aggregator-service.news-aggregator.svc.cluster.local:443/news",
+		ServiceURL: "http://test-service",
 		Finalizer:  "example.com.finalizer",
 	}
 
@@ -98,6 +99,89 @@ func TestHotNewsReconciler_Reconcile(t *testing.T) {
 	if !assert.Contains(t, hotNews.Finalizers, "example.com.finalizer", "Finalizer should be added") {
 		t.Logf("Finalizers found: %v", hotNews.Finalizers)
 	}
+}
+
+func TestHotNewsReconciler_Reconcile_ErrorGettingHotNews(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = aggregatorv1.AddToScheme(scheme)
+
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	r := &HotNewsReconciler{
+		Client:    client,
+		Scheme:    scheme,
+		Finalizer: "example.com.finalizer",
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "non-existent-hotnews",
+			Namespace: "default",
+		},
+	}
+
+	res, err := r.Reconcile(context.Background(), req)
+	assert.NoError(t, err)
+	assert.False(t, res.Requeue, "Reconcile should not requeue when HotNews is not found")
+}
+
+func TestFetchNewsData_ErrorFetching(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockHTTPClient := controller.NewMockHttpClient(ctrl)
+	reconciler := &HotNewsReconciler{
+		HttpClient: mockHTTPClient,
+		ServiceURL: "http://test-service",
+	}
+
+	mockHTTPClient.EXPECT().
+		Do(gomock.Any()).
+		Return(nil, fmt.Errorf("network error")).
+		Times(1)
+
+	status, err := reconciler.fetchNewsData([]string{"source1"}, aggregatorv1.HotNewsSpec{
+		Keywords:      []string{"keyword"},
+		DateStart:     "2024-01-01",
+		DateEnd:       "2024-01-31",
+		SummaryConfig: aggregatorv1.SummaryConfig{TitlesCount: 2},
+	})
+
+	assert.Error(t, err)
+	assert.Empty(t, status)
+}
+
+func TestFetchNewsData_InvalidResponse(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockHTTPClient := controller.NewMockHttpClient(ctrl)
+	reconciler := &HotNewsReconciler{
+		HttpClient: mockHTTPClient,
+		ServiceURL: "http://test-service",
+	}
+
+	mockHTTPClient.EXPECT().
+		Do(gomock.Any()).
+		Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`invalid json`)),
+		}, nil).
+		Times(1)
+
+	status, err := reconciler.fetchNewsData([]string{"source1"}, aggregatorv1.HotNewsSpec{
+		Keywords:      []string{"keyword"},
+		DateStart:     "2024-01-01",
+		DateEnd:       "2024-01-31",
+		SummaryConfig: aggregatorv1.SummaryConfig{TitlesCount: 2},
+	})
+
+	assert.Error(t, err)
+	assert.Empty(t, status)
 }
 
 func TestFetchNewsData(t *testing.T) {
