@@ -28,27 +28,3 @@ tasks:
   docker_push:
     desc: "Push the Docker image to the registry"
     cmd: docker push {{.docker_image_name}}:{{.cronjob_image_tag}}
-
-  add_fetcher:
-    desc: "Add News Fetcher CronJob on Kubernetes cluster"
-    deps: [ create_ns ]
-    cmds:
-      - kubectl apply -f {{.cronjob_path}}
-
-  remove_fetcher:
-    desc: "Remove News Fetcher CronJob from Kubernetes cluster"
-    cmds:
-      - kubectl delete -f {{.cronjob_path}}
-
-  create_ns:
-    cmd: |
-      if ! kubectl get namespace {{.namespace_name}} >/dev/null 2>&1; then
-        kubectl create namespace {{.namespace_name}}
-      else
-        echo "Namespace {{.namespace_name}} already exists"
-      fi
-    desc: "Create a Kubernetes namespace if it does not exist"
-
-  delete_ns:
-    cmd: kubectl delete namespace {{.namespace_name}}
-    desc: "Delete a Kubernetes namespace"
