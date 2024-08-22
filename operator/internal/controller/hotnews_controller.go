@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"slices"
 	"strings"
@@ -260,40 +259,19 @@ func (r *HotNewsReconciler) makeRequest(reqURL string, titleCount int) (aggregat
 	}, nil
 }
 
-// SetupWithManager sets up the HotNewsReconciler with the provided manager. It configures the
-// controller to manage HotNews resources and watches changes to a feed or group of feeds.
-func (r *HotNewsReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&aggregatorv1.HotNews{}).
-		Watches(
-			&aggregatorv1.Feed{},
-			handler.EnqueueRequestsFromMapFunc(r.updateHotNews),
-		).
-		Watches(
-			&v1.ConfigMap{},
-			handler.EnqueueRequestsFromMapFunc(r.updateHotNews),
-		).
-		Complete(r)
-}
-
-// updateHotNews is a handler function that is triggered when relevant changes
-// occur to resources that the controller watches.
-func (r *HotNewsReconciler) updateHotNews(context.Context, client.Object) []reconcile.Request {
-	var hotNewsList aggregatorv1.HotNewsList
-	if err := r.List(context.TODO(), &hotNewsList); err != nil {
-		log.Printf("Failed to list HotNews resources %v", err)
-		return nil
-	}
-
-	var requests []ctrl.Request
-	for _, hotNews := range hotNewsList.Items {
-		requests = append(requests, ctrl.Request{
-			NamespacedName: client.ObjectKey{
-				Name:      hotNews.Name,
-				Namespace: hotNews.Namespace,
-			},
-		})
-	}
-
-	return requests
-}
+//TODO : change logic by update
+//// SetupWithManager sets up the HotNewsReconciler with the provided manager. It configures the
+//// controller to manage HotNews resources and watches changes to a feed or group of feeds.
+//func (r *HotNewsReconciler) SetupWithManager(mgr ctrl.Manager) error {
+//	return ctrl.NewControllerManagedBy(mgr).
+//		For(&aggregatorv1.HotNews{}).
+//		Watches(
+//			&aggregatorv1.Feed{},
+//			handler.EnqueueRequestsFromMapFunc(r.updateHotNews),
+//		).
+//		Watches(
+//			&v1.ConfigMap{},
+//			handler.EnqueueRequestsFromMapFunc(r.updateHotNews),
+//		).
+//		Complete(r)
+//}
