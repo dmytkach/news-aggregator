@@ -61,25 +61,25 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Printf("Error retrieving HotNews %s/%s from k8s Cluster: %v", req.Namespace, req.Name, err)
 		return ctrl.Result{}, err
 	}
-	if !slices.Contains(hotNews.ObjectMeta.Finalizers, r.Finalizer) {
-		hotNews.ObjectMeta.Finalizers = append(hotNews.ObjectMeta.Finalizers, r.Finalizer)
-		if err := r.Client.Update(ctx, &hotNews); err != nil {
-			log.Printf("Error adding finalizer to Feed %s/%s: %v", req.Namespace, req.Name, err)
-			return ctrl.Result{}, err
-		}
-	}
-
-	if !hotNews.ObjectMeta.DeletionTimestamp.IsZero() {
-		if slices.Contains(hotNews.ObjectMeta.Finalizers, r.Finalizer) {
-			log.Printf("Handling deletion of Feed %s/%s", req.Namespace, req.Name)
-			hotNews.ObjectMeta.Finalizers = removeString(hotNews.ObjectMeta.Finalizers, r.Finalizer)
-			if err := r.Client.Update(ctx, &hotNews); err != nil {
-				log.Printf("Error removing finalizer from Feed %s/%s: %v", req.Namespace, req.Name, err)
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
-	}
+	//if !slices.Contains(hotNews.ObjectMeta.Finalizers, r.Finalizer) {
+	//	hotNews.ObjectMeta.Finalizers = append(hotNews.ObjectMeta.Finalizers, r.Finalizer)
+	//	if err := r.Client.Update(ctx, &hotNews); err != nil {
+	//		log.Printf("Error adding finalizer to Feed %s/%s: %v", req.Namespace, req.Name, err)
+	//		return ctrl.Result{}, err
+	//	}
+	//}
+	//
+	//if !hotNews.ObjectMeta.DeletionTimestamp.IsZero() {
+	//	if slices.Contains(hotNews.ObjectMeta.Finalizers, r.Finalizer) {
+	//		log.Printf("Handling deletion of Feed %s/%s", req.Namespace, req.Name)
+	//		hotNews.ObjectMeta.Finalizers = removeString(hotNews.ObjectMeta.Finalizers, r.Finalizer)
+	//		if err := r.Client.Update(ctx, &hotNews); err != nil {
+	//			log.Printf("Error removing finalizer from Feed %s/%s: %v", req.Namespace, req.Name, err)
+	//			return ctrl.Result{}, err
+	//		}
+	//	}
+	//	return ctrl.Result{}, nil
+	//}
 	var feeds aggregatorv1.FeedList
 	if err := r.List(ctx, &feeds, client.InNamespace(req.Namespace)); err != nil {
 		log.Printf("Error listing Feed resources: %v", err)

@@ -92,7 +92,7 @@ func (h *HotNews) validate() (admission.Warnings, error) {
 		errorsList = append(errorsList, field.Required(specPath.Child("feeds"), err.Error()))
 	}
 
-	log.Print("Error list lenght: ", len(errorsList))
+	log.Print("Error list length: ", len(errorsList))
 	log.Print("Errors from error list: ", errorsList.ToAggregate())
 
 	if len(errorsList) > 0 {
