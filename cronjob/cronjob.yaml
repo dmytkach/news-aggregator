@@ -20,8 +20,8 @@ spec:
                 - name: sources-volume
                   mountPath: /mnt/sources
               args:
-                - -path_to_source=/mnt/sources/sources.json
-                - -news_folder=/mnt/news
+                - -path-to-source=/mnt/sources/sources.json
+                - -news-folder=/mnt/news
           restartPolicy: OnFailure
           volumes:
             - name: news-volume

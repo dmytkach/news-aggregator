@@ -8,8 +8,10 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
+  storageClassName: news-storage
   hostPath:
     path: "/mnt/news"
+
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -21,5 +23,6 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
+  storageClassName: source-storage
   hostPath:
     path: "/mnt/sources"

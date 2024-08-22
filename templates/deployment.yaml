@@ -25,8 +25,8 @@ spec:
             - "-port=:8443"
             - "-cert=./server/certificates/cert.pem"
             - "-key=./server/certificates/key.pem"
-            - "-path_to_source=/mnt/sources/sources.json"
-            - "-news_folder=/mnt/news"
+            - "-path-to-source=/mnt/sources/sources.json"
+            - "-news-folder=/mnt/news"
           volumeMounts:
             - name: news-volume
               mountPath: "/mnt/news"
