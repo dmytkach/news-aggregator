@@ -65,3 +65,11 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 80
+vpa:
+  enabled: false
+  minAllowed:
+    cpu: "50m"
+    memory: "64Mi"
+  maxAllowed:
+    cpu: "200m"
+    memory: "256Mi"
