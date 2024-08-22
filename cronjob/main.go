@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	pathToSourcesFile := flag.String("path_to_source", "../sources.json", "Path to the file containing news sources. Default is 'server/sources.json'.")
-	pathToNews := flag.String("news_folder", "../server-news/", "Path to the folder where news files are stored. Default is 'server-news/'.")
+	pathToSourcesFile := flag.String("path-to-source", "../sources.json", "Path to the file containing news sources. Default is 'server/sources.json'.")
+	pathToNews := flag.String("news-folder", "../server-news/", "Path to the folder where news files are stored. Default is 'server-news/'.")
 
 	flag.Parse()
 
