@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"slices"
 	"strings"
+	"time"
 
 	aggregatorv1 "com.teamdev/news-aggregator/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -322,9 +323,10 @@ func (r *HotNewsReconciler) handlerConfigMap(ctx context.Context, obj client.Obj
 	if configMap.Name == r.ConfigMap {
 
 		namespace := configMap.Namespace
-
+		timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
 		hotNewsList := &aggregatorv1.HotNewsList{}
-		err := r.Client.List(ctx, hotNewsList, client.InNamespace(namespace))
+		err := r.Client.List(timeoutCtx, hotNewsList, client.InNamespace(namespace))
 		if err != nil {
 			log.Printf("Error listing HotNews in namespace %s: %v", namespace, err)
 			return requests
@@ -352,11 +354,15 @@ func (r *HotNewsReconciler) handlerConfigMap(ctx context.Context, obj client.Obj
 }
 
 // handlerFeed processes changes to Feed objects and generates reconcile requests for HotNews resources.
-func (r *HotNewsReconciler) handlerFeed(context.Context, client.Object) []ctrl.Request {
+func (r *HotNewsReconciler) handlerFeed(ctx context.Context, obj client.Object) []ctrl.Request {
 	var requests []ctrl.Request
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	//get feeds
 	feedList := &aggregatorv1.FeedList{}
-	err := r.Client.List(context.Background(), feedList, &client.ListOptions{})
+	err := r.Client.List(timeoutCtx, feedList, &client.ListOptions{})
 	if err != nil {
 		return requests
 	}
@@ -366,7 +372,7 @@ func (r *HotNewsReconciler) handlerFeed(context.Context, client.Object) []ctrl.R
 
 		hotNewsList := &aggregatorv1.HotNewsList{}
 		// get hotNews in the feed namespace
-		err = r.Client.List(context.Background(), hotNewsList, client.InNamespace(namespace))
+		err = r.Client.List(timeoutCtx, hotNewsList, client.InNamespace(namespace))
 		if err != nil {
 			return requests
 		}

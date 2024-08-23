@@ -29,6 +29,8 @@ var _ webhook.Defaulter = &HotNews{}
 
 // Default implements webhook.Defaulter and sets default values for the HotNews resource.
 func (h *HotNews) Default() {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	if h.Spec.SummaryConfig.TitlesCount == 0 {
 		h.Spec.SummaryConfig.TitlesCount = 10
 	}
@@ -36,7 +38,8 @@ func (h *HotNews) Default() {
 	if len(h.Spec.Feeds) == 0 && len(h.Spec.FeedGroups) == 0 {
 		feedList := &FeedList{}
 		listOpts := client.ListOptions{Namespace: h.Namespace}
-		err := k8sClient.List(context.Background(), feedList, &listOpts)
+
+		err := k8sClient.List(timeoutCtx, feedList, &listOpts)
 		if err != nil {
 			log.Printf("Defaulting Feeds: Failed to list feeds in namespace %s: %v", h.Namespace, err)
 		}
@@ -113,7 +116,9 @@ func (h *HotNews) validateKeywords() error {
 func (h *HotNews) validateFeeds() error {
 	feedList := &FeedList{}
 	listOpts := client.ListOptions{Namespace: h.Namespace}
-	err := k8sClient.List(context.Background(), feedList, &listOpts)
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := k8sClient.List(timeoutCtx, feedList, &listOpts)
 	if err != nil {
 		return fmt.Errorf("fail with getting feeds: %v", err)
 	}
