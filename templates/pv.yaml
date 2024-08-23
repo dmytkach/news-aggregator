@@ -8,7 +8,6 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
-  storageClassName: news-storage
   hostPath:
     path: "/mnt/news"
 
@@ -23,6 +22,5 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
-  storageClassName: source-storage
   hostPath:
     path: "/mnt/sources"
