@@ -80,7 +80,6 @@ func TestHotNewsReconciler_Reconcile(t *testing.T) {
 		Scheme:     scheme,
 		HttpClient: mockHTTPClient,
 		ServiceURL: "http://test-service",
-		Finalizer:  "example.com.finalizer",
 	}
 
 	req := reconcile.Request{
@@ -96,9 +95,6 @@ func TestHotNewsReconciler_Reconcile(t *testing.T) {
 	err = client.Get(context.Background(), req.NamespacedName, hotNews)
 	assert.NoError(t, err)
 
-	if !assert.Contains(t, hotNews.Finalizers, "example.com.finalizer", "Finalizer should be added") {
-		t.Logf("Finalizers found: %v", hotNews.Finalizers)
-	}
 }
 
 func TestHotNewsReconciler_Reconcile_ErrorGettingHotNews(t *testing.T) {
@@ -112,9 +108,8 @@ func TestHotNewsReconciler_Reconcile_ErrorGettingHotNews(t *testing.T) {
 	defer ctrl.Finish()
 
 	r := &HotNewsReconciler{
-		Client:    client,
-		Scheme:    scheme,
-		Finalizer: "example.com.finalizer",
+		Client: client,
+		Scheme: scheme,
 	}
 
 	req := reconcile.Request{
@@ -152,7 +147,12 @@ func TestFetchNewsData_ErrorFetching(t *testing.T) {
 	})
 
 	assert.Error(t, err)
-	assert.Empty(t, status)
+	assert.Equal(t, status, aggregatorv1.HotNewsStatus{
+		Condition: aggregatorv1.HotNewsCondition{
+			Status: false,
+			Reason: "network error",
+		},
+	})
 }
 
 func TestFetchNewsData_InvalidResponse(t *testing.T) {
@@ -181,7 +181,12 @@ func TestFetchNewsData_InvalidResponse(t *testing.T) {
 	})
 
 	assert.Error(t, err)
-	assert.Empty(t, status)
+	assert.Equal(t, status, aggregatorv1.HotNewsStatus{
+		Condition: aggregatorv1.HotNewsCondition{
+			Status: false,
+			Reason: "invalid character 'i' looking for beginning of value",
+		},
+	})
 }
 
 func TestFetchNewsData(t *testing.T) {

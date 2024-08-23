@@ -38,12 +38,12 @@ func (h *HotNews) Default() {
 		listOpts := client.ListOptions{Namespace: h.Namespace}
 		err := k8sClient.List(context.Background(), feedList, &listOpts)
 		if err != nil {
-			log.Printf("validateFeeds: failed to list feeds: %v", err)
+			log.Printf("Defaulting Feeds: Failed to list feeds in namespace %s: %v", h.Namespace, err)
 		}
 		h.Spec.Feeds = feedList.GetAllFeedNames()
 	}
 
-	log.Print("default ", "name ", h.Name)
+	log.Printf("Defaulting HotNews resource: Name=%s", h.Name)
 
 }
 
@@ -53,20 +53,20 @@ var _ webhook.Validator = &HotNews{}
 
 // ValidateCreate validates the HotNews resource during creation.
 func (h *HotNews) ValidateCreate() (admission.Warnings, error) {
-	log.Print("validate create ", "name ", h.Name)
+	log.Printf("Validating creation of HotNews resource: Name=%s", h.Name)
 	return h.validate()
 }
 
 // ValidateUpdate validates the HotNews resource during updates.
 func (h *HotNews) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	log.Print("validate update", "name", h.Name)
+	log.Printf("Validating update of HotNews resource: Name=%s", h.Name)
 
 	return h.validate()
 }
 
 // ValidateDelete validates the HotNews resource during deletion.
 func (h *HotNews) ValidateDelete() (admission.Warnings, error) {
-	log.Print("validate delete ", "name ", h.Name)
+	log.Printf("Validating deletion of HotNews resource: Name=%s", h.Name)
 
 	return nil, nil
 }
@@ -92,9 +92,6 @@ func (h *HotNews) validate() (admission.Warnings, error) {
 		errorsList = append(errorsList, field.Required(specPath.Child("feeds"), err.Error()))
 	}
 
-	log.Print("Error list length: ", len(errorsList))
-	log.Print("Errors from error list: ", errorsList.ToAggregate())
-
 	if len(errorsList) > 0 {
 		return nil, errorsList.ToAggregate()
 	}
@@ -102,11 +99,11 @@ func (h *HotNews) validate() (admission.Warnings, error) {
 	return nil, nil
 }
 
-// validateKeywords ensures that at least one keyword is specified in the HotNews resource.
-// Returns an error if no keywords are provided.
+// validateKeywords checks that at least one keyword is specified in the HotNews resource.
+// It returns an error if no keywords are provided.
 func (h *HotNews) validateKeywords() error {
 	if len(h.Spec.Keywords) == 0 {
-		return fmt.Errorf("keywords is required")
+		return fmt.Errorf("at least one keyword must be specified")
 	}
 	return nil
 }
@@ -118,7 +115,7 @@ func (h *HotNews) validateFeeds() error {
 	listOpts := client.ListOptions{Namespace: h.Namespace}
 	err := k8sClient.List(context.Background(), feedList, &listOpts)
 	if err != nil {
-		return fmt.Errorf("validateFeeds: failed to list feeds: %v", err)
+		return fmt.Errorf("fail with getting feeds: %v", err)
 	}
 
 	existingFeeds := make(map[string]bool)
@@ -127,7 +124,7 @@ func (h *HotNews) validateFeeds() error {
 	}
 	for _, feedName := range h.Spec.Feeds {
 		if !existingFeeds[feedName] {
-			return fmt.Errorf("validateFeeds: feed %s does not exist in namespace %s", feedName, h.Namespace)
+			return fmt.Errorf("feed %s does not exist in namespace %s", feedName, h.Namespace)
 		}
 	}
 	return nil

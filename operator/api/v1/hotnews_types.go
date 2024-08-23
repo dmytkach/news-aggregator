@@ -21,9 +21,18 @@ type SummaryConfig struct {
 
 // HotNewsStatus defines the observed state of HotNews.
 type HotNewsStatus struct {
-	ArticlesCount  int      `json:"articlesCount,omitempty"`
-	NewsLink       string   `json:"newsLink,omitempty"`
-	ArticlesTitles []string `json:"articlesTitles,omitempty"`
+	ArticlesCount  int              `json:"articlesCount,omitempty"`
+	NewsLink       string           `json:"newsLink,omitempty"`
+	ArticlesTitles []string         `json:"articlesTitles,omitempty"`
+	Condition      HotNewsCondition `json:"condition,omitempty"`
+}
+
+// HotNewsCondition represents the state of a Feed at a certain point.
+type HotNewsCondition struct {
+	// Status of the condition, one of True, False.
+	Status bool `json:"status"`
+	// If status is False, the reason should be populated
+	Reason string `json:"reason,omitempty"`
 }
 
 // +kubebuilder:object:root=true

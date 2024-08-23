@@ -17,7 +17,8 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: HotNews is the Schema for the hotnews API
+        description: HotNews represents resource and includes its specification and
+          status.
         properties:
           apiVersion:
             description: |-
@@ -37,6 +38,7 @@ spec:
           metadata:
             type: object
           spec:
+            description: HotNewsSpec defines the desired state of HotNews.
             properties:
               dateEnd:
                 type: string
@@ -55,6 +57,8 @@ spec:
                   type: string
                 type: array
               summaryConfig:
+                description: SummaryConfig defines the configuration for summarizing
+                  news articles.
                 properties:
                   titlesCount:
                     type: integer
@@ -63,6 +67,7 @@ spec:
             - keywords
             type: object
           status:
+            description: HotNewsStatus defines the observed state of HotNews.
             properties:
               articlesCount:
                 type: integer
@@ -70,6 +75,19 @@ spec:
                 items:
                   type: string
                 type: array
+              condition:
+                description: HotNewsCondition represents the state of a Feed at a
+                  certain point.
+                properties:
+                  reason:
+                    description: If status is False, the reason should be populated
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False.
+                    type: boolean
+                required:
+                - status
+                type: object
               newsLink:
                 type: string
             type: object

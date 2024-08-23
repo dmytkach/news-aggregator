@@ -12,5 +12,5 @@ spec:
     feedGroups:
       - "world"
     summaryConfig:
-      titlesCount: 10
+      titlesCount: 20
 
