@@ -9,8 +9,8 @@ spec:
     dateStart: ""
     dateEnd: ""
     feeds:
+      - "abc"
     feedGroups:
-      - "world"
     summaryConfig:
       titlesCount: 20
 

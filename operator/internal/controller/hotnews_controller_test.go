@@ -55,7 +55,7 @@ func TestHotNewsReconciler_Reconcile(t *testing.T) {
 		Status: aggregatorv1.HotNewsStatus{},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).
+	c := fake.NewClientBuilder().WithScheme(scheme).
 		WithObjects(hotNews).WithObjects(initialFeed).Build()
 
 	ctrl := gomock.NewController(t)
@@ -76,7 +76,7 @@ func TestHotNewsReconciler_Reconcile(t *testing.T) {
 		Times(1)
 
 	r := &HotNewsReconciler{
-		Client:     client,
+		Client:     c,
 		Scheme:     scheme,
 		HttpClient: mockHTTPClient,
 		ServiceURL: "http://test-service",
@@ -92,7 +92,7 @@ func TestHotNewsReconciler_Reconcile(t *testing.T) {
 	res, err := r.Reconcile(context.Background(), req)
 	assert.False(t, res.Requeue)
 
-	err = client.Get(context.Background(), req.NamespacedName, hotNews)
+	err = c.Get(context.Background(), req.NamespacedName, hotNews)
 	assert.NoError(t, err)
 
 }
@@ -102,13 +102,13 @@ func TestHotNewsReconciler_Reconcile_ErrorGettingHotNews(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = aggregatorv1.AddToScheme(scheme)
 
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	r := &HotNewsReconciler{
-		Client: client,
+		Client: c,
 		Scheme: scheme,
 	}
 
@@ -221,6 +221,7 @@ func TestFetchNewsData(t *testing.T) {
 	assert.Equal(t, 2, status.ArticlesCount)
 	assert.ElementsMatch(t, []string{"Test News 1", "Test News 2"}, status.ArticlesTitles)
 }
+
 func TestGetFeedNamesFromFeedGroups(t *testing.T) {
 	r := &HotNewsReconciler{}
 
@@ -290,4 +291,141 @@ func TestMakeRequest(t *testing.T) {
 	assert.Equal(t, 3, status.ArticlesCount)
 	assert.Equal(t, "http://example.com/news?date-end=2024-01-31&date-start=2024-01-01&keywords=keyword&sort-order=asc&sources=source1", status.NewsLink)
 	assert.ElementsMatch(t, []string{"Title1", "Title2", "Title3"}, status.ArticlesTitles)
+}
+func TestHotNewsReconciler_Reconcile_EmptyData(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = aggregatorv1.AddToScheme(scheme)
+
+	hotNews := &aggregatorv1.HotNews{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-hotnews",
+			Namespace: "default",
+		},
+		Spec: aggregatorv1.HotNewsSpec{
+			Keywords: []string{"test"},
+			Feeds:    []string{"test-feed"},
+			SummaryConfig: aggregatorv1.SummaryConfig{
+				TitlesCount: 5,
+			},
+		},
+		Status: aggregatorv1.HotNewsStatus{},
+	}
+
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithObjects(hotNews).Build()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockHTTPClient := controller.NewMockHttpClient(ctrl)
+
+	mockHTTPClient.EXPECT().
+		Do(gomock.Any()).
+		Return(&http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`[]`)),
+		}, nil).
+		Times(1)
+
+	r := &HotNewsReconciler{
+		Client:     c,
+		Scheme:     scheme,
+		HttpClient: mockHTTPClient,
+		ServiceURL: "http://test-service",
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "test-hotnews",
+			Namespace: "default",
+		},
+	}
+
+	res, err := r.Reconcile(context.Background(), req)
+	assert.False(t, res.Requeue)
+
+	err = c.Get(context.Background(), req.NamespacedName, hotNews)
+	assert.NoError(t, err)
+}
+
+func TestHandlerConfigMap_Update(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = aggregatorv1.AddToScheme(scheme)
+
+	hotNews := &aggregatorv1.HotNews{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-hotnews",
+			Namespace: "default",
+		},
+		Spec: aggregatorv1.HotNewsSpec{
+			FeedGroups: []string{"group1"},
+		},
+	}
+
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithObjects(hotNews).Build()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	r := &HotNewsReconciler{
+		Client:    c,
+		Scheme:    scheme,
+		ConfigMap: "config-map-name",
+	}
+
+	configMap := v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "config-map-name",
+			Namespace: "default",
+		},
+		Data: map[string]string{
+			"group1": "feed1",
+		},
+	}
+
+	requests := r.handlerConfigMap(context.Background(), &configMap)
+
+	assert.Len(t, requests, 1)
+	assert.Equal(t, "test-hotnews", requests[0].NamespacedName.Name)
+}
+func TestHandlerFeed_Update(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = aggregatorv1.AddToScheme(scheme)
+
+	feed := &aggregatorv1.Feed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-feed",
+			Namespace: "default",
+		},
+		Spec: aggregatorv1.FeedSpec{
+			Name: "Updated Feed",
+		},
+	}
+
+	hotNews := &aggregatorv1.HotNews{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-hotnews",
+			Namespace: "default",
+		},
+		Spec: aggregatorv1.HotNewsSpec{
+			Feeds: []string{"test-feed"},
+		},
+	}
+
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithObjects(feed, hotNews).Build()
+
+	r := &HotNewsReconciler{
+		Client: c,
+		Scheme: scheme,
+	}
+
+	requests := r.handlerFeed(context.Background(), feed)
+
+	assert.Len(t, requests, 1)
+	assert.Equal(t, "test-hotnews", requests[0].NamespacedName.Name)
 }

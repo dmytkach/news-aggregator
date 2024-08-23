@@ -312,7 +312,7 @@ func (r *HotNewsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *HotNewsReconciler) handlerConfigMap(ctx context.Context, obj client.Object) []ctrl.Request {
 	var requests []ctrl.Request
 
-	log.Printf("Starting handlerConfigMap for object: %v", obj)
+	log.Print("Starting handlerConfigMap")
 
 	configMap, ok := obj.(*v1.ConfigMap)
 	if !ok {
@@ -359,33 +359,30 @@ func (r *HotNewsReconciler) handlerFeed(ctx context.Context, obj client.Object) 
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-
 	//get feeds
-	feedList := &aggregatorv1.FeedList{}
-	err := r.Client.List(timeoutCtx, feedList, &client.ListOptions{})
-	if err != nil {
+	feed, ok := obj.(*aggregatorv1.Feed)
+	if !ok {
+		log.Printf("Object is not a feed: %v", obj)
 		return requests
 	}
 
-	for _, feed := range feedList.Items {
-		namespace := feed.Namespace
+	namespace := feed.Namespace
 
-		hotNewsList := &aggregatorv1.HotNewsList{}
-		// get hotNews in the feed namespace
-		err = r.Client.List(timeoutCtx, hotNewsList, client.InNamespace(namespace))
-		if err != nil {
-			return requests
-		}
-		// fing hotnews and save to request
-		for _, hotNews := range hotNewsList.Items {
-			if slices.Contains(hotNews.Spec.Feeds, feed.Name) {
-				requests = append(requests, reconcile.Request{
-					NamespacedName: types.NamespacedName{
-						Namespace: hotNews.Namespace,
-						Name:      hotNews.Name,
-					},
-				})
-			}
+	hotNewsList := &aggregatorv1.HotNewsList{}
+	// get hotNews in the feed namespace
+	err := r.Client.List(timeoutCtx, hotNewsList, client.InNamespace(namespace))
+	if err != nil {
+		return requests
+	}
+	// fing hotnews and save to request
+	for _, hotNews := range hotNewsList.Items {
+		if slices.Contains(hotNews.Spec.Feeds, feed.Name) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: hotNews.Namespace,
+					Name:      hotNews.Name,
+				},
+			})
 		}
 	}
 	return requests
