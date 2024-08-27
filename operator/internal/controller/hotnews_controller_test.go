@@ -4,7 +4,7 @@ import (
 	"bytes"
 	v1 "com.teamdev/news-aggregator/api/v1"
 	"com.teamdev/news-aggregator/internal/controller"
-	mockclient "com.teamdev/news-aggregator/internal/controller/mock_aggregator"
+	mockaggregator "com.teamdev/news-aggregator/internal/controller/mock_aggregator"
 	"context"
 	"errors"
 	"fmt"
@@ -28,7 +28,7 @@ import (
 var _ = Describe("HotNewsReconciler", func() {
 	var (
 		fakeClient     client.Client
-		mockHTTPClient *mockclient.MockHttpClient
+		mockHTTPClient *mockaggregator.MockHttpClient
 		reconciler     *controller.HotNewsReconciler
 		ctx            context.Context
 		feed           *v1.Feed
@@ -40,7 +40,7 @@ var _ = Describe("HotNewsReconciler", func() {
 	BeforeEach(func() {
 		ctx = context.TODO()
 		ctrl = gomock.NewController(GinkgoT())
-		mockHTTPClient = mockclient.NewMockHttpClient(ctrl)
+		mockHTTPClient = mockaggregator.NewMockHttpClient(ctrl)
 		fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		mgr, err = manager.New(config.GetConfigOrDie(), manager.Options{
 			Scheme: scheme.Scheme,
