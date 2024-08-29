@@ -12,7 +12,7 @@ func TestDefaultValues(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = AddToScheme(scheme)
 
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).Build()
+	Client = fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	tests := []struct {
 		name           string
@@ -65,7 +65,7 @@ func TestValidateHotNewsAllErrors(t *testing.T) {
 		},
 	}
 
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingFeed).Build()
+	Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingFeed).Build()
 
 	tests := []struct {
 		name      string
@@ -121,7 +121,7 @@ func TestValidateHotNewsCreationAndUpdate(t *testing.T) {
 		},
 	}
 
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingFeed).Build()
+	Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingFeed).Build()
 
 	tests := []struct {
 		name      string
@@ -200,7 +200,7 @@ func TestValidateHotNewsKeywords(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = AddToScheme(scheme)
 
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).Build()
+	Client = fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	tests := []struct {
 		name      string
@@ -250,7 +250,7 @@ func TestValidateHotNewsFeeds(t *testing.T) {
 		},
 	}
 
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingFeed).Build()
+	Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(existingFeed).Build()
 
 	tests := []struct {
 		name      string
@@ -295,7 +295,7 @@ func TestValidateHotNewsDates(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = AddToScheme(scheme)
 
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).Build()
+	Client = fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	tests := []struct {
 		name      string
