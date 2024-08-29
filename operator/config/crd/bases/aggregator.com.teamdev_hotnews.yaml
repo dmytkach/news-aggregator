@@ -75,6 +75,19 @@ spec:
                 items:
                   type: string
                 type: array
+              condition:
+                description: HotNewsCondition represents the state of a Feed at a
+                  certain point.
+                properties:
+                  reason:
+                    description: If status is False, the reason should be populated
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False.
+                    type: boolean
+                required:
+                - status
+                type: object
               newsLink:
                 type: string
             type: object
