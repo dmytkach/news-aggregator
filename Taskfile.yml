@@ -65,7 +65,7 @@ tasks:
 
   createChart:
     desc: "Creates a Helm chart for news-aggregator"
-    cmd: helm create $HELM_CHART_NAME
+    cmd: helm create {{.chart_name}}
 
   chart_install:
     desc: "Installs the Helm chart on the Kubernetes cluster"

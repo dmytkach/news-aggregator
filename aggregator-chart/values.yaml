@@ -38,6 +38,13 @@ service:
   name: news-aggregator-service
   port: 443
 
+cronjob:
+  schedule: "0 12 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  image:
+    repository: dmytkach/news-fetcher
+    tag: 1.0.2
 
 resources:
   limits:
