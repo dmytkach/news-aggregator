@@ -10,6 +10,7 @@ spec:
     - ReadWriteOnce
   hostPath:
     path: "/mnt/news"
+
 ---
 apiVersion: v1
 kind: PersistentVolume

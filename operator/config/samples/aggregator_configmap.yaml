@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: feed-group-source
 data:
-  world: "abc"
+  world: "bbc"

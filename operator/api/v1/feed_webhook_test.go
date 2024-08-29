@@ -65,7 +65,6 @@ func TestValidateFeedName(t *testing.T) {
 	}
 }
 
-// TestValidateFeedLink тестирует валидацию поля Link в Feed.
 func TestValidateFeedLink(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = AddToScheme(scheme)
