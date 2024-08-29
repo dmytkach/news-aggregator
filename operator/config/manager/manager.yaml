@@ -65,8 +65,8 @@ spec:
           - --health-probe-bind-address=:8081
           - --service-url=https://news-aggregator-service.news-aggregator.svc.cluster.local:443/
           - --feed-finalizer=feeds.finalizers.teamdev.com
-          - --news-finalizer=news.finalizers.teamdev.com
           - --config-map-name=feed-group-source
+          - --news-finalizer=news.finalizers.teamdev.com
         image: controller:latest
         name: manager
         securityContext:

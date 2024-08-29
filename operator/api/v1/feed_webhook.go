@@ -54,7 +54,9 @@ func (r *Feed) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 
 // ValidateDelete validates the Feed object during deletion. No validation is performed in this case.
 func (r *Feed) ValidateDelete() (admission.Warnings, error) {
-	log.Print("validate delete ", "name", r.Name)
+	if len(r.OwnerReferences) > 0 {
+		return admission.Warnings{}, fmt.Errorf("feed using in gotnews")
+	}
 
 	return nil, nil
 }

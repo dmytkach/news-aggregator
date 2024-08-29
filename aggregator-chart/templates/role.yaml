@@ -4,9 +4,4 @@ metadata:
   namespace: {{ .Values.namespace }}
   name: {{ .Values.role.name }}
 rules:
-  - apiGroups: [""]
-    resources: ["pods", "services", "configmaps"]
-    verbs: ["get", "create", "delete", "patch"]
-  - apiGroups: ["apps/v1"]
-    resources: ["deployments"]
-    verbs: ["get", "create", "delete", "patch"]
+

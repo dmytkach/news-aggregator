@@ -1,7 +1,10 @@
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
+	"strings"
 )
 
 // HotNewsSpec defines the desired state of HotNews.
@@ -21,9 +24,25 @@ type SummaryConfig struct {
 
 // HotNewsStatus defines the observed state of HotNews.
 type HotNewsStatus struct {
-	ArticlesCount  int      `json:"articlesCount,omitempty"`
-	NewsLink       string   `json:"newsLink,omitempty"`
-	ArticlesTitles []string `json:"articlesTitles,omitempty"`
+	ArticlesCount  int              `json:"articlesCount,omitempty"`
+	NewsLink       string           `json:"newsLink,omitempty"`
+	ArticlesTitles []string         `json:"articlesTitles,omitempty"`
+	Condition      HotNewsCondition `json:"condition,omitempty"`
+}
+
+// HotNewsCondition represents the state of a Feed at a certain point.
+type HotNewsCondition struct {
+	// Status of the condition, one of True, False.
+	Status bool `json:"status"`
+	// If status is False, the reason should be populated
+	Reason string `json:"reason,omitempty"`
+}
+
+func SetHotNewsErrorStatus(errorMessage string) HotNewsStatus {
+	return HotNewsStatus{Condition: HotNewsCondition{
+		Status: false,
+		Reason: errorMessage,
+	}}
 }
 
 // +kubebuilder:object:root=true
@@ -36,6 +55,22 @@ type HotNews struct {
 
 	Spec   HotNewsSpec   `json:"spec,omitempty"`
 	Status HotNewsStatus `json:"status,omitempty"`
+}
+
+// ExtractFeedsFromGroups retrieves the feed names associated
+// with the specified FeedGroups by referencing a ConfigMap.
+func (h *HotNews) ExtractFeedsFromGroups(configMap v1.ConfigMap) []string {
+	var feedNames []string
+
+	for _, feedGroup := range h.Spec.FeedGroups {
+		log.Printf("Processing FeedGroup: %s", feedGroup)
+		if value, ok := configMap.Data[feedGroup]; ok {
+			feedNames = append(feedNames, strings.Split(value, ",")...)
+			log.Printf("Matched FeedGroup '%s' in ConfigMap, added values: %v", feedGroup, feedNames)
+		}
+	}
+
+	return feedNames
 }
 
 // +kubebuilder:object:root=true

@@ -27,6 +27,7 @@ func main() {
 	newsFolder := managers.CreateNewsFolder(*pathToNews)
 	sourceHandler := handlers.SourceHandler{SourceManager: sourceFolder}
 	newsHandler := handlers.NewsHandler{NewsManager: newsFolder, SourceManager: sourceFolder}
+
 	http.HandleFunc("/news", newsHandler.News)
 	http.HandleFunc("/sources", sourceHandler.Sources)
 
