@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"slices"
 	"strings"
 )
 
@@ -31,6 +32,7 @@ type HotNewsReconciler struct {
 	HttpClient HttpClient
 	ServiceURL string
 	ConfigMap  string
+	Finalizer  string
 }
 
 // NewsTitle represents a single news article title retrieved from
@@ -56,10 +58,34 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	var hotNews aggregatorv1.HotNews
 	if err := r.Get(ctx, req.NamespacedName, &hotNews); err != nil {
 		if errors.IsNotFound(err) {
-			log.Print("Reconcile: HotNews was not found. Error ignored")
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
+	}
+	owner := HotNewsOwner{
+		Client:  r.Client,
+		Ctx:     ctx,
+		HotNews: &hotNews,
+	}
+	if !slices.Contains(hotNews.ObjectMeta.Finalizers, r.Finalizer) {
+		hotNews.ObjectMeta.Finalizers = append(hotNews.ObjectMeta.Finalizers, r.Finalizer)
+		log.Printf("Add finalizer for HotNews %s/%s", req.Namespace, req.Name)
+		if err := r.Client.Update(ctx, &hotNews); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	if !hotNews.ObjectMeta.DeletionTimestamp.IsZero() {
+		if slices.Contains(hotNews.ObjectMeta.Finalizers, r.Finalizer) {
+			if cleanupErr := owner.CleanupOwnerReferences(); cleanupErr != nil {
+				log.Print(cleanupErr, "Failed to clean up OwnerReferences after HotNews deletion")
+				return ctrl.Result{}, cleanupErr
+			}
+			hotNews.ObjectMeta.Finalizers = removeString(hotNews.ObjectMeta.Finalizers, r.Finalizer)
+			if err := r.Client.Update(ctx, &hotNews); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
 	}
 	var feedNames []string
 	if len(hotNews.Spec.Feeds) > 0 {
@@ -99,7 +125,6 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	sources := feeds.GetNewsSources(feedNames)
-
 	log.Printf("Final list of news names: %v", sources)
 	status, err := r.fetchNewsData(sources, hotNews.Spec)
 	if err != nil {
@@ -120,7 +145,10 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			Status: true,
 		},
 	}
-
+	if err := owner.UpdateOwnerReferences(); err != nil {
+		log.Printf("Failed to update Feed ownerReferences: %v", err)
+		return ctrl.Result{}, err
+	}
 	if err := r.Status().Update(ctx, &hotNews); err != nil {
 		log.Printf("Error updating status of HotNews %s/%s: %v", req.Namespace, req.Name, err)
 		return reconcile.Result{}, err

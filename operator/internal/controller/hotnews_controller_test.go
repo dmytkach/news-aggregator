@@ -52,6 +52,7 @@ var _ = Describe("HotNewsReconciler", func() {
 			HttpClient: mockHTTPClient,
 			ServiceURL: "http://test-service",
 			ConfigMap:  "test-configmap",
+			Finalizer:  "test-finalizer",
 		}
 
 		feed = &v1.Feed{
@@ -105,6 +106,53 @@ var _ = Describe("HotNewsReconciler", func() {
 			Expect(err).To(MatchError("find Error"))
 		})
 	})
+	Context("when HotNews uses finalizers", func() {
+		var (
+			hotNews *v1.HotNews
+		)
+		BeforeEach(func() {
+			hotNews = &v1.HotNews{
+				ObjectMeta: v12.ObjectMeta{
+					Name:      "test-hotnews",
+					Namespace: "default",
+				},
+				Spec: v1.HotNewsSpec{
+					Feeds:     []string{"test-feed"},
+					Keywords:  []string{"test-keyword"},
+					DateStart: "2024-01-01",
+					DateEnd:   "2024-01-02",
+					SummaryConfig: v1.SummaryConfig{
+						TitlesCount: 3,
+					},
+				},
+			}
+		})
+		It("Finalizer not found with wrong status update", func() {
+			c := fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).WithStatusSubresource(&v1.HotNews{}).WithInterceptorFuncs(interceptor.Funcs{
+				Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+					return fakeClient.Get(ctx, key, obj, opts...)
+				},
+				Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+					return errors.New("fail to add finalizer")
+				},
+			}).Build()
+			reconciler.Client = c
+
+			Expect(fakeClient.Create(ctx, hotNews)).To(Succeed())
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: "default",
+					Name:      "test-hotnews",
+				},
+			}
+			result, err := reconciler.Reconcile(ctx, req)
+
+			Expect(err).To(MatchError("fail to add finalizer"))
+			Expect(result.Requeue).To(BeFalse())
+
+		})
+	})
 	Context("when HotNews uses feeds", func() {
 		var (
 			hotNews *v1.HotNews
@@ -113,8 +161,9 @@ var _ = Describe("HotNewsReconciler", func() {
 		BeforeEach(func() {
 			hotNews = &v1.HotNews{
 				ObjectMeta: v12.ObjectMeta{
-					Name:      "test-hotnews",
-					Namespace: "default",
+					Name:       "test-hotnews",
+					Namespace:  "default",
+					Finalizers: []string{"test-finalizer"},
 				},
 				Spec: v1.HotNewsSpec{
 					Feeds:     []string{"test-feed"},
@@ -427,8 +476,9 @@ var _ = Describe("HotNewsReconciler", func() {
 			}
 			hotNews = &v1.HotNews{
 				ObjectMeta: v12.ObjectMeta{
-					Name:      "test-hotnews",
-					Namespace: "default",
+					Name:       "test-hotnews",
+					Namespace:  "default",
+					Finalizers: []string{"test-finalizer"},
 				},
 				Spec: v1.HotNewsSpec{
 					FeedGroups: []string{"group"},

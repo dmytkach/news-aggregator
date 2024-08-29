@@ -9,7 +9,7 @@ spec:
     dateStart: ""
     dateEnd: ""
     feeds:
-      - "abc"
+      - "bbc"
     feedGroups:
     summaryConfig:
       titlesCount: 20
