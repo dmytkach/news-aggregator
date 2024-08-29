@@ -70,7 +70,12 @@ tasks:
   chart_install:
     desc: "Installs the Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
-    cmd: helm install {{.release_name}} ./aggregator-chart -n {{.namespace_name}}
+    cmd: helm install {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}}
+
+  chart_upgrade:
+    desc: "Upgrades the Helm chart on the Kubernetes cluster"
+    deps: [ create_ns ]
+    cmd: helm upgrade {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}}
 
   chart_uninstall:
     desc: "Remove news-aggregator app from Kubernetes cluster"
