@@ -1,128 +1,112 @@
-package controller
+package controller_test
 
 import (
 	"bytes"
 	aggregatorv1 "com.teamdev/news-aggregator/api/v1"
-	controller "com.teamdev/news-aggregator/internal/controller/mock_aggregator"
+	"com.teamdev/news-aggregator/internal/controller"
+	mockaggregator "com.teamdev/news-aggregator/internal/controller/mock_aggregator"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
 )
 
-func TestFeedReconcile(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = aggregatorv1.AddToScheme(scheme)
+var _ = Describe("FeedReconciler", func() {
+	var (
+		fakeClient     client.Client
+		mockHTTPClient *mockaggregator.MockHttpClient
+		reconciler     *controller.FeedReconciler
+		ctx            context.Context
+		feed           *aggregatorv1.Feed
+		ctrl           *gomock.Controller
+		err            error
+		req            reconcile.Request
+		mgr            manager.Manager
+	)
 
-	initialFeed := &aggregatorv1.Feed{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-feed",
-			Namespace: "default",
-		},
-		Spec: aggregatorv1.FeedSpec{
-			Name: "TestFeed",
-			Link: "https://example.com/feed",
-		},
-		Status: aggregatorv1.FeedStatus{
-			Conditions: []aggregatorv1.Condition{},
-		},
-	}
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initialFeed).Build()
-
-	feed := &aggregatorv1.Feed{}
-	err := c.Get(context.Background(), types.NamespacedName{
-		Name:      "test-feed",
-		Namespace: "default",
-	}, feed)
-	assert.NoError(t, err, "initial Feed object should be found")
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockHTTPClient := controller.NewMockHttpClient(ctrl)
-
-	mockHTTPClient.EXPECT().
-		Post("https://news-aggregator-service.news-aggregator.svc.cluster.local:443/sources?name=TestFeed&url=https://example.com/feed",
-			"application/json", gomock.Any()).
-		Return(&http.Response{
-			StatusCode: http.StatusCreated,
-			Body:       io.NopCloser(bytes.NewBufferString("")),
-		}, nil)
-
-	r := &FeedReconciler{
-		Client:        c,
-		Scheme:        scheme,
-		HttpClient:    mockHTTPClient,
-		FeedFinalizer: "feed.finalizers.news.teamdev.com",
-		ServiceURL:    "https://news-aggregator-service.news-aggregator.svc.cluster.local:443/sources",
-	}
-
-	req := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      "test-feed",
-			Namespace: "default",
-		},
-	}
-
-	res, err := r.Reconcile(context.Background(), req)
-	assert.False(t, res.Requeue)
-
-	err = c.Get(context.Background(), req.NamespacedName, feed)
-	assert.NoError(t, err, "Feed object should be found after reconciliation")
-
-	if !assert.Contains(t, feed.Finalizers, "feed.finalizers.news.teamdev.com", "Finalizer should be added") {
-		t.Logf("Finalizers found: %v", feed.Finalizers)
-	}
-}
-func TestFeedNotFound(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = aggregatorv1.AddToScheme(scheme)
-
-	tests := []struct {
-		name          string
-		clientSetup   func() client.Client
-		expectedError error
-	}{
-		{
-			name: "Feed not found without error",
-			clientSetup: func() client.Client {
-				return fake.NewClientBuilder().WithScheme(scheme).Build()
+	BeforeEach(func() {
+		ctx = context.TODO()
+		ctrl = gomock.NewController(GinkgoT())
+		mockHTTPClient = mockaggregator.NewMockHttpClient(ctrl)
+		fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		mgr, err = manager.New(config.GetConfigOrDie(), manager.Options{
+			Scheme: scheme.Scheme,
+		})
+		req = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: "default",
+				Name:      "non-existent-feed",
 			},
-			expectedError: nil,
-		},
-		{
-			name: "Feed not found with error",
-			clientSetup: func() client.Client {
-				return fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
-					Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-						return errors.New("feed not found")
-					},
-				}).Build()
-			},
-			expectedError: errors.New("feed not found"),
-		},
-	}
+		}
+		reconciler = &controller.FeedReconciler{
+			Client:        fakeClient,
+			Scheme:        scheme.Scheme,
+			HttpClient:    mockHTTPClient,
+			ServiceURL:    "http://test-service",
+			FeedFinalizer: "test-finalizer",
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := tt.clientSetup()
-			r := &FeedReconciler{
-				Client: c,
-				Scheme: scheme,
-			}
+		feed = &aggregatorv1.Feed{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-feed",
+				Namespace: "default",
+			},
+			Spec: aggregatorv1.FeedSpec{
+				Name: "test-feed",
+				Link: "http://test-example",
+			},
+		}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Context("when Feed resource is not found", func() {
+		It("should return no error and not attempt to reconcile with a not found error", func() {
+			_, err := reconciler.Reconcile(ctx, req)
+
+			Expect(err).To(BeNil())
+		})
+
+		It("should return an error when there is a find error", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithInterceptorFuncs(interceptor.Funcs{
+				Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+					return errors.New("find Error")
+				},
+			}).Build()
+
+			reconciler.Client = fakeClient
+
+			_, err := reconciler.Reconcile(ctx, req)
+
+			Expect(err).To(MatchError("find Error"))
+		})
+	})
+
+	Context("when creating a Feed resource", func() {
+		It("should succeed and add a finalizer", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
+				Post(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil)
 
 			req := reconcile.Request{
 				NamespacedName: types.NamespacedName{
@@ -131,278 +115,488 @@ func TestFeedNotFound(t *testing.T) {
 				},
 			}
 
-			res, err := r.Reconcile(context.Background(), req)
-			if tt.expectedError != nil {
-				assert.Error(t, err)
-				assert.EqualError(t, err, tt.expectedError.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.False(t, res.Requeue)
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
+
+			feed := &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(feed.ObjectMeta.Finalizers).To(ContainElement("test-finalizer"))
+			Expect(feed.Status.Conditions[0].Status).To(Equal(true))
+			Expect(feed.Status.Conditions[0].Type).To(Equal(aggregatorv1.ConditionAdded))
+			Expect(feed.Status.Conditions[0].Message).To(Equal("Feed added successfully"))
 		})
-	}
-}
-func TestCannotUpdateFeedAfterAddingFinalizer(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = aggregatorv1.AddToScheme(scheme)
-	c := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
-		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-			return client.Create(ctx, obj)
-		},
-		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-			return errors.New("error with status update")
-		},
-	}).Build()
-	initialFeed := &aggregatorv1.Feed{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-feed",
-			Namespace: "default",
-		},
-	}
-	_ = c.Create(context.TODO(), initialFeed)
-
-	r := &FeedReconciler{
-		Client: c,
-		Scheme: scheme,
-	}
-
-	req := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      "test-feed",
-			Namespace: "default",
-		},
-	}
-
-	res, err := r.Reconcile(context.Background(), req)
-	assert.False(t, res.Requeue)
-	assert.Error(t, err, errors.New("error with status update"), "Feed object should not be found")
-}
-func TestFeedReconciler_addFeed(t *testing.T) {
-	tests := []struct {
-		name             string
-		feed             aggregatorv1.Feed
-		mockPostResponse *http.Response
-		mockPostError    error
-		expectedError    bool
-	}{
-		{
-			name: "Success request",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockPostResponse: &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBufferString("")),
-			},
-			mockPostError: nil,
-			expectedError: false,
-		},
-		{
-			name: "HTTP error from POST request",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockPostResponse: nil,
-			mockPostError:    fmt.Errorf("network error"),
-			expectedError:    true,
-		},
-		{
-			name: "Non-200 status code",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockPostResponse: &http.Response{
-				StatusCode: http.StatusInternalServerError,
-				Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
-			},
-			mockPostError: nil,
-			expectedError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockHttpClient := controller.NewMockHttpClient(ctrl)
-
-			mockHttpClient.EXPECT().
+		It("should handle POST success but fail to update status", func() {
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
 				Post(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return(tt.mockPostResponse, tt.mockPostError)
+				Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil)
 
-			reconciler := &FeedReconciler{
-				HttpClient: mockHttpClient,
-				ServiceURL: "http://mock-server/create-feed",
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
 			}
 
-			err := reconciler.createFeed(tt.feed)
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
+		})
+		It("should handle error when adding finalizer", func() {
+			fakeClient = fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithInterceptorFuncs(
+					interceptor.Funcs{
+						Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+							return client.Get(ctx, key, obj)
+						},
+						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+							return client.Create(ctx, obj)
+						},
+						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+							return errors.New("error with Update feed")
+						},
+					}).Build()
+			reconciler.Client = fakeClient
 
-			if (err != nil) != tt.expectedError {
-				t.Errorf("createFeed() error = %v, expectedError %v", err, tt.expectedError)
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(MatchError("error with Update feed"))
+			Expect(res.Requeue).To(BeFalse())
+		})
+		It("should handle POST fails", func() {
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
+				Post(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil)
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
+		})
+		It("should handle POST request failure", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
+				Post("http://test-service?name=test-feed&url=http://test-example", "application/json", nil).
+				Return(nil, errors.New("error with Post request"))
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(MatchError("error with Post request"))
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(feed.ObjectMeta.Finalizers).To(ContainElement("test-finalizer"))
+			Expect(feed.Status.Conditions[0].Status).To(Equal(false))
+			Expect(feed.Status.Conditions[0].Type).To(Equal(aggregatorv1.ConditionAdded))
+			Expect(feed.Status.Conditions[0].Message).To(Equal("Feed didn't add successfully"))
+
+		})
+		Context("when POST request returns an error status", func() {
+			var req reconcile.Request
+			BeforeEach(func() {
+				mockHTTPClient.EXPECT().
+					Post(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(&http.Response{
+						StatusCode: http.StatusInternalServerError,
+						Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
+					}, nil)
+
+				req = reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      "test-feed",
+						Namespace: "default",
+					},
+				}
+			})
+			It("should handle POST request failure and update the feed status", func() {
+				fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+				reconciler.Client = fakeClient
+				Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+
+				res, err := reconciler.Reconcile(ctx, req)
+				Expect(err).To(MatchError("failed to create source, status code: 500"))
+				Expect(res.Requeue).To(BeFalse())
+
+				feed = &aggregatorv1.Feed{}
+				err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(feed.ObjectMeta.Finalizers).To(ContainElement("test-finalizer"))
+				Expect(feed.Status.Conditions[0].Status).To(Equal(false))
+				Expect(feed.Status.Conditions[0].Type).To(Equal(aggregatorv1.ConditionAdded))
+				Expect(feed.Status.Conditions[0].Message).To(Equal("Feed didn't add successfully"))
+
+			})
+			It("should handle POST request failure but feed not updated", func() {
+				fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+				reconciler.Client = fakeClient
+				Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+
+				res, err := reconciler.Reconcile(ctx, req)
+				Expect(err.Error()).To(ContainSubstring("not found"))
+				Expect(res.Requeue).To(BeFalse())
+
+			})
+		})
+	})
+
+	Context("when updating a Feed resource", func() {
+		BeforeEach(func() {
+			feed.Status.Conditions = []aggregatorv1.Condition{
+				{
+					Type:   aggregatorv1.ConditionAdded,
+					Status: true,
+				},
 			}
 		})
-	}
-}
-func TestFeedReconciler_deleteFeed(t *testing.T) {
-	tests := []struct {
-		name               string
-		feed               aggregatorv1.Feed
-		mockDeleteResponse *http.Response
-		mockDeleteError    error
-		expectedError      bool
-	}{
-		{
-			name: "Success delete request",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockDeleteResponse: &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBufferString("")),
-			},
-			mockDeleteError: nil,
-			expectedError:   false,
-		},
-		{
-			name: "Failed delete request with error",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockDeleteResponse: nil,
-			mockDeleteError:    fmt.Errorf("delete request failed"),
-			expectedError:      true,
-		},
-		{
-			name: "Failed delete request with non-OK status code",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockDeleteResponse: &http.Response{
-				StatusCode: http.StatusInternalServerError,
-				Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
-			},
-			mockDeleteError: nil,
-			expectedError:   true,
-		},
-	}
+		It("should successfully update the feed", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockHttpClient := controller.NewMockHttpClient(ctrl)
-
-			mockHttpClient.EXPECT().
+			mockHTTPClient.EXPECT().
 				Do(gomock.Any()).
-				Return(tt.mockDeleteResponse, tt.mockDeleteError).
-				Times(1)
+				Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil)
 
-			reconciler := &FeedReconciler{
-				HttpClient: mockHttpClient,
-				ServiceURL: "http://mock-server/delete-feed",
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
 			}
 
-			err := reconciler.deleteFeed(tt.feed)
-			if (err != nil) != tt.expectedError {
-				t.Errorf("deleteFeed() error = %v, expectedError %v", err, tt.expectedError)
-			}
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
+
+			feed := &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(feed.Status.Conditions[1].Status).To(Equal(true))
+			Expect(feed.Status.Conditions[1].Type).To(Equal(aggregatorv1.ConditionUpdated))
+			Expect(feed.Status.Conditions[1].Message).To(Equal("Feed updated successfully"))
 		})
-	}
-}
-func TestFeedReconciler_updateFeed(t *testing.T) {
-	tests := []struct {
-		name            string
-		feed            aggregatorv1.Feed
-		mockPutResponse *http.Response
-		mockPutError    error
-		expectedError   bool
-	}{
-		{
-			name: "Success update request",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockPutResponse: &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBufferString("")),
-			},
-			mockPutError:  nil,
-			expectedError: false,
-		},
-		{
-			name: "Failed update request with error",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockPutResponse: nil,
-			mockPutError:    fmt.Errorf("update request failed"),
-			expectedError:   true,
-		},
-		{
-			name: "Failed update request with non-OK status code",
-			feed: aggregatorv1.Feed{
-				Spec: aggregatorv1.FeedSpec{
-					Name: "TestFeed",
-					Link: "http://example.com/feed",
-				},
-			},
-			mockPutResponse: &http.Response{
-				StatusCode: http.StatusInternalServerError,
-				Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
-			},
-			mockPutError:  nil,
-			expectedError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockHttpClient := controller.NewMockHttpClient(ctrl)
-
-			mockHttpClient.EXPECT().
+		It("should handle a successful update but fail to update the status", func() {
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
 				Do(gomock.Any()).
-				Return(tt.mockPutResponse, tt.mockPutError).
-				Times(1)
+				Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil)
 
-			reconciler := &FeedReconciler{
-				HttpClient: mockHttpClient,
-				ServiceURL: "http://mock-server/update-feed",
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
 			}
 
-			err := reconciler.updateFeed(tt.feed)
-			if (err != nil) != tt.expectedError {
-				t.Errorf("updateFeed() error = %v, expectedError %v", err, tt.expectedError)
-			}
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
 		})
-	}
-}
+		It("should handle errors when sending the Put request", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				Return(nil, errors.New("error with PUT request"))
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(MatchError("error with PUT request"))
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(feed.Status.Conditions[1].Status).To(Equal(false))
+			Expect(feed.Status.Conditions[1].Type).To(Equal(aggregatorv1.ConditionUpdated))
+			Expect(feed.Status.Conditions[1].Message).To(Equal("Feed didn't update successfully"))
+		})
+		It("should handle issues with the URL scheme in update request", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			reconciler.ServiceURL = "://bad-url"
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err.Error()).To(ContainSubstring("missing protocol scheme"))
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(feed.Status.Conditions[1].Status).To(Equal(false))
+			Expect(feed.Status.Conditions[1].Type).To(Equal(aggregatorv1.ConditionUpdated))
+			Expect(feed.Status.Conditions[1].Message).To(Equal("Feed didn't update successfully"))
+		})
+		Context("PUT Request Error Status Handling", func() {
+			var req reconcile.Request
+			BeforeEach(func() {
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(&http.Response{
+						StatusCode: http.StatusInternalServerError,
+						Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
+					}, nil)
+
+				req = reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      "test-feed",
+						Namespace: "default",
+					},
+				}
+			})
+
+			It("should handle PUT request failure but feed updated", func() {
+				fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+				reconciler.Client = fakeClient
+				Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+
+				res, err := reconciler.Reconcile(ctx, req)
+				Expect(err).To(MatchError("failed to update source, status code: 500"))
+				Expect(res.Requeue).To(BeFalse())
+
+				feed = &aggregatorv1.Feed{}
+				err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(feed.Status.Conditions[1].Status).To(Equal(false))
+				Expect(feed.Status.Conditions[1].Type).To(Equal(aggregatorv1.ConditionUpdated))
+				Expect(feed.Status.Conditions[1].Message).To(Equal("Feed didn't update successfully"))
+			})
+
+			It("should handle PUT request failure but feed not updated", func() {
+				fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+				reconciler.Client = fakeClient
+				Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+
+				res, err := reconciler.Reconcile(ctx, req)
+				Expect(err.Error()).To(ContainSubstring("not found"))
+				Expect(res.Requeue).To(BeFalse())
+			})
+		})
+	})
+
+	Context("when deleting a Feed resource", func() {
+		It("should successfully delete the feed", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			feed.Finalizers = []string{"test-finalizer"}
+
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			Expect(reconciler.Client.Delete(ctx, feed)).To(Succeed())
+
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil)
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).To(HaveOccurred())
+		})
+		It("should handle successful deletion but fail to update the status", func() {
+			fakeClient = fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithInterceptorFuncs(
+					interceptor.Funcs{
+						Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+							return client.Get(ctx, key, obj)
+						},
+						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+							return client.Create(ctx, obj)
+						},
+						Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+							return client.Delete(ctx, obj)
+						},
+						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+							return errors.New("error with Update feed")
+						},
+					}).Build()
+			reconciler.Client = fakeClient
+			feed.Finalizers = []string{"test-finalizer"}
+
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			Expect(reconciler.Client.Delete(ctx, feed)).To(Succeed())
+
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				Return(&http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil)
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(MatchError("error with Update feed"))
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+		})
+		It("should handle errors during the DELETE request ", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			feed.Finalizers = []string{"test-finalizer"}
+
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			Expect(reconciler.Client.Delete(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				Return(nil, errors.New("error with DELETE request"))
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(MatchError("error with DELETE request"))
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(feed.Status.Conditions[0].Status).To(Equal(false))
+			Expect(feed.Status.Conditions[0].Type).To(Equal(aggregatorv1.ConditionDeleted))
+			Expect(feed.Status.Conditions[0].Message).To(Equal("Failed to delete feed"))
+		})
+		It("should handle issues with an invalid URL scheme during the DELETE request", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&aggregatorv1.Feed{}).Build()
+			reconciler.Client = fakeClient
+			reconciler.ServiceURL = "://bad-url"
+			feed.Finalizers = []string{"test-finalizer"}
+
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			Expect(reconciler.Client.Delete(ctx, feed)).To(Succeed())
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err.Error()).To(ContainSubstring("missing protocol scheme"))
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(feed.Status.Conditions[0].Status).To(Equal(false))
+			Expect(feed.Status.Conditions[0].Type).To(Equal(aggregatorv1.ConditionDeleted))
+			Expect(feed.Status.Conditions[0].Message).To(Equal("Failed to delete feed"))
+		})
+		It("should handle issues during the DELETE request without updating feed status", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+			reconciler.Client = fakeClient
+			feed.Finalizers = []string{"test-finalizer"}
+
+			Expect(reconciler.Client.Create(ctx, feed)).To(Succeed())
+			Expect(reconciler.Client.Delete(ctx, feed)).To(Succeed())
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				Return(&http.Response{
+					StatusCode: http.StatusInternalServerError,
+					Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
+				}, nil)
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-feed",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
+
+			feed = &aggregatorv1.Feed{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, feed)
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("SetupWithManager", func() {
+		It("should setup the controller without errors", func() {
+			err = reconciler.SetupWithManager(mgr)
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+})
