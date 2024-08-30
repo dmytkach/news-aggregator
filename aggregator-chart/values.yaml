@@ -64,19 +64,20 @@ resources:
     cpu: "100m"
     memory: "128Mi"
   requests:
-    cpu: "100m"
-    memory: "128Mi"
-
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 80
-vpa:
-  enabled: false
-  minAllowed:
     cpu: "50m"
     memory: "64Mi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetUtilPercent: 80
+
+vpa:
+  enabled: true
+  minAllowed:
+    cpu: "50m"
+    memory: "32Mi"
   maxAllowed:
-    cpu: "200m"
-    memory: "256Mi"
+    cpu: "100m"
+    memory: "128Mi"
