@@ -13,11 +13,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var k8sClient client.Client
+var Client client.Client
 
 // SetupWebhookWithManager configures the manager to handle webhooks for the Feed type.
 func (r *Feed) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	k8sClient = mgr.GetClient()
+	Client = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -66,26 +66,21 @@ func (r *Feed) validateFeed() (admission.Warnings, error) {
 	var errorsList field.ErrorList
 	specPath := field.NewPath("spec")
 
-	// Validate name
 	if r.Spec.Name == "" {
 		errorsList = append(errorsList, field.Required(specPath.Child("name"), "name cannot be empty"))
 	} else if len(r.Spec.Name) > 20 {
 		errorsList = append(errorsList, field.Invalid(specPath.Child("name"), r.Spec.Name, "name must not exceed 20 characters"))
 	}
 
-	// Validate URL
 	if r.Spec.Link == "" {
-		errorsList = append(errorsList, field.Required(specPath.Child("url"), "URL cannot be empty"))
-	} else if !isValidURL(r.Spec.Link) {
-		errorsList = append(errorsList, field.Invalid(specPath.Child("url"), r.Spec.Link, "URL must be a valid URL"))
+		errorsList = append(errorsList, field.Required(specPath.Child("link"), "link cannot be empty"))
+	} else if !isValidLink(r.Spec.Link) {
+		errorsList = append(errorsList, field.Invalid(specPath.Child("link"), r.Spec.Link, "link must be a valid"))
 	}
 
-	// Check name uniqueness
 	if err := checkNameUniqueness(r); err != nil {
 		errorsList = append(errorsList, field.Invalid(specPath.Child("name"), r.Spec.Name, err.Error()))
 	}
-
-	// Return the aggregated errors if any
 	if len(errorsList) > 0 {
 		return nil, errorsList.ToAggregate()
 	}
@@ -93,8 +88,8 @@ func (r *Feed) validateFeed() (admission.Warnings, error) {
 	return nil, nil
 }
 
-// isValidURL checks if the provided string is a valid URL.
-func isValidURL(str string) bool {
+// isValidLink checks if the provided string is a valid URL.
+func isValidLink(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
@@ -103,9 +98,9 @@ func isValidURL(str string) bool {
 func checkNameUniqueness(feed *Feed) error {
 	feedList := &FeedList{}
 	listOpts := client.ListOptions{Namespace: feed.Namespace}
-	err := k8sClient.List(context.Background(), feedList, &listOpts)
-	if err != nil {
+	if err := Client.List(context.Background(), feedList, &listOpts); err != nil {
 		return fmt.Errorf("checkNameUniqueness: failed to list feeds: %v", err)
+
 	}
 
 	for _, existingFeed := range feedList.Items {

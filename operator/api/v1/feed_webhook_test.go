@@ -1,188 +1,111 @@
-package v1
+package v1_test
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	v1 "com.teamdev/news-aggregator/api/v1"
+	"context"
+	"errors"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestValidateFeedName(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = AddToScheme(scheme)
+var _ = Describe("FeedWebhook", func() {
+	var (
+		testFeed *v1.Feed
+		ctx      context.Context
+		c        client.Client
+		old      runtime.Object
+	)
 
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).Build()
+	BeforeEach(func() {
+		ctx = context.TODO()
+		testFeed = &v1.Feed{
+			ObjectMeta: v12.ObjectMeta{
+				Name:      "testFeed",
+				Namespace: "testFeedNamespace",
+			},
+			Spec: v1.FeedSpec{
+				Name: "valid-name",
+				Link: "http://valid-url.com",
+			},
+		}
+		c = fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		v1.Client = c
+	})
+	It("ValidateCreate", func() {
+		warnings, err := testFeed.ValidateCreate()
+		Expect(err).To(BeNil())
+		Expect(warnings).To(BeNil())
+	})
+	It("ValidateUpdate", func() {
+		warnings, err := testFeed.ValidateUpdate(old)
+		Expect(err).To(BeNil())
+		Expect(warnings).To(BeNil())
+	})
 
-	tests := []struct {
-		name      string
-		feed      *Feed
-		expectErr bool
-	}{
-		{
-			name: "valid name",
-			feed: &Feed{
-				Spec: FeedSpec{
-					Name: "TestFeed",
-					Link: "https://example.com",
-				},
-			},
-			expectErr: false,
-		},
-		{
-			name: "empty name",
-			feed: &Feed{
-				Spec: FeedSpec{Name: ""},
-			},
-			expectErr: true,
-		},
-		{
-			name: "name too long",
-			feed: &Feed{
-				Spec: FeedSpec{Name: "TestFeedTestFeedTestFeedTestFeedTestFeedTestFeedTestFeedTestFeedTestFeed"},
-			},
-			expectErr: true,
-		},
-		{
-			name: "name with invalid characters",
-			feed: &Feed{
-				Spec: FeedSpec{Name: "Test!Feed"},
-			},
-			expectErr: true,
-		},
-	}
+	It("ValidateDelete", func() {
+		warnings, err := testFeed.ValidateDelete()
+		Expect(err).To(BeNil())
+		Expect(warnings).To(BeNil())
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.feed.validateFeed()
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
+	Context("feed has an invalid name", func() {
+		It("empty name", func() {
+			testFeed.Spec.Name = ""
+			_, err := testFeed.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("name cannot be empty"))
 		})
-	}
-}
-
-func TestValidateFeedLink(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = AddToScheme(scheme)
-
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).Build()
-
-	tests := []struct {
-		name      string
-		feed      *Feed
-		expectErr bool
-	}{
-		{
-			name: "valid link",
-			feed: &Feed{
-				Spec: FeedSpec{
-					Link: "http://example.com",
-					Name: "TestFeed",
-				},
-			},
-			expectErr: false,
-		},
-		{
-			name: "invalid link",
-			feed: &Feed{
-				Spec: FeedSpec{
-					Link: "invalid-link",
-					Name: "TestFeed",
-				},
-			},
-			expectErr: true,
-		},
-		{
-			name: "empty link",
-			feed: &Feed{
-				Spec: FeedSpec{
-					Link: "",
-					Name: "TestFeed",
-				},
-			},
-			expectErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.feed.validateFeed()
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
+		It("long name", func() {
+			testFeed.Spec.Name = "verysuperlongnameformytestfeed"
+			_, err := testFeed.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("name must not exceed 20 characters"))
 		})
-	}
-}
+	})
 
-func TestCheckNameUniqueness(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = AddToScheme(scheme)
-
-	existingFeed := &Feed{
-		Spec: FeedSpec{
-			Name: "existing-feed",
-			Link: "https://example.com",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			UID:       "existing-uid",
-		},
-	}
-	existingFeedList := &FeedList{
-		Items: []Feed{*existingFeed},
-	}
-
-	k8sClient = fake.NewClientBuilder().WithScheme(scheme).WithLists(existingFeedList).Build()
-
-	tests := []struct {
-		name      string
-		feed      *Feed
-		expectErr bool
-	}{
-		{
-			name: "unique name",
-			feed: &Feed{
-				Spec: FeedSpec{
-					Name: "new-feed",
-					Link: "https://example.com",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: existingFeed.Namespace,
-					UID:       "new-uid",
-				},
-			},
-			expectErr: false,
-		},
-		{
-			name: "duplicate name",
-			feed: &Feed{
-				Spec: FeedSpec{
-					Name: "existing-feed",
-					Link: "https://example.com",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: existingFeed.Namespace,
-					UID:       "new-uid",
-				},
-			},
-			expectErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := checkNameUniqueness(tt.feed)
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
+	Context("feed has an invalid link", func() {
+		It("empty link", func() {
+			testFeed.Spec.Link = ""
+			_, err := testFeed.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("link cannot be empty"))
 		})
-	}
-}
+		It("invelid link", func() {
+			testFeed.Spec.Link = "invalid-url"
+			_, err := testFeed.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("link must be a valid"))
+		})
+
+	})
+	Context("feed is not unique", func() {
+		It("try to create existing feed", func() {
+			Expect(c.Create(ctx, testFeed)).Should(Succeed())
+			testFeed.UID = "12345"
+			_, err := testFeed.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("already exists in namespace"))
+		})
+		It("try to create existing feed", func() {
+			c = fake.NewClientBuilder().WithScheme(scheme.Scheme).
+				WithInterceptorFuncs(interceptor.Funcs{
+					List: func(ctx context.Context, client client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+						return errors.New("error with get feeds")
+					},
+				}).Build()
+			v1.Client = c
+			Expect(c.Create(ctx, testFeed)).Should(Succeed())
+			testFeed.UID = "12345"
+			_, err := testFeed.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error with get feeds"))
+		})
+	})
+
+})
