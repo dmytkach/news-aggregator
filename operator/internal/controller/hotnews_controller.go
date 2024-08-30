@@ -287,7 +287,3 @@ func (r *HotNewsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			handler.EnqueueRequestsFromMapFunc(f.Handle)).
 		Complete(r)
 }
-
-type Handler interface {
-	Handle(ctx context.Context, event client.Object) []ctrl.Request
-}
