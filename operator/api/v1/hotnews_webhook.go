@@ -17,7 +17,7 @@ const DateFormat = "2006-01-02"
 
 // SetupWebhookWithManager configures the webhook for the HotNews resource with the provided manager.
 func (h *HotNews) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	k8sClient = mgr.GetClient()
+	Client = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(h).
 		Complete()
@@ -39,11 +39,11 @@ func (h *HotNews) Default() {
 		feedList := &FeedList{}
 		listOpts := client.ListOptions{Namespace: h.Namespace}
 
-		err := k8sClient.List(timeoutCtx, feedList, &listOpts)
-		if err != nil {
+		if err := Client.List(timeoutCtx, feedList, &listOpts); err != nil {
 			log.Printf("Defaulting Feeds: Failed to list feeds in namespace %s: %v", h.Namespace, err)
+		} else {
+			h.Spec.Feeds = feedList.GetAllFeedNames()
 		}
-		h.Spec.Feeds = feedList.GetAllFeedNames()
 	}
 
 	log.Printf("Defaulting HotNews resource: Name=%s", h.Name)
@@ -63,7 +63,6 @@ func (h *HotNews) ValidateCreate() (admission.Warnings, error) {
 // ValidateUpdate validates the HotNews resource during updates.
 func (h *HotNews) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	log.Printf("Validating update of HotNews resource: Name=%s", h.Name)
-
 	return h.validate()
 }
 
@@ -118,9 +117,9 @@ func (h *HotNews) validateFeeds() error {
 	listOpts := client.ListOptions{Namespace: h.Namespace}
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err := k8sClient.List(timeoutCtx, feedList, &listOpts)
+	err := Client.List(timeoutCtx, feedList, &listOpts)
 	if err != nil {
-		return fmt.Errorf("fail with getting feeds: %v", err)
+		return err
 	}
 
 	existingFeeds := make(map[string]bool)
@@ -131,6 +130,9 @@ func (h *HotNews) validateFeeds() error {
 		if !existingFeeds[feedName] {
 			return fmt.Errorf("feed %s does not exist in namespace %s", feedName, h.Namespace)
 		}
+	}
+	if len(h.Spec.FeedGroups) == 0 && len(h.Spec.Feeds) == 0 {
+		return fmt.Errorf("at least one feed must be specified")
 	}
 	return nil
 }
