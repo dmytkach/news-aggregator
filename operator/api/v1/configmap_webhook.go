@@ -13,14 +13,14 @@ import (
 
 // +kubebuilder:webhook:path=/mutate-v1-configmap,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=configmaps,verbs=create;update,versions=v1,name=mconfigmap.kb.io,admissionReviewVersions=v1
 
-// ConfigMapMutator implements admission.Handler
-type ConfigMapMutator struct {
+// ConfigMapWebHook handles admission requests for ConfigMap resources.
+type ConfigMapWebHook struct {
 	Client  client.Client
 	Decoder admission.Decoder
 }
 
-// Handle checks the ConfigMap and mutates it if necessary
-func (m *ConfigMapMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
+// Handle checks whether all feed names specified in the ConfigMap data exist in the cluster.
+func (m *ConfigMapWebHook) Handle(ctx context.Context, req admission.Request) admission.Response {
 	configMap := &corev1.ConfigMap{}
 
 	err := (m.Decoder).Decode(req, configMap)

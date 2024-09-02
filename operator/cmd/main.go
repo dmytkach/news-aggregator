@@ -133,7 +133,7 @@ func main() {
 		}
 	}
 	mgr.GetWebhookServer().Register("/mutate-v1-configmap", &webhook.Admission{
-		Handler: &aggregatorv1.ConfigMapMutator{
+		Handler: &aggregatorv1.ConfigMapWebHook{
 			Client:  mgr.GetClient(),
 			Decoder: admission.NewDecoder(mgr.GetScheme()),
 		},
