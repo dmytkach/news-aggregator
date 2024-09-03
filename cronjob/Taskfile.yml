@@ -7,6 +7,8 @@ vars:
   dockerfile_path: "cronjob/Dockerfile"
   namespace_name: "news-aggregator"
   cronjob_path: "cronjob.yaml"
+  ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-news-fetcher"
+
 
 tasks:
   build:
@@ -25,6 +27,12 @@ tasks:
     cmd: docker run --rm {{.docker_image_name}}:{{.cronjob_image_tag}}
     desc: "Run Docker container for the CronJob locally"
 
+  docker_tag:
+    cmd: docker tag {{.docker_image_name}}:{{.cronjob_image_tag}} {{.ecr_repository}}:{{.cronjob_image_tag}}
+    desc: "Tag Docker image with ECR repository URI"
+
   docker_push:
-    desc: "Push the Docker image to the registry"
-    cmd: docker push {{.docker_image_name}}:{{.cronjob_image_tag}}
+    desc: "Push the Docker image to ECR"
+    cmd: |
+      aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin {{.ecr_repository}}
+      docker push {{.ecr_repository}}:{{.cronjob_image_tag}}

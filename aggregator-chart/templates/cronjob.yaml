@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-news-fetcher
+  name: {{ .Values.app.name }}-news-fetcher
   namespace: {{ .Values.namespace }}
 spec:
   schedule: {{ .Values.cronjob.schedule }}
@@ -12,7 +12,7 @@ spec:
       template:
         spec:
           containers:
-            - name: news-fetcher
+            - name:  {{ .Values.app.name }}-news-fetcher
               image: {{ .Values.cronjob.image.repository }}:{{ .Values.cronjob.image.tag }}
               volumeMounts:
                   - name: news-volume

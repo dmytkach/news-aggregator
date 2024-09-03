@@ -14,6 +14,8 @@ spec:
         app: {{ .Values.app.name }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      imagePullSecrets:
+        - name: ecr-registry-secret
       volumes:
         - name: news-volume
           persistentVolumeClaim:
