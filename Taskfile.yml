@@ -121,7 +121,7 @@ tasks:
   chart_push:
     desc: "Uploads the chart to the Helm repository"
     deps:
-      - authenticate-helm
+      - authenticate_helm
       - chart_package
     cmds:
       - helm push charts/aggregator-chart-0.1.0.tgz oci://{{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
