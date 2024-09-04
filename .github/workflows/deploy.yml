@@ -37,8 +37,6 @@ jobs:
       - name: Push Cronjob Docker image
         working-directory: ./cronjob
         run: |
-            task docker_build || { echo 'docker_build failed'; exit 1; }
-            task docker_tag || { echo 'docker_tag failed'; exit 1; }
             task docker_push || { echo 'docker_push failed'; exit 1; }
 
       - name: Deploy Helm chart
