@@ -23,6 +23,8 @@ spec:
                 - -path-to-source=/mnt/sources/sources.json
                 - -news-folder=/mnt/news
           restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: ecr-registry-secret
           volumes:
             - name: news-volume
               persistentVolumeClaim:

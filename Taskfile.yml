@@ -15,8 +15,7 @@ vars:
   region: "us-west-1"
   account_id: "406477933661"
   repository_name: "dmytro-news-aggregator"
-  accessKey:
-  privateAccessKey:
+  secret_name: "ecr-registry-secret"
 
 tasks:
   test:
@@ -63,7 +62,6 @@ tasks:
     cmd: docker run --rm -p {{.docker_port}}:{{.server_expose_port}} {{.docker_image_name}}:{{.docker_image_tag}} {{.CLI_ARGS}}
     desc: "Run Docker container locally"
 
-
   docker_tag:
     cmd: docker tag {{.docker_image_name}}:{{.docker_image_tag}} {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.docker_image_tag}}
     desc: "Tag Docker image with ECR repository URI"
@@ -81,12 +79,12 @@ tasks:
   chart_install:
     desc: "Installs the Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
-    cmd: helm install {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}} --set accessKey={{.accessKey}} --set privateAccessKey={{.privateAccessKey}}
+    cmd: helm install {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}}
 
   chart_upgrade:
     desc: "Upgrades the Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
-    cmd: helm upgrade {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}} --set accessKey={{.accessKey}} --set privateAccessKey={{.privateAccessKey}}
+    cmd: helm upgrade {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}}
 
   chart_uninstall:
     desc: "Remove news-aggregator app from Kubernetes cluster"
@@ -108,8 +106,8 @@ tasks:
   chart_package:
     desc: "Generate a Helm chart with all required resources for the news aggregator"
     cmds:
-      - helm lint ./aggregator-chart
-      - helm package ./aggregator-chart
+      - helm lint ./{{.chart_name}}
+      - helm package ./{{.chart_name}}
       - mkdir -p ./charts
       - mv *.tgz ./charts/
 
@@ -125,3 +123,8 @@ tasks:
       - chart_package
     cmds:
       - helm push charts/aggregator-chart-0.1.0.tgz oci://{{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
+
+  generate_keys:
+    desc: "Generate keys for access to private repository."
+    cmds:
+      - kubectl create secret docker-registry {{.secret_name}} --docker-server={{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com --docker-username=AWS --docker-password="$(aws ecr get-login-password --region us-west-1)" -n {{.namespace_name}}

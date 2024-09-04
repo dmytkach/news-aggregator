@@ -8,6 +8,7 @@ vars:
   namespace_name: "news-aggregator"
   cronjob_path: "cronjob.yaml"
   ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-news-fetcher"
+  region: "us-west-1"
 
 
 tasks:
@@ -34,5 +35,5 @@ tasks:
   docker_push:
     desc: "Push the Docker image to ECR"
     cmd: |
-      aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin {{.ecr_repository}}
+      aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.ecr_repository}}
       docker push {{.ecr_repository}}:{{.cronjob_image_tag}}
