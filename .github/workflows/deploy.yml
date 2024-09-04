@@ -29,7 +29,6 @@ jobs:
           aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin 406477933661.dkr.ecr.us-west-1.amazonaws.com
 
       - name: Log in to Docker Hub
-        if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
