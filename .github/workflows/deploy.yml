@@ -37,17 +37,18 @@ jobs:
       - name: Push Cronjob Docker image
         working-directory: ./cronjob
         run: |
-            task docker_push || { echo 'docker_push failed'; exit 1; }
-
-      - name: Push Operator-Manager image to ECR
-        working-directory: ./operator
-        run: |
-            task docker_push
-
-      - name: Push News-Aggregator-Server image to ECR
-        run: |
-          task docker_push
-
-      - name: Deploy Helm chart
-        run: |
-          task chart_push
+          task docker_build || { echo 'docker_build failed'; exit 1; }
+          task docker_tag || { echo 'docker_tag failed'; exit 1; }
+          task docker_push || { echo 'docker_push failed'; exit 1; }
+#      - name: Push Operator-Manager image to ECR
+#        working-directory: ./operator
+#        run: |
+#            task docker_push
+#
+#      - name: Push News-Aggregator-Server image to ECR
+#        run: |
+#          task docker_push
+#
+#      - name: Deploy Helm chart
+#        run: |
+#          task chart_push
