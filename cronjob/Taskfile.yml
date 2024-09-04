@@ -9,6 +9,7 @@ vars:
   cronjob_path: "cronjob.yaml"
   ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-news-fetcher"
   region: "us-west-1"
+  account_id: "406477933661"
 
 
 tasks:
@@ -34,7 +35,7 @@ tasks:
 
   docker_login:
     desc: "Login to the ECR registry"
-    cmd: aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.ecr_repository}}
+    cmd: aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
 
   docker_push:
     desc: "Push the Docker image to ECR"
