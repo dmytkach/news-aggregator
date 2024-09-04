@@ -62,7 +62,6 @@ tasks:
   docker_push:
     desc: "Push the Docker image to ECR"
     deps:
-      - docker_login
       - docker_build
       - docker_tag
     cmd: docker push {{.ecr_repository}}:{{.docker_image_tag}}

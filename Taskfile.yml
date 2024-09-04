@@ -73,7 +73,6 @@ tasks:
   docker_push:
     desc: "Push the Docker image to the ECR registry"
     deps:
-      - docker_login
       - docker_build
       - docker_tag
     cmd: docker push {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.docker_image_tag}}

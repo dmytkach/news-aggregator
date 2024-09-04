@@ -39,10 +39,6 @@ jobs:
         run: |
             task docker_push || { echo 'docker_push failed'; exit 1; }
 
-      - name: Deploy Helm chart
-        run: |
-          task chart_push
-
       - name: Push Operator-Manager image to ECR
         working-directory: ./operator
         run: |
@@ -51,3 +47,7 @@ jobs:
       - name: Push News-Aggregator-Server image to ECR
         run: |
           task docker_push
+
+      - name: Deploy Helm chart
+        run: |
+          task chart_push
