@@ -8,7 +8,8 @@ vars:
   ignore_not_found: "false"
   LOCALBIN: "$(pwd)/bin"
   CONTROLLER_GEN: "{{.LOCALBIN}}/controller-gen"
-
+  ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-operator-controller-manager"
+  region: "us-west-1"
 tasks:
   help:
     desc: "List all tasks with their descriptions"
@@ -43,13 +44,25 @@ tasks:
     desc: Run a controller from your host.
     cmd: go run ./cmd/main.go
 
-  docker-build:
+  docker_build:
     desc: Build docker image with the manager.
     cmd: docker build -t {{.docker_image_name}}:{{.docker_image_tag}} .
 
+  docker_tag:
+    cmd: docker tag {{.docker_image_name}}:{{.docker_image_tag}} {{.ecr_repository}}:{{.docker_image_tag}}
+    desc: "Tag Docker image with ECR repository URI"
+
+  docker_login:
+    desc: "Login to the ECR registry"
+    cmd: aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.ecr_repository}}
+
   docker_push:
-    desc: "Push the Docker image to the registry"
-    cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
+    desc: "Push the Docker image to ECR"
+    deps:
+      - docker_login
+      - docker_build
+      - docker_tag
+    cmd: docker push {{.ecr_repository}}:{{.docker_image_tag}}
 
   kustomize:
     desc: "Download kustomize locally if necessary."

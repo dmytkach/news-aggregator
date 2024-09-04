@@ -66,11 +66,17 @@ tasks:
     cmd: docker tag {{.docker_image_name}}:{{.docker_image_tag}} {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.docker_image_tag}}
     desc: "Tag Docker image with ECR repository URI"
 
+  docker_login:
+    desc: "Login to the ECR registry"
+    cmd: aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
+
   docker_push:
     desc: "Push the Docker image to the ECR registry"
-    cmd: |
-      aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
-      docker push {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.docker_image_tag}}
+    deps:
+      - docker_login
+      - docker_build
+      - docker_tag
+    cmd: docker push {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.docker_image_tag}}
 
   createChart:
     desc: "Creates a Helm chart for news-aggregator"
