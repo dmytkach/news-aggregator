@@ -34,10 +34,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push News-Fetcher Docker to ECR
+      - name: Push Cronjob Docker image
         working-directory: ./cronjob
         run: |
-          task docker_push
+            task docker_build || { echo 'docker_build failed'; exit 1; }
+            task docker_tag || { echo 'docker_tag failed'; exit 1; }
+            task docker_push || { echo 'docker_push failed'; exit 1; }
 
       - name: Deploy Helm chart
         run: |
