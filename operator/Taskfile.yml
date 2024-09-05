@@ -1,7 +1,6 @@
 version: '3'
 
 vars:
-  docker_image_name: "dmytkach/news-aggregator-operator"
   docker_image_tag: "v2"
   KUBECTL: "kubectl"
   KUSTOMIZE_VERSION: "v5.4.2"
@@ -49,10 +48,10 @@ tasks:
 
   docker_build:
     desc: Build docker image with the manager.
-    cmd: docker build -t {{.docker_image_name}}:{{.docker_image_tag}} .
+    cmd: docker build -t {{.ecr_repository}}:{{.docker_image_tag}} .
 
   docker_tag:
-    cmd: docker tag {{.docker_image_name}}:{{.docker_image_tag}} {{.ecr_repository}}:{{.docker_image_tag}}
+    cmd: docker tag {{.ecr_repository}}:{{.docker_image_tag}} {{.ecr_repository}}:{{.docker_image_tag}}
     desc: "Tag Docker image with ECR repository URI"
 
   docker_login:
@@ -96,7 +95,7 @@ tasks:
     cmd: |
         LOCALBIN=$(pwd)/bin
         KUSTOMIZE=$LOCALBIN/kustomize
-        cd config/manager && $KUSTOMIZE edit set image controller={{.docker_image_name}}:{{.docker_image_tag}}
+        cd config/manager && $KUSTOMIZE edit set image controller={{.ecr_repository}}:{{.docker_image_tag}}
         cd - 
         $KUSTOMIZE build config/default | {{.KUBECTL}} apply -f -
 
