@@ -23,15 +23,6 @@ func (r *Feed) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-aggregator-com-teamdev-v1-feed,mutating=true,failurePolicy=fail,sideEffects=None,groups=aggregator.com.teamdev,resources=feeds,verbs=create;update;delete,versions=v1,name=mfeed.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &Feed{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Feed) Default() {
-	log.Print("default", "name", r.Name)
-}
-
 // +kubebuilder:webhook:path=/validate-aggregator-com-teamdev-v1-feed,mutating=false,failurePolicy=fail,sideEffects=None,groups=aggregator.com.teamdev,resources=feeds,verbs=create;update;delete,versions=v1,name=vfeed.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Feed{}
