@@ -23,11 +23,9 @@ func main() {
 		flag.Usage()
 		return
 	}
-
 	sourceFolder := managers.CreateSourceFolder(*pathToSourcesFile)
 	newsFolder := managers.CreateNewsFolder(*pathToNews)
-	urlFeed := managers.UrlFeed{}
-	sourceHandler := handlers.SourceHandler{SourceManager: sourceFolder, FeedManager: urlFeed}
+	sourceHandler := handlers.SourceHandler{SourceManager: sourceFolder}
 	newsHandler := handlers.NewsHandler{NewsManager: newsFolder, SourceManager: sourceFolder}
 
 	http.HandleFunc("/news", newsHandler.News)

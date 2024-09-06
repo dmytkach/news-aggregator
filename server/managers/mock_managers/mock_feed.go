@@ -35,10 +35,10 @@ func (m *MockFeedManager) EXPECT() *MockFeedManagerMockRecorder {
 }
 
 // FetchFeed mocks base method.
-func (m *MockFeedManager) FetchFeed(path string) (entity.Feed, error) {
+func (m *MockFeedManager) FetchFeed(path string) ([]entity.News, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchFeed", path)
-	ret0, _ := ret[0].(entity.Feed)
+	ret0, _ := ret[0].([]entity.News)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

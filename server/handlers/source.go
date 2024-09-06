@@ -5,11 +5,11 @@ import (
 	"log"
 	"net/http"
 	"news-aggregator/server/managers"
+	"regexp"
 )
 
 type SourceHandler struct {
 	SourceManager managers.SourceManager
-	FeedManager   managers.FeedManager
 }
 
 // Sources handles requests for managing news sources and feeds.
@@ -59,20 +59,22 @@ func (s SourceHandler) getSources(w http.ResponseWriter, r *http.Request) {
 // downloadSource handles POST requests to add new news feed URL.
 func (s SourceHandler) downloadSource(w http.ResponseWriter, r *http.Request) {
 	urlStr := r.URL.Query().Get("url")
-	log.Printf("POST request received to add source with URL: %s", urlStr)
-
+	name := r.URL.Query().Get("name")
+	log.Printf("POST request received to add source with Name%s ; URL: %s", name, urlStr)
 	if urlStr == "" {
 		log.Print("URL parameter is missing")
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	feed, err := s.FeedManager.FetchFeed(urlStr)
-	if err != nil {
-		log.Printf("Error loading feed from URL %s: %v", urlStr, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if name == "" {
+		log.Print("Name parameter is missing")
+		http.Error(w, "Name parameter is missing", http.StatusBadRequest)
 		return
 	}
-	source, err := s.SourceManager.CreateSource(string(feed.Name), urlStr)
+	reg := regexp.MustCompile(`[^\p{L}\p{N}_]+`)
+	cleaned := reg.ReplaceAllString(name, "_")
+
+	source, err := s.SourceManager.CreateSource(cleaned, urlStr)
 	if err != nil {
 		log.Printf("Error creating source for URL %s: %v", urlStr, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -83,22 +85,28 @@ func (s SourceHandler) downloadSource(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error encoding response: %v", err)
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 	}
+	log.Printf("Successfully created source with Name: %s and URL: %s", name, urlStr)
 }
 
 // updateSource handles PUT requests to update an existing news source URL.
 func (s SourceHandler) updateSource(w http.ResponseWriter, r *http.Request) {
-	oldUrl := r.URL.Query().Get("oldUrl")
 	newUrl := r.URL.Query().Get("newUrl")
-	log.Printf("PUT request received to update source from URL %s to %s", oldUrl, newUrl)
+	name := r.URL.Query().Get("name")
+	log.Printf("PUT request received to update source with Name %s ; New url  %s", name, newUrl)
 
-	if oldUrl == "" || newUrl == "" {
+	if newUrl == "" {
 		log.Print("URL parameters are missing")
 		http.Error(w, "URL parameters are missing", http.StatusBadRequest)
 		return
 	}
-	err := s.SourceManager.UpdateSource(oldUrl, newUrl)
+	if name == "" {
+		log.Print("Name parameter is missing")
+		http.Error(w, "Name parameter is missing", http.StatusBadRequest)
+		return
+	}
+	err := s.SourceManager.UpdateSource(name, newUrl)
 	if err != nil {
-		log.Printf("Error updating source from URL %s to %s: %v", oldUrl, newUrl, err)
+		log.Printf("Error updating source from URL %s to %s: %v", name, newUrl, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
