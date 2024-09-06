@@ -15,6 +15,7 @@ spec:
       labels:
         app: news-aggregator
     spec:
+      serviceAccountName: news-aggregator-sa
       containers:
         - name: news-aggregator
           image: dmytkach/news-aggregator:1.0.4
