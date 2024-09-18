@@ -24,7 +24,7 @@ spec:
                 - -news-folder=/mnt/news
           restartPolicy: OnFailure
           imagePullSecrets:
-            - name: ecr-registry-secret
+            - name: regcred
           volumes:
             - name: news-volume
               persistentVolumeClaim:

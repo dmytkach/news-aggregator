@@ -10,8 +10,10 @@ vars:
   server_expose_port: "8443"
   namespace_name: "news-aggregator"
   k8s_folder: "templates"
-  chart_name: "aggregator-chart"
-  release_name: "news-aggregator-chart"
+  aggregator_chart_name: "aggregator-chart"
+  auth_chart_name: "dmytro-aws-auth-chart"
+  release_aggregator_chart_name: "news-aggregator-chart"
+  release_auth_chart_name: "dmytro-aws-auth"
   region: "us-west-1"
   account_id: "406477933661"
   repository_name: "dmytro-news-aggregator"
@@ -76,21 +78,35 @@ tasks:
 
   createChart:
     desc: "Creates a Helm chart for news-aggregator"
-    cmd: helm create {{.chart_name}}
+    cmd: helm create {{.aggregator_chart_name}}
 
-  chart_install:
-    desc: "Installs the Helm chart on the Kubernetes cluster"
+  aggregator_chart_install:
+    desc: "Installs the news-aggregator Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
-    cmd: helm install {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}}
+    cmd: helm install {{.release_aggregator_chart_name}} ./{{.aggregator_chart_name}} -n {{.namespace_name}}
 
-  chart_upgrade:
-    desc: "Upgrades the Helm chart on the Kubernetes cluster"
+  aggregator_chart_upgrade:
+    desc: "Upgrades the news-aggregator Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
-    cmd: helm upgrade {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}}
+    cmd: helm upgrade {{.release_aggregator_chart_name}} ./{{.aggregator_chart_name}} -n {{.namespace_name}}
 
-  chart_uninstall:
+  aggregator_chart_uninstall:
     desc: "Remove news-aggregator app from Kubernetes cluster"
-    cmd: helm uninstall {{.release_name}} -n {{.namespace_name}}
+    cmd: helm uninstall {{.release_aggregator_chart_name}} -n {{.namespace_name}}
+
+  aws_auth_chart_install:
+    desc: "Installs aws auth Helm chart on the Kubernetes cluster"
+    deps: [ create_ns ]
+    cmd: helm install {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}
+
+  aws_auth_chart_upgrade:
+    desc: "Upgrades aws auth Helm chart on the Kubernetes cluster"
+    deps: [ create_ns ]
+    cmd: helm upgrade {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}}
+
+  aws_auth_chart_uninstall:
+    desc: "Remove aws auth Helm chart from Kubernetes cluster"
+    cmd: helm uninstall {{.release_auth_chart_name}} -n {{.namespace_name}}
 
   create_ns:
     cmd: |
@@ -105,11 +121,19 @@ tasks:
     cmd: kubectl delete namespace {{.namespace_name}}
     desc: "Delete a Kubernetes namespace"
 
-  chart_package:
-    desc: "Generate a Helm chart with all required resources for the news aggregator"
+  aggregator_chart_package:
+    desc: "Generate the news-aggregator Helm chart with all required resources for the news aggregator"
     cmds:
-      - helm lint ./{{.chart_name}}
-      - helm package ./{{.chart_name}}
+      - helm lint ./{{.aggregator_chart_name}}
+      - helm package ./{{.aggregator_chart_name}}
+      - mkdir -p ./charts
+      - mv *.tgz ./charts/
+
+  aws_auth_chart_package:
+    desc: "Generate a aws auth chart with all required resources from helm chart"
+    cmds:
+      - helm lint ./{{.auth_chart_name}}
+      - helm package ./{{.auth_chart_name}}
       - mkdir -p ./charts
       - mv *.tgz ./charts/
 
@@ -118,13 +142,21 @@ tasks:
     cmds:
       - aws ecr get-login-password --region {{.region}} | helm registry login --username AWS --password-stdin {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
 
-  chart_push:
-    desc: "Uploads the chart to the Helm repository"
+  aggregator_chart_push:
+    desc: "Uploads the news-aggregator chart to the Helm repository"
     deps:
       - authenticate_helm
-      - chart_package
+      - aggregator_chart_package
     cmds:
       - helm push charts/aggregator-chart-0.1.0.tgz oci://{{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
+
+  aws_auth_chart_push:
+    desc: "Uploads the aws authentication chart to the Helm repository"
+    deps:
+      - authenticate_helm
+      - aws_auth_chart_package
+    cmds:
+      - helm push charts/dmytro-aws-auth-chart-0.1.0.tgz oci://{{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
 
   generate_keys:
     desc: "Generate keys for access to private repository."

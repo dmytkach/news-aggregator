@@ -40,11 +40,11 @@ jobs:
           task docker_tag
           task docker_push
 
-      - name: Deploy Helm chart
+      - name: Deploy aggregator Helm chart
         run: |
           task authenticate_helm
-          task chart_package
-          task chart_push
+          task aggregator_chart_package
+          task aggregator_chart_push
 
       - name: Push Cronjob Docker image
         working-directory: ./cronjob

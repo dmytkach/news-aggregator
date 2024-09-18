@@ -58,7 +58,7 @@ spec:
         # seccompProfile:
         #   type: RuntimeDefault
       imagePullSecrets:
-        - name: operator-registry-secret
+        - name: regcred
       containers:
       - command:
         - /manager
