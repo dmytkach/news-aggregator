@@ -97,7 +97,7 @@ tasks:
   aws_auth_chart_install:
     desc: "Installs aws auth Helm chart on the Kubernetes cluster"
     deps: [ create_ns ]
-    cmd: helm install {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}
+    cmd: helm install {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}} {{.CLI_ARGS}}
 
   aws_auth_chart_upgrade:
     desc: "Upgrades aws auth Helm chart on the Kubernetes cluster"
