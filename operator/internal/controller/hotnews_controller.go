@@ -3,6 +3,7 @@ package controller
 import (
 	aggregatorv1 "com.teamdev/news-aggregator/api/v1"
 	"com.teamdev/news-aggregator/internal/controller/handlers"
+	"com.teamdev/news-aggregator/internal/controller/predicates"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -94,7 +95,6 @@ func (r *HotNewsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		var feedGroupConfigMap v1.ConfigMap
 		if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: r.ConfigMap}, &feedGroupConfigMap); err != nil {
 			if errors.IsNotFound(err) {
-				log.Print("ConfigMap not found, retrying later")
 				return ctrl.Result{}, nil
 			}
 			hotNews.Status = aggregatorv1.SetHotNewsErrorStatus(err.Error())
@@ -270,8 +270,7 @@ func (r *HotNewsReconciler) makeRequest(reqURL string, titleCount int) (aggregat
 // SetupWithManager configures the HotNewsReconciler to manage resources and adds the necessary event predicates
 func (r *HotNewsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	cm := &handlers.ConfigMapHandler{
-		Client:        r.Client,
-		ConfigMapName: r.ConfigMap,
+		Client: r.Client,
 	}
 	f := &handlers.FeedHandler{
 		Client: r.Client,
@@ -281,6 +280,7 @@ func (r *HotNewsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&v1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(cm.Handle),
+			builder.WithPredicates(predicates.ConfigMapNamePredicate(r.ConfigMap)),
 		).
 		Watches(
 			&aggregatorv1.Feed{},
