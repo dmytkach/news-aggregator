@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"time"
 )
 
 var Client client.Client
@@ -89,11 +90,12 @@ func isValidLink(str string) bool {
 func checkNameUniqueness(feed *Feed) error {
 	feedList := &FeedList{}
 	listOpts := client.ListOptions{Namespace: feed.Namespace}
-	if err := Client.List(context.Background(), feedList, &listOpts); err != nil {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := Client.List(timeoutCtx, feedList, &listOpts); err != nil {
 		return fmt.Errorf("checkNameUniqueness: failed to list feeds: %v", err)
 
 	}
-
 	for _, existingFeed := range feedList.Items {
 		if existingFeed.Spec.Name == feed.Spec.Name && existingFeed.Namespace == feed.Namespace && existingFeed.UID != feed.UID {
 			return fmt.Errorf("checkNameUniqueness: a Feed with name '%s' already exists in namespace '%s'", feed.Spec.Name, feed.Namespace)
