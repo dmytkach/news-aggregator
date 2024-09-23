@@ -4,7 +4,7 @@ vars:
   cli_aggregator: ./cli/main.go
   server_aggregator: ./server/main.go
   docker_image_name: "dmytkach/news-aggregator"
-  docker_image_tag: "1.0.4"
+  docker_image_tag: "1.0.6"
   dockerfile_path: ".Dockerfile"
   docker_port: "8443"
   server_expose_port: "8443"
@@ -23,7 +23,7 @@ tasks:
   build_cli:
     cmd: go build -o ./bin/news-aggregator-cli {{.cli_aggregator}}
     desc: "Build cli version"
-# Usage: task run_server -- --fetch_interval=30s
+# Usage: task run_server -- --port=:443
   run_server:
     cmd: go run {{.server_aggregator}} {{.CLI_ARGS}}
     desc: "Run the web-server locally"

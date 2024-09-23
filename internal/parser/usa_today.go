@@ -33,10 +33,10 @@ func (usaTodayParser *UsaToday) CanParseFileType(ext string) bool {
 }
 
 // Parse - implementation of a parser for files in HTML format.
-func (usaTodayParser *UsaToday) Parse() (entity.Feed, error) {
+func (usaTodayParser *UsaToday) Parse() ([]entity.News, error) {
 	file, err := os.Open(string(usaTodayParser.FilePath))
 	if err != nil {
-		return entity.Feed{}, err
+		return nil, err
 	}
 	defer func(file *os.File) {
 		closeErr := file.Close()
@@ -49,7 +49,7 @@ func (usaTodayParser *UsaToday) Parse() (entity.Feed, error) {
 	doc, err := goquery.NewDocumentFromReader(file)
 	if err != nil {
 		log.Fatal(err)
-		return entity.Feed{}, err
+		return nil, err
 	}
 
 	baseURL := "https://www.usatoday.com"
@@ -98,10 +98,7 @@ func (usaTodayParser *UsaToday) Parse() (entity.Feed, error) {
 
 	})
 	if len(allNews) == 0 {
-		return entity.Feed{}, errors.New("no news found")
+		return nil, errors.New("no news found")
 	}
-	return entity.Feed{
-		Name: "usa_today",
-		News: allNews,
-	}, nil
+	return allNews, nil
 }

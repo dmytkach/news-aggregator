@@ -1,0 +1,30 @@
+version: '3'
+
+vars:
+  cronjob_aggregator: ./main.go
+  docker_image_name: "dmytkach/news-fetcher"
+  cronjob_image_tag: "1.0.1"
+  dockerfile_path: "cronjob/Dockerfile"
+  namespace_name: "news-aggregator"
+  cronjob_path: "cronjob.yaml"
+
+tasks:
+  build:
+    cmd: go build -o ./bin/fetch-news {{.cronjob_aggregator}}
+    desc: "Build the News Fetcher app"
+
+  run:
+    cmd: go run {{.cronjob_aggregator}} {{.CLI_ARGS}}
+    desc: "Run the News Fetcher app locally"
+
+  docker_build:
+    cmd: cd .. && docker build -t {{.docker_image_name}}:{{.cronjob_image_tag}} -f {{.dockerfile_path}} .
+    desc: "Build Docker image for the CronJob"
+
+  docker_run:
+    cmd: docker run --rm {{.docker_image_name}}:{{.cronjob_image_tag}}
+    desc: "Run Docker container for the CronJob locally"
+
+  docker_push:
+    desc: "Push the Docker image to the registry"
+    cmd: docker push {{.docker_image_name}}:{{.cronjob_image_tag}}

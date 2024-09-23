@@ -10,7 +10,7 @@ import (
 // Parser provides an API for a news parser capable of processing a specific file type.
 type Parser interface {
 	CanParseFileType(ext string) bool
-	Parse() (entity.Feed, error)
+	Parse() ([]entity.News, error)
 }
 
 // GetFileParser returns the appropriate parser implementation based on the path to file.
