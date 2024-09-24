@@ -2,3 +2,5 @@
 /server-resources
 /server/service/test-resources.json
 /aggregator-chart/charts/cert-manager-v1.15.3.tgz
+/aggregator-chart/charts/vertical-pod-autoscaler-1.7.0.tgz
+/charts/aggregator-chart-0.1.0.tgz
