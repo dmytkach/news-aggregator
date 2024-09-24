@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/dmytkach/news-aggregator/compare/v1.0.4...v1.0.5) (2024-09-23)
+
+
+### Bug Fixes
+
+* replace underscore to dash, and change version ([feea728](https://github.com/dmytkach/news-aggregator/commit/feea7289e872efc49500df44eed8d38da0afb111))
+
 ## [1.0.4](https://github.com/dmytkach/news-aggregator/compare/v1.0.3...v1.0.4) (2024-07-23)
 
 

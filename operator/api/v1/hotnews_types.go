@@ -9,11 +9,17 @@ import (
 
 // HotNewsSpec defines the desired state of HotNews.
 type HotNewsSpec struct {
-	Keywords      []string      `json:"keywords"`
-	DateStart     string        `json:"dateStart,omitempty"`
-	DateEnd       string        `json:"dateEnd,omitempty"`
-	Feeds         []string      `json:"feeds,omitempty"`
-	FeedGroups    []string      `json:"feedGroups,omitempty"`
+	// Keywords represent the list of search terms used to find relevant news articles.
+	Keywords []string `json:"keywords"`
+	// DateStart is the start date for filtering news articles.
+	DateStart string `json:"dateStart,omitempty"`
+	// DateEnd is the end date for filtering news articles.
+	DateEnd string `json:"dateEnd,omitempty"`
+	// Feeds specify sources from which news articles will be gathered.
+	Feeds []string `json:"feeds,omitempty"`
+	// FeedGroups define sets of feeds from which news articles will be gathered.
+	FeedGroups []string `json:"feedGroups,omitempty"`
+	// SummaryConfig sets the configuration for the maximum amount of news articles.
 	SummaryConfig SummaryConfig `json:"summaryConfig,omitempty"`
 }
 
@@ -24,10 +30,14 @@ type SummaryConfig struct {
 
 // HotNewsStatus defines the observed state of HotNews.
 type HotNewsStatus struct {
-	ArticlesCount  int              `json:"articlesCount,omitempty"`
-	NewsLink       string           `json:"newsLink,omitempty"`
-	ArticlesTitles []string         `json:"articlesTitles,omitempty"`
-	Condition      HotNewsCondition `json:"condition,omitempty"`
+	// ArticlesCount represents the total number of articles retrieved.
+	ArticlesCount int `json:"articlesCount,omitempty"`
+	// NewsLink is a URL to the collection or feed of the relevant news.
+	NewsLink string `json:"newsLink,omitempty"`
+	// ArticlesTitles contains the titles of the retrieved articles.
+	ArticlesTitles []string `json:"articlesTitles,omitempty"`
+	// Condition represents the current condition or state of the HotNews.
+	Condition HotNewsCondition `json:"condition,omitempty"`
 }
 
 // HotNewsCondition represents the state of a Feed at a certain point.
