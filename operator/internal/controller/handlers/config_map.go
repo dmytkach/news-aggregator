@@ -11,8 +11,7 @@ import (
 )
 
 type ConfigMapHandler struct {
-	Client        client.Client
-	ConfigMapName string
+	Client client.Client
 }
 
 // Handle processes changes to ConfigMap objects and generates reconcile requests for HotNews resources.
@@ -27,31 +26,29 @@ func (h *ConfigMapHandler) Handle(ctx context.Context, obj client.Object) []ctrl
 		return requests
 	}
 
-	if configMap.Name == h.ConfigMapName {
-		namespace := configMap.Namespace
-		timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		hotNewsList := &aggregatorv1.HotNewsList{}
-		err := h.Client.List(timeoutCtx, hotNewsList, client.InNamespace(namespace))
-		if err != nil {
-			log.Printf("Error listing HotNews in namespace %s: %v", namespace, err)
-			return requests
-		}
+	namespace := configMap.Namespace
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	hotNewsList := &aggregatorv1.HotNewsList{}
+	err := h.Client.List(timeoutCtx, hotNewsList, client.InNamespace(namespace))
+	if err != nil {
+		log.Printf("Error listing HotNews in namespace %s: %v", namespace, err)
+		return requests
+	}
 
-		log.Printf("Found %d HotNews in namespace %s", len(hotNewsList.Items), namespace)
+	log.Printf("Found %d HotNews in namespace %s", len(hotNewsList.Items), namespace)
 
-		for _, hotNews := range hotNewsList.Items {
+	for _, hotNews := range hotNewsList.Items {
 
-			if len(hotNews.ExtractFeedsFromGroups(*configMap)) > 0 {
-				requests = append(requests, ctrl.Request{
-					NamespacedName: client.ObjectKey{
-						Namespace: hotNews.Namespace,
-						Name:      hotNews.Name,
-					},
-				})
+		if len(hotNews.ExtractFeedsFromGroups(*configMap)) > 0 {
+			requests = append(requests, ctrl.Request{
+				NamespacedName: client.ObjectKey{
+					Namespace: hotNews.Namespace,
+					Name:      hotNews.Name,
+				},
+			})
 
-				log.Printf("Enqueued request for HotNews: Name=%s, Namespace=%s", hotNews.Name, hotNews.Namespace)
-			}
+			log.Printf("Enqueued request for HotNews: Name=%s, Namespace=%s", hotNews.Name, hotNews.Namespace)
 		}
 	}
 
