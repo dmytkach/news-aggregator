@@ -17,6 +17,10 @@ tasks:
     desc: Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
     cmd: '{{.CONTROLLER_GEN}} rbac:roleName=manager-role crd webhook paths=./... output:crd:artifacts:config=config/crd/bases'
 
+  generate:
+    desc: "Generate deepcopy, client, lister, and informer code for Kubernetes resources"
+    cmd: '{{.CONTROLLER_GEN}} object:headerFile="hack/boilerplate.go.txt" paths=./...'
+
   fmt:
     desc: Run go fmt against code.
     cmd: go fmt ./...
