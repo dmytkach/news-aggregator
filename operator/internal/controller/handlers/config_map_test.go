@@ -48,8 +48,7 @@ var _ = Describe("ConfigMapHandler", func() {
 		fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		ctx, cancelFunc = context.WithTimeout(context.Background(), 10*time.Second)
 		handler = &handlers.ConfigMapHandler{
-			Client:        fakeClient,
-			ConfigMapName: configMapName,
+			Client: fakeClient,
 		}
 	})
 
