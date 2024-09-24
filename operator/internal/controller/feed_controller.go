@@ -51,17 +51,14 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	var feed aggregatorv1.Feed
 	if err := r.Client.Get(ctx, req.NamespacedName, &feed); err != nil {
 		if errors.IsNotFound(err) {
-			log.Print("Reconcile: Feed was not found. Error ignored")
 			return ctrl.Result{}, nil
 		}
-		log.Printf("Error retrieving Feed %s/%s from k8s Cluster: %v", req.Namespace, req.Name, err)
 		return ctrl.Result{}, err
 	}
 
 	if !slices.Contains(feed.ObjectMeta.Finalizers, r.FeedFinalizer) {
 		feed.ObjectMeta.Finalizers = append(feed.ObjectMeta.Finalizers, r.FeedFinalizer)
 		if err := r.Client.Update(ctx, &feed); err != nil {
-			log.Printf("Error adding finalizer to Feed %s/%s: %v", req.Namespace, req.Name, err)
 			return ctrl.Result{}, err
 		}
 	}
@@ -77,7 +74,6 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 					Reason:  err.Error(),
 				})
 				if err := r.Client.Status().Update(ctx, &feed); err != nil {
-					log.Printf("Error updating status of Feed %s/%s after failed deletion: %v", req.Namespace, req.Name, err)
 					return ctrl.Result{}, err
 				}
 				return ctrl.Result{}, err
@@ -89,7 +85,6 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			})
 			feed.ObjectMeta.Finalizers = removeString(feed.ObjectMeta.Finalizers, r.FeedFinalizer)
 			if err := r.Client.Update(ctx, &feed); err != nil {
-				log.Printf("Error removing finalizer from Feed %s/%s: %v", req.Namespace, req.Name, err)
 				return ctrl.Result{}, err
 			}
 		}
@@ -105,7 +100,6 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				Message: "Feed didn't update successfully",
 			})
 			if err := r.Client.Status().Update(ctx, &feed); err != nil {
-				log.Printf("Error updating status of Feed %s/%s after failed update: %v", req.Namespace, req.Name, err)
 				return ctrl.Result{}, err
 			}
 			return ctrl.Result{}, err
@@ -124,7 +118,6 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				Message: "Feed didn't add successfully",
 			})
 			if err := r.Client.Status().Update(ctx, &feed); err != nil {
-				log.Printf("Error updating status of Feed %s/%s: %v", req.Namespace, req.Name, err)
 				return ctrl.Result{}, err
 			}
 			return ctrl.Result{}, err
@@ -137,11 +130,8 @@ func (r *FeedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	if err := r.Client.Status().Update(ctx, &feed); err != nil {
-		log.Printf("Error updating status of Feed %s/%s: %v", req.Namespace, req.Name, err)
 		return ctrl.Result{}, err
 	}
-
-	log.Printf("Successfully updated Feed %s/%s. Feed Name: %s, Feed Link: %s", req.Namespace, req.Name, feed.Spec.Name, feed.Spec.Link)
 	return ctrl.Result{}, nil
 }
 
