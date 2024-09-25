@@ -8,6 +8,8 @@ spec:
   duration: {{ .Values.certManager.duration }}
   renewBefore: {{ .Values.certManager.renewBefore }}
   commonName: {{ .Values.certManager.commonName }}
+  dnsNames:
+    - {{ .Values.service.name }}.{{ .Values.namespace }}.svc.cluster.local
   issuerRef:
     name: {{ .Values.certManager.issuerName }}
     kind: Issuer
