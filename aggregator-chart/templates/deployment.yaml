@@ -27,6 +27,13 @@ spec:
             - "-key=./server/certificates/key.pem"
             - "-path-to-source=/mnt/sources/sources.json"
             - "-news-folder=/mnt/news"
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
           volumeMounts:
             - name: news-volume
               mountPath: "/mnt/news"
