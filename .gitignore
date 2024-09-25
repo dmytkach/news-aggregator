@@ -1,4 +1,4 @@
 /server-news
 /server-resources
 /server/service/test-resources.json
-/aggregator-chart/charts/cert-manager-v1.15.3.tgz
+/aggregator-chart/charts/*
