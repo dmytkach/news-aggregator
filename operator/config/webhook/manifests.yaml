@@ -21,29 +21,9 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
-    resources:
-    - configmaps
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-aggregator-com-teamdev-v1-feed
-  failurePolicy: Fail
-  name: mfeed.kb.io
-  rules:
-  - apiGroups:
-    - aggregator.com.teamdev
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
     - DELETE
     resources:
-    - feeds
+    - configmaps
   sideEffects: None
 - admissionReviewVersions:
   - v1
