@@ -2,7 +2,7 @@ version: '3'
 
 vars:
   docker_image_name: "dmytkach/news-aggregator-operator"
-  docker_image_tag: "v2"
+  docker_image_tag: "v3"
   KUBECTL: "kubectl"
   ignore_not_found: "false"
   LOCALBIN: "$(pwd)/bin"

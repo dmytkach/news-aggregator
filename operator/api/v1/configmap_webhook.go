@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// +kubebuilder:webhook:path=/mutate-v1-configmap,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=configmaps,verbs=create;update;delete,versions=v1,name=mconfigmap.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate--v1-configmap,mutating=false,failurePolicy=fail,sideEffects=None,groups="",resources=configmaps,verbs=create;update;delete,versions=v1,name=vconfigmap.kb.io,admissionReviewVersions=v1
 
 // ConfigMapWebHook handles admission requests for ConfigMap resources.
 type ConfigMapWebHook struct {
@@ -46,7 +46,12 @@ func (m *ConfigMapWebHook) handleCreateOrUpdate(ctx context.Context, req admissi
 			return res
 		}
 	}
-	return m.createPatchFromConfigMap(req, configMap)
+	marshaledConfigMap, err := json.Marshal(configMap)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledConfigMap)
 }
 
 // checkFeedNamesExistence verifies if all feed names specified in ConfigMap exist.
@@ -60,16 +65,6 @@ func (m *ConfigMapWebHook) checkFeedNamesExistence(ctx context.Context, namespac
 		}
 	}
 	return admission.Allowed("")
-}
-
-// createPatchFromConfigMap marshals the ConfigMap and returns a patch response.
-func (m *ConfigMapWebHook) createPatchFromConfigMap(req admission.Request, configMap *corev1.ConfigMap) admission.Response {
-	marshaledConfigMap, err := json.Marshal(configMap)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledConfigMap)
 }
 
 // handleDelete contains the logic that blocks deletion if any FeedGroup exists in the ConfigMap.
