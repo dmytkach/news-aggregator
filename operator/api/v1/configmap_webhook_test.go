@@ -34,7 +34,7 @@ var _ = Describe("ConfigMapWebHook", func() {
 		}
 	})
 
-	Context("when handling a ConfigMap admission request", func() {
+	Context("when handling a CREATE/UPDATE admission request", func() {
 		It("should return an error if a referenced feed does not exist", func() {
 			configMap := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
