@@ -1,0 +1,9 @@
+dependencies:
+- name: cert-manager
+  repository: https://charts.jetstack.io
+  version: v1.15.3
+- name: vertical-pod-autoscaler
+  repository: https://stevehipwell.github.io/helm-charts/
+  version: 1.7.0
+digest: sha256:ed62496d1cc4b90be9f75a7c77b9af3eff0d09a2fc20af5cd38a9fe2d74469f8
+generated: "2024-09-24T11:48:26.075021207+03:00"

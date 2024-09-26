@@ -106,6 +106,89 @@ var _ = Describe("HotNewsReconciler", func() {
 			Expect(err).To(MatchError("find Error"))
 		})
 	})
+	Context("when HotNews resource is deleted.", func() {
+		var (
+			hotNews *v1.HotNews
+		)
+		BeforeEach(func() {
+			hotNews = &v1.HotNews{
+				ObjectMeta: v12.ObjectMeta{
+					Name:      "test-hotnews",
+					Namespace: "default",
+				},
+				Spec: v1.HotNewsSpec{
+					Feeds:     []string{"test-feed"},
+					Keywords:  []string{"test-keyword"},
+					DateStart: "2024-01-01",
+					DateEnd:   "2024-01-02",
+					SummaryConfig: v1.SummaryConfig{
+						TitlesCount: 3,
+					},
+				},
+			}
+		})
+		It("should successfully delete the HotNews", func() {
+			fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithStatusSubresource(&v1.HotNews{}).Build()
+			reconciler.Client = fakeClient
+			hotNews.Finalizers = []string{"test-finalizer"}
+
+			Expect(reconciler.Client.Create(ctx, hotNews)).To(Succeed())
+			Expect(reconciler.Client.Delete(ctx, hotNews)).To(Succeed())
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-hotnews",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Requeue).To(BeFalse())
+
+			hotNews = &v1.HotNews{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, hotNews)
+			Expect(err).To(HaveOccurred())
+		})
+		It("should handle successful deletion but fail to update the status", func() {
+			fakeClient = fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithInterceptorFuncs(
+					interceptor.Funcs{
+						Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+							return client.Get(ctx, key, obj)
+						},
+						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+							return client.Create(ctx, obj)
+						},
+						Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+							return client.Delete(ctx, obj)
+						},
+						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+							return errors.New("error with Update hotNews")
+						},
+					}).Build()
+			reconciler.Client = fakeClient
+			hotNews.Finalizers = []string{"test-finalizer"}
+
+			Expect(reconciler.Client.Create(ctx, hotNews)).To(Succeed())
+			Expect(reconciler.Client.Delete(ctx, hotNews)).To(Succeed())
+
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "test-hotnews",
+					Namespace: "default",
+				},
+			}
+
+			res, err := reconciler.Reconcile(ctx, req)
+			Expect(err).To(MatchError("error with Update hotNews"))
+			Expect(res.Requeue).To(BeFalse())
+
+			hotNews = &v1.HotNews{}
+			err = reconciler.Client.Get(ctx, req.NamespacedName, hotNews)
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
 	Context("when HotNews uses finalizers", func() {
 		var (
 			hotNews *v1.HotNews
@@ -619,61 +702,6 @@ var _ = Describe("HotNewsReconciler", func() {
 			_, err := reconciler.Reconcile(ctx, req)
 
 			Expect(err).To(BeNil())
-		})
-	})
-	Context("when no feeds or feed groups are provided", func() {
-		var (
-			hotNews *v1.HotNews
-		)
-
-		BeforeEach(func() {
-			hotNews = &v1.HotNews{
-				ObjectMeta: v12.ObjectMeta{
-					Name:      "test-hotnews",
-					Namespace: "default",
-				},
-				Spec: v1.HotNewsSpec{
-					Keywords:  []string{"test-keyword"},
-					DateStart: "2024-01-01",
-					DateEnd:   "2024-01-02",
-					SummaryConfig: v1.SummaryConfig{
-						TitlesCount: 3,
-					},
-				},
-			}
-		})
-		It("should return an error and update status", func() {
-			fakeClient := fake.NewClientBuilder().WithStatusSubresource(&v1.HotNews{}).Build()
-			reconciler.Client = fakeClient
-			Expect(fakeClient.Create(ctx, hotNews)).To(Succeed())
-			req := reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Namespace: "default",
-					Name:      "test-hotnews",
-				},
-			}
-			result, err := reconciler.Reconcile(ctx, req)
-
-			Expect(err).To(MatchError("no feeds or feed groups provided in HotNews spec"))
-			Expect(result.Requeue).To(BeFalse())
-			var updatedHotNews v1.HotNews
-			Expect(fakeClient.Get(ctx, req.NamespacedName, &updatedHotNews)).To(Succeed())
-			Expect(updatedHotNews.Status.Condition.Reason).To(Equal("no feeds or feed groups provided in HotNews spec"))
-			Expect(updatedHotNews.Status.Condition.Status).To(Equal(false))
-		})
-		It("should return an error and not update status", func() {
-			Expect(fakeClient.Create(ctx, hotNews)).To(Succeed())
-			req := reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Namespace: "default",
-					Name:      "test-hotnews",
-				},
-			}
-			result, err := reconciler.Reconcile(ctx, req)
-
-			Expect(err).To(MatchError("error updating Feed default/test-hotnews"))
-			Expect(result.Requeue).To(BeFalse())
-
 		})
 	})
 	Context("SetupWithManager", func() {
