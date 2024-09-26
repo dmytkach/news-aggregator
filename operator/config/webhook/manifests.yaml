@@ -10,27 +10,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-v1-configmap
-  failurePolicy: Fail
-  name: mconfigmap.kb.io
-  rules:
-  - apiGroups:
-    - ""
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    - DELETE
-    resources:
-    - configmaps
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
       path: /mutate-aggregator-com-teamdev-v1-hotnews
   failurePolicy: Fail
   name: mhotnews.kb.io
@@ -70,6 +49,27 @@ webhooks:
     - UPDATE
     resources:
     - hotnews
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate--v1-configmap
+  failurePolicy: Fail
+  name: vconfigmap.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - configmaps
   sideEffects: None
 - admissionReviewVersions:
   - v1
