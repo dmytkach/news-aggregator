@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"time"
 )
 
 var Client client.Client
@@ -21,15 +22,6 @@ func (r *Feed) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
-}
-
-// +kubebuilder:webhook:path=/mutate-aggregator-com-teamdev-v1-feed,mutating=true,failurePolicy=fail,sideEffects=None,groups=aggregator.com.teamdev,resources=feeds,verbs=create;update;delete,versions=v1,name=mfeed.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &Feed{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Feed) Default() {
-	log.Print("default", "name", r.Name)
 }
 
 // +kubebuilder:webhook:path=/validate-aggregator-com-teamdev-v1-feed,mutating=false,failurePolicy=fail,sideEffects=None,groups=aggregator.com.teamdev,resources=feeds,verbs=create;update;delete,versions=v1,name=vfeed.kb.io,admissionReviewVersions=v1
@@ -98,11 +90,12 @@ func isValidLink(str string) bool {
 func checkNameUniqueness(feed *Feed) error {
 	feedList := &FeedList{}
 	listOpts := client.ListOptions{Namespace: feed.Namespace}
-	if err := Client.List(context.Background(), feedList, &listOpts); err != nil {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := Client.List(timeoutCtx, feedList, &listOpts); err != nil {
 		return fmt.Errorf("checkNameUniqueness: failed to list feeds: %v", err)
 
 	}
-
 	for _, existingFeed := range feedList.Items {
 		if existingFeed.Spec.Name == feed.Spec.Name && existingFeed.Namespace == feed.Namespace && existingFeed.UID != feed.UID {
 			return fmt.Errorf("checkNameUniqueness: a Feed with name '%s' already exists in namespace '%s'", feed.Spec.Name, feed.Namespace)

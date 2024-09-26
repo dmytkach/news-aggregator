@@ -4,7 +4,7 @@ vars:
   cli_aggregator: ./cli/main.go
   server_aggregator: ./server/main.go
   docker_image_name: "dmytkach/news-aggregator"
-  docker_image_tag: "1.0.6"
+  docker_image_tag: "1.1.0"
   dockerfile_path: ".Dockerfile"
   docker_port: "8443"
   server_expose_port: "8443"
@@ -12,7 +12,7 @@ vars:
   k8s_folder: "templates"
   aggregator_chart_name: "aggregator-chart"
   auth_chart_name: "dmytro-aws-auth-chart"
-  release_aggregator_chart_name: "news-aggregator-chart"
+  release_aggregator_chart_name: "news-aggregator"
   release_auth_chart_name: "dmytro-aws-auth"
   region: "us-west-1"
   account_id: "406477933661"
@@ -82,13 +82,11 @@ tasks:
 
   aggregator_chart_install:
     desc: "Installs the news-aggregator Helm chart on the Kubernetes cluster"
-    deps: [ create_ns ]
-    cmd: helm install {{.release_aggregator_chart_name}} ./{{.aggregator_chart_name}} -n {{.namespace_name}}
+    cmd: helm install {{.release_aggregator_chart_name}} ./{{.aggregator_chart_name}} -n {{.namespace_name}} --create-namespace
 
   aggregator_chart_upgrade:
     desc: "Upgrades the news-aggregator Helm chart on the Kubernetes cluster"
-    deps: [ create_ns ]
-    cmd: helm upgrade {{.release_aggregator_chart_name}} ./{{.aggregator_chart_name}} -n {{.namespace_name}}
+    cmd: helm upgrade {{.release_aggregator_chart_name}} ./{{.aggregator_chart_name}} -n {{.namespace_name}} --create-namespace
 
   aggregator_chart_uninstall:
     desc: "Remove news-aggregator app from Kubernetes cluster"
@@ -96,13 +94,11 @@ tasks:
 
   aws_auth_chart_install:
     desc: "Installs aws auth Helm chart on the Kubernetes cluster"
-    deps: [ create_ns ]
-    cmd: helm install {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}} {{.CLI_ARGS}}
+    cmd: helm install {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}} {{.CLI_ARGS}} --create-namespace
 
   aws_auth_chart_upgrade:
     desc: "Upgrades aws auth Helm chart on the Kubernetes cluster"
-    deps: [ create_ns ]
-    cmd: helm upgrade {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}}
+    cmd: helm upgrade {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}} --create-namespace
 
   aws_auth_chart_uninstall:
     desc: "Remove aws auth Helm chart from Kubernetes cluster"

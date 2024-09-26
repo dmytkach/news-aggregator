@@ -41,24 +41,32 @@ spec:
             description: HotNewsSpec defines the desired state of HotNews.
             properties:
               dateEnd:
+                description: DateEnd is the end date for filtering news articles.
                 type: string
               dateStart:
+                description: DateStart is the start date for filtering news articles.
                 type: string
               feedGroups:
+                description: FeedGroups define sets of feeds from which news articles
+                  will be gathered.
                 items:
                   type: string
                 type: array
               feeds:
+                description: Feeds specify sources from which news articles will be
+                  gathered.
                 items:
                   type: string
                 type: array
               keywords:
+                description: Keywords represent the list of search terms used to find
+                  relevant news articles.
                 items:
                   type: string
                 type: array
               summaryConfig:
-                description: SummaryConfig defines the configuration for summarizing
-                  news articles.
+                description: SummaryConfig sets the configuration for the maximum
+                  amount of news articles.
                 properties:
                   titlesCount:
                     type: integer
@@ -70,14 +78,17 @@ spec:
             description: HotNewsStatus defines the observed state of HotNews.
             properties:
               articlesCount:
+                description: ArticlesCount represents the total number of articles
+                  retrieved.
                 type: integer
               articlesTitles:
+                description: ArticlesTitles contains the titles of the retrieved articles.
                 items:
                   type: string
                 type: array
               condition:
-                description: HotNewsCondition represents the state of a Feed at a
-                  certain point.
+                description: Condition represents the current condition or state of
+                  the HotNews.
                 properties:
                   reason:
                     description: If status is False, the reason should be populated
@@ -89,6 +100,8 @@ spec:
                 - status
                 type: object
               newsLink:
+                description: NewsLink is a URL to the collection or feed of the relevant
+                  news.
                 type: string
             type: object
         type: object
