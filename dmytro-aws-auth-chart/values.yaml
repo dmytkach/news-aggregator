@@ -1,10 +1,6 @@
-news_aggregator:
-  namespace: "news-aggregator"
-  docker_secret_name: "regcred"
+namespace: "default"
 
-operator_system:
-  namespace: "operator-system"
-  docker_secret_name: "regcred"
+docker_secret_name: "regcred"
 
 aws_region: "us-west-1"
 aws_account_id: "406477933661"

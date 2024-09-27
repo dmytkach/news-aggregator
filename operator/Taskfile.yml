@@ -1,15 +1,12 @@
 version: '3'
 
 vars:
-  docker_image_tag: "v3"
+  operator_image_tag: "v3"
   KUBECTL: "kubectl"
   ignore_not_found: "false"
   LOCALBIN: "$(pwd)/bin"
   CONTROLLER_GEN: "{{.LOCALBIN}}/controller-gen"
-  ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-operator-controller-manager"
-  region: "us-west-1"
-  account_id: "406477933661"
-
+  operator_ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-operator-controller-manager"
 
 tasks:
   help:
@@ -46,25 +43,17 @@ tasks:
 
   docker_build:
     desc: Build docker image with the manager.
-    cmd: docker build -t {{.ecr_repository}}:{{.docker_image_tag}} .
-
-  docker_tag:
-    cmd: docker tag {{.ecr_repository}}:{{.docker_image_tag}} {{.ecr_repository}}:{{.docker_image_tag}}
-    desc: "Tag Docker image with ECR repository URI"
-
-  docker_login:
-    desc: "Login to the ECR registry"
-    cmd: aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
+    cmd: docker build -t {{.operator_ecr_repository}}:{{.operator_image_tag}} .
 
   docker_push:
     desc: "Push the Docker image to ECR"
-    cmd: docker push {{.ecr_repository}}:{{.docker_image_tag}}
+    cmd: docker push {{.operator_ecr_repository}}:{{.operator_image_tag}}
 
   deploy:
     desc: "Deploy controller to the K8s cluster specified in ~/.kube/config."
     deps: [ manifests ]
     cmd: |
-      cd config/manager && kustomize edit set image controller={{.docker_image_name}}:{{.docker_image_tag}}
+      cd config/manager && kustomize edit set image controller={{.operator_ecr_repository}}:{{.operator_image_tag}}
       cd - 
       kustomize build config/default | kubectl apply -f -
 
