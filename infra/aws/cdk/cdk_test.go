@@ -1,26 +1,37 @@
 package main
 
-// import (
-// 	"testing"
+import (
+	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/assertions"
+	"github.com/aws/jsii-runtime-go"
+	"testing"
+)
 
-// 	"github.com/aws/aws-cdk-go/awscdk/v2"
-// 	"github.com/aws/aws-cdk-go/awscdk/v2/assertions"
-// 	"github.com/aws/jsii-runtime-go"
-// )
+func TestCdkStack(t *testing.T) {
+	// GIVEN
+	app := awscdk.NewApp(nil)
 
-// example tests. To run these tests, uncomment this file along with the
-// example resource in cdk_test.go
-// func TestCdkStack(t *testing.T) {
-// 	// GIVEN
-// 	app := awscdk.NewApp(nil)
+	// WHEN
+	stack := NewCdkStack(app, "MyStack", nil)
 
-// 	// WHEN
-// 	stack := NewCdkStack(app, "MyStack", nil)
+	// THEN
+	template := assertions.Template_FromStack(stack, nil)
 
-// 	// THEN
-// 	template := assertions.Template_FromStack(stack, nil)
+	template.HasResourceProperties(jsii.String("AWS::EC2::VPC"), map[string]interface{}{
+		"CidrBlock": jsii.String(vpcCIDR),
+	})
 
-// 	template.HasResourceProperties(jsii.String("AWS::SQS::Queue"), map[string]interface{}{
-// 		"VisibilityTimeout": 300,
-// 	})
-// }
+	template.HasResourceProperties(jsii.String("AWS::EC2::SecurityGroup"), map[string]interface{}{
+		"GroupDescription": jsii.String("Allow access to EKS Cluster"),
+	})
+
+	template.HasResourceProperties(jsii.String("Custom::AWSCDK-EKS-Cluster"), map[string]interface{}{})
+
+	template.HasResourceProperties(jsii.String("AWS::EKS::Nodegroup"), map[string]interface{}{
+		"ScalingConfig": map[string]interface{}{
+			"MinSize":     jsii.Number(1),
+			"MaxSize":     jsii.Number(10),
+			"DesiredSize": jsii.Number(2),
+		},
+	})
+}

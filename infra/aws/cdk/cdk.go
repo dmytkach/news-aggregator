@@ -11,34 +11,54 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
+const (
+	vpcCIDR                    = "10.0.0.0/16"
+	publicSubnetName           = "PublicSubnet"
+	privateSubnetName          = "PrivateSubnet"
+	clusterName                = "DmytroEKSCluster"
+	eksClusterSGName           = "DmytroEKSClusterSG"
+	iamUserArn                 = "arn:aws:iam::406477933661:user/dmytro"
+	nodeInstanceType           = "t3.medium"
+	eksAddonVPCVersion         = "v1.18.3-eksbuild.3"
+	eksAddonCoreDNSVersion     = "v1.11.3-eksbuild.1"
+	eksAddonKubeProxyVersion   = "v1.30.3-eksbuild.5"
+	eksAddonPodIdentityVersion = "v1.3.2-eksbuild.2"
+	accountID                  = "406477933661"
+	region                     = "us-west-1"
+)
+
 type CdkStackProps struct {
 	awscdk.StackProps
 }
 
 func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) awscdk.Stack {
-	stack := awscdk.NewStack(scope, &id, &props.StackProps)
+	var sprops awscdk.StackProps
+	if props != nil {
+		sprops = props.StackProps
+	}
+	stack := awscdk.NewStack(scope, &id, &sprops)
 
 	vpc := awsec2.NewVpc(stack, jsii.String("DmytroVpc"), &awsec2.VpcProps{
-		IpAddresses: awsec2.IpAddresses_Cidr(jsii.String("10.0.0.0/16")),
+		IpAddresses: awsec2.IpAddresses_Cidr(jsii.String(vpcCIDR)),
 		MaxAzs:      jsii.Number(2),
 		NatGateways: jsii.Number(1),
 		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
 			{
 				CidrMask:   jsii.Number(24),
-				Name:       jsii.String("PublicSubnet"),
+				Name:       jsii.String(publicSubnetName),
 				SubnetType: awsec2.SubnetType_PUBLIC,
 			},
 			{
 				CidrMask:   jsii.Number(24),
-				Name:       jsii.String("PrivateSubnet"),
+				Name:       jsii.String(privateSubnetName),
 				SubnetType: awsec2.SubnetType_PRIVATE_WITH_EGRESS,
 			},
 		},
 	})
 
-	sg := awsec2.NewSecurityGroup(stack, jsii.String("DmytroEKSClusterSG"), &awsec2.SecurityGroupProps{
+	sg := awsec2.NewSecurityGroup(stack, jsii.String(eksClusterSGName), &awsec2.SecurityGroupProps{
 		Vpc:               vpc,
-		SecurityGroupName: jsii.String("DmytroEKSClusterSG"),
+		SecurityGroupName: jsii.String(eksClusterSGName),
 		AllowAllOutbound:  jsii.Bool(true),
 		Description:       jsii.String("Allow access to EKS Cluster"),
 	})
@@ -55,21 +75,22 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 		},
 	})
 
-	eksCluster := awseks.NewCluster(stack, jsii.String("DmytroEKSCluster"), &awseks.ClusterProps{
+	eksCluster := awseks.NewCluster(stack, jsii.String(clusterName), &awseks.ClusterProps{
 		Version:         awseks.KubernetesVersion_V1_30(),
 		Vpc:             vpc,
 		SecurityGroup:   sg,
-		ClusterName:     jsii.String("DmytroEKSCluster"),
+		ClusterName:     jsii.String(clusterName),
 		DefaultCapacity: jsii.Number(0),
 		Role:            eksRole,
 	})
-	iamUserArn := "arn:aws:iam::406477933661:user/dmytro"
+
 	eksCluster.AwsAuth().AddUserMapping(awsiam.User_FromUserArn(stack, jsii.String("dmytro"), jsii.String(iamUserArn)), &awseks.AwsAuthMapping{
 		Username: jsii.String("dmytro"),
 		Groups: &[]*string{
 			jsii.String("system:masters"),
 		},
 	})
+
 	nodeRole := awsiam.NewRole(stack, jsii.String("DmytroEKSNodeRole"), &awsiam.RoleProps{
 		AssumedBy: awsiam.NewServicePrincipal(jsii.String("ec2.amazonaws.com"), nil),
 		ManagedPolicies: &[]awsiam.IManagedPolicy{
@@ -82,7 +103,7 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 	awseks.NewNodegroup(stack, jsii.String("DmytroEKSNodeGroup"), &awseks.NodegroupProps{
 		Cluster:       eksCluster,
 		NodeRole:      nodeRole,
-		InstanceTypes: &[]awsec2.InstanceType{awsec2.NewInstanceType(jsii.String("t3.medium"))},
+		InstanceTypes: &[]awsec2.InstanceType{awsec2.NewInstanceType(jsii.String(nodeInstanceType))},
 		MinSize:       jsii.Number(1),
 		MaxSize:       jsii.Number(10),
 		DesiredSize:   jsii.Number(2),
@@ -92,28 +113,28 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 	awseks.NewCfnAddon(stack, jsii.String("VPCCNIAddon"), &awseks.CfnAddonProps{
 		ClusterName:      eksCluster.ClusterName(),
 		AddonName:        jsii.String("vpc-cni"),
-		AddonVersion:     jsii.String("v1.18.3-eksbuild.3"),
+		AddonVersion:     jsii.String(eksAddonVPCVersion),
 		ResolveConflicts: jsii.String("OVERWRITE"),
 	})
 
 	awseks.NewCfnAddon(stack, jsii.String("CoreDNSAddon"), &awseks.CfnAddonProps{
 		ClusterName:      eksCluster.ClusterName(),
 		AddonName:        jsii.String("coredns"),
-		AddonVersion:     jsii.String("v1.11.3-eksbuild.1"),
+		AddonVersion:     jsii.String(eksAddonCoreDNSVersion),
 		ResolveConflicts: jsii.String("OVERWRITE"),
 	})
 
 	awseks.NewCfnAddon(stack, jsii.String("KubeProxyAddon"), &awseks.CfnAddonProps{
 		ClusterName:      eksCluster.ClusterName(),
 		AddonName:        jsii.String("kube-proxy"),
-		AddonVersion:     jsii.String("v1.30.3-eksbuild.5"),
+		AddonVersion:     jsii.String(eksAddonKubeProxyVersion),
 		ResolveConflicts: jsii.String("OVERWRITE"),
 	})
 
 	awseks.NewCfnAddon(stack, jsii.String("PodIdentityAddon"), &awseks.CfnAddonProps{
 		ClusterName:      eksCluster.ClusterName(),
 		AddonName:        jsii.String("eks-pod-identity-agent"),
-		AddonVersion:     jsii.String("v1.3.2-eksbuild.2"),
+		AddonVersion:     jsii.String(eksAddonPodIdentityVersion),
 		ResolveConflicts: jsii.String("OVERWRITE"),
 	})
 
@@ -137,26 +158,8 @@ func main() {
 // env determines the AWS environment (account+region) in which our stack is to
 // be deployed. For more information see: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
 func env() *awscdk.Environment {
-	// If unspecified, this stack will be "environment-agnostic".
-	// Account/Region-dependent features and context lookups will not work, but a
-	// single synthesized template can be deployed anywhere.
-	//---------------------------------------------------------------------------
-	//return nil
-
-	// Uncomment if you know exactly what account and region you want to deploy
-	// the stack to. This is the recommendation for production stacks.
-	//---------------------------------------------------------------------------
 	return &awscdk.Environment{
-		Account: jsii.String("406477933661"),
-		Region:  jsii.String("us-west-1"),
+		Account: jsii.String(accountID),
+		Region:  jsii.String(region),
 	}
-
-	// Uncomment to specialize this stack for the AWS Account and Region that are
-	// implied by the current CLI configuration. This is recommended for dev
-	// stacks.
-	//---------------------------------------------------------------------------
-	// return &awscdk.Environment{
-	//  Account: jsii.String(os.Getenv("CDK_DEFAULT_ACCOUNT")),
-	//  Region:  jsii.String(os.Getenv("CDK_DEFAULT_REGION")),
-	// }
 }
