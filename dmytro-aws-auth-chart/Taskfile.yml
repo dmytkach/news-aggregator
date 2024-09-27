@@ -1,0 +1,31 @@
+version: '3'
+
+vars:
+  namespace_name: "news-aggregator"
+  auth_chart_name: "dmytro-aws-auth-chart"
+  release_auth_chart_name: "dmytro-aws-auth"
+  auth_chart_version: "0.2.0"
+
+tasks:
+  aws_auth_chart_deploy:
+    desc: "Installs aws auth Helm chart on the Kubernetes cluster"
+    cmd: helm install {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}} {{.CLI_ARGS}} --create-namespace --upgrade
+
+  aws_auth_chart_uninstall:
+    desc: "Remove aws auth Helm chart from Kubernetes cluster"
+    cmd: helm uninstall {{.release_auth_chart_name}} -n {{.namespace_name}}
+
+  aws_auth_chart_package:
+    desc: "Generate a aws auth chart with all required resources from helm chart"
+    cmds:
+      - helm lint ./{{.auth_chart_name}}
+      - helm package ./{{.auth_chart_name}}
+      - mkdir -p ./charts
+      - mv *.tgz ./charts/
+
+  aws_auth_chart_push:
+    desc: "Uploads the aws authentication chart to the Helm repository"
+    deps:
+      - aws_auth_chart_package
+    cmds:
+      - helm push charts/dmytro-aws-auth-chart-{{.auth_chart_version}}.tgz oci://{{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
