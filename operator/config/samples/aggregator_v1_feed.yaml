@@ -1,0 +1,7 @@
+apiVersion: aggregator.com.teamdev/v1
+kind: Feed
+metadata:
+  name: bbc
+spec:
+  name: bbc
+  link: https://feeds.bbci.co.uk/news/world/asia/rss.xml

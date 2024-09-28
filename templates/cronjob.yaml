@@ -14,7 +14,7 @@ spec:
           serviceAccountName: news-aggregator-sa
           containers:
             - name: news-fetcher
-              image: dmytkach/news-fetcher:1.0.1
+              image: dmytkach/news-fetcher:1.0.2
               volumeMounts:
                 - name: news-volume
                   mountPath: /mnt/news
