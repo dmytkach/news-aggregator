@@ -44,9 +44,10 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 		NatGateways: jsii.Number(1),
 		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
 			{
-				CidrMask:   jsii.Number(24),
-				Name:       jsii.String(publicSubnetName),
-				SubnetType: awsec2.SubnetType_PUBLIC,
+				CidrMask:            jsii.Number(24),
+				Name:                jsii.String(publicSubnetName),
+				SubnetType:          awsec2.SubnetType_PUBLIC,
+				MapPublicIpOnLaunch: jsii.Bool(true),
 			},
 			{
 				CidrMask:   jsii.Number(24),
