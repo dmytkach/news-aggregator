@@ -10,7 +10,7 @@ replicas: 1
 
 image:
   repository: dmytkach/news-aggregator
-  tag: 1.0.6
+  tag: 1.1.0
 
 containerPort: 8443
 
@@ -45,6 +45,19 @@ cronjob:
   image:
     repository: dmytkach/news-fetcher
     tag: 1.0.2
+certManager:
+  certificateName: news-aggregator-cert
+  tlsSecretName: news-aggregator-tls
+  duration: 2160h
+  renewBefore: 360h
+  commonName: localhost
+  issuerName: aggregator-cert-issuer
+  tlsCertPath: /etc/tls/certs/tls.crt
+  tlsKeyPath: /etc/tls/certs/tls.key
+  tlsMountPath: /etc/tls/certs
+
+issuer:
+  name: aggregator-cert-issuer
 
 resources:
   limits:
