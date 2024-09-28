@@ -2,6 +2,8 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
+	"slices"
 )
 
 // FeedSpec defines the desired state of Feed
@@ -89,6 +91,27 @@ type FeedList struct {
 	Items           []Feed `json:"items"`
 }
 
+func (fl *FeedList) GetAllFeedNames() []string {
+	feeds := make([]string, 0)
+	for _, feed := range fl.Items {
+		feeds = append(feeds, feed.Name)
+	}
+	return feeds
+}
+
+// GetNewsSources retrieves the news sources based on the specified feed names.
+func (fl *FeedList) GetNewsSources(feedNames []string) []string {
+	var sources []string
+
+	for _, feed := range fl.Items {
+		if slices.Contains(feedNames, feed.Name) && !slices.Contains(sources, feed.Spec.Name) {
+			sources = append(sources, feed.Spec.Name)
+			log.Printf("Matched Feed: %s, adding to sources: %s", feed.Name, feed.Spec.Name)
+		}
+	}
+
+	return sources
+}
 func init() {
 	SchemeBuilder.Register(&Feed{}, &FeedList{})
 }

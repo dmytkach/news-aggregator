@@ -1,0 +1,16 @@
+apiVersion: aggregator.com.teamdev/v1
+kind: HotNews
+metadata:
+  name: year
+spec:
+    keywords:
+      - "2024"
+      - "year"
+    dateStart: ""
+    dateEnd: ""
+    feeds:
+      - "bbc"
+    feedGroups:
+    summaryConfig:
+      titlesCount: 20
+
