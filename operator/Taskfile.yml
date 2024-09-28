@@ -1,0 +1,63 @@
+version: '3'
+
+vars:
+  docker_image_name: "dmytkach/news-aggregator-operator"
+  docker_image_tag: "v2"
+  KUBECTL: "kubectl"
+  ignore_not_found: "false"
+  LOCALBIN: "$(pwd)/bin"
+  CONTROLLER_GEN: "{{.LOCALBIN}}/controller-gen"
+
+tasks:
+  help:
+    desc: "List all tasks with their descriptions"
+    cmd: task --list
+
+  manifests:
+    desc: Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+    cmd: '{{.CONTROLLER_GEN}} rbac:roleName=manager-role crd webhook paths=./... output:crd:artifacts:config=config/crd/bases'
+
+  generate:
+    desc: "Generate deepcopy, client, lister, and informer code for Kubernetes resources"
+    cmd: '{{.CONTROLLER_GEN}} object:headerFile="hack/boilerplate.go.txt" paths=./...'
+
+  fmt:
+    desc: Run go fmt against code.
+    cmd: go fmt ./...
+
+  vet:
+    desc: Run go vet against code.
+    cmd: go vet ./...
+
+  test:
+    cmd: go test ./.../...
+    desc: "Run tests"
+
+  build:
+    desc: Build manager binary.
+    cmd: go build -o bin/manager cmd/main.go
+
+  run:
+    desc: Run a controller from your host.
+    cmd: go run ./cmd/main.go
+
+  docker-build:
+    desc: Build docker image with the manager.
+    cmd: docker build -t {{.docker_image_name}}:{{.docker_image_tag}} .
+
+  docker_push:
+    desc: "Push the Docker image to the registry"
+    cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
+
+  deploy:
+    desc: "Deploy controller to the K8s cluster specified in ~/.kube/config."
+    deps: [ manifests ]
+    cmd: |
+      cd config/manager && kustomize edit set image controller={{.docker_image_name}}:{{.docker_image_tag}}
+      cd - 
+      kustomize build config/default | kubectl apply -f -
+
+  undeploy:
+    desc: "Undeploy controller from the K8s cluster specified in ~/.kube/config."
+    cmd: |
+        kustomize build config/default | kubectl delete --ignore-not-found={{.ignore_not_found}} -f -
