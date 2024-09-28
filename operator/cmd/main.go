@@ -5,6 +5,7 @@ import (
 	"flag"
 	"net/http"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"time"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -131,7 +132,12 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
+	mgr.GetWebhookServer().Register("/mutate-v1-configmap", &webhook.Admission{
+		Handler: &aggregatorv1.ConfigMapWebHook{
+			Client:  mgr.GetClient(),
+			Decoder: admission.NewDecoder(mgr.GetScheme()),
+		},
+	})
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
