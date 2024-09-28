@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/dmytkach/news-aggregator/compare/v1.0.5...v1.1.0) (2024-09-28)
+
+
+### Features
+
+* migrate from self-signed certificates to cert-manager. ([621d0ad](https://github.com/dmytkach/news-aggregator/commit/621d0ad8a2d1bd5d18dbb498b58c4c18261b49fb))
+
 ## [1.0.5](https://github.com/dmytkach/news-aggregator/compare/v1.0.4...v1.0.5) (2024-09-23)
 
 
