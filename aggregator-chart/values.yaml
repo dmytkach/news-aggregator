@@ -1,0 +1,55 @@
+namespace: news-aggregator
+
+app:
+  name: news-aggregator
+
+deployment:
+  name: news-aggregator-deployment
+
+replicas: 1
+
+image:
+  repository: dmytkach/news-aggregator
+  tag: 1.0.6
+
+containerPort: 8443
+
+serviceAccount:
+  name: news-aggregator-sa
+
+persistentVolume:
+  news: news-aggregator-news-pv
+  sources: news-aggregator-sources-pv
+  size: 1Gi
+  newsPath: /mnt/news
+  sourcesPath: /mnt/sources
+
+persistentVolumeClaim:
+  news: news-aggregator-news-pvc
+  sources: news-aggregator-sources-pvc
+
+role:
+  name: news-aggregator-role
+
+roleBinding:
+  name: news-aggregator-rolebinding
+
+service:
+  name: news-aggregator-service
+  port: 443
+
+cronjob:
+  schedule: "0 12 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  image:
+    repository: dmytkach/news-fetcher
+    tag: 1.0.2
+
+resources:
+  limits:
+    cpu: "100m"
+    memory: "128Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
