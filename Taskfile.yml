@@ -11,7 +11,7 @@ vars:
   namespace_name: "news-aggregator"
   k8s_folder: "templates"
   chart_name: "aggregator-chart"
-  release_name: "news-aggregator-chart"
+  release_name: "news-aggregator"
 
 
 tasks:

@@ -61,8 +61,24 @@ issuer:
 
 resources:
   limits:
-    cpu: "100m"
-    memory: "128Mi"
+    cpu: "150m"
+    memory: "192Mi"
   requests:
-    cpu: "100m"
-    memory: "128Mi"
+    cpu: "75m"
+    memory: "96Mi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetUtilPercent: 80
+
+vpa:
+  enabled: true
+  minAllowed:
+    cpu: "30m"
+    memory: "48Mi"
+  maxAllowed:
+    cpu: "150m"
+    memory: "192Mi"
+
