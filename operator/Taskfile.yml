@@ -47,6 +47,7 @@ tasks:
 
   docker_push:
     desc: "Push the Docker image to ECR"
+    deps: [docker_build]
     cmd: docker push {{.operator_ecr_repository}}:{{.operator_image_tag}}
 
   deploy:

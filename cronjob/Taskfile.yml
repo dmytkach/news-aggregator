@@ -30,5 +30,6 @@ tasks:
 
   docker_push:
     desc: "Push the Docker image to ECR"
+    deps: [docker_build,docker_tag]
     cmd: docker push {{.cronjob_ecr_repository}}:{{.cronjob_image_tag}}
 

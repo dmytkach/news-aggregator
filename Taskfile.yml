@@ -15,8 +15,10 @@ vars:
 includes:
   cronjob:
     taskfile: ./cronjob/Taskfile.yml
+    dir: ./cronjob
   operator:
     taskfile: ./operator/Taskfile.yml
+    dir: ./operator
   aggregator_chart:
     taskfile: ./aggregator-chart/Taskfile.yml
   aws_auth_chart:
