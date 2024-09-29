@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: 406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-operator-controller-manager
-  newTag: 1.1.2
+  newTag: 1.1.3

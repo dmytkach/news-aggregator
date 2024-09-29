@@ -25,13 +25,21 @@ spec:
                 - |-
                   ECR_TOKEN=`aws ecr get-login-password --region ${AWS_REGION}`
                   NAMESPACE_NAME={{ .Values.namespace }}
-                  kubectl delete secret --ignore-not-found $DOCKER_SECRET_NAME -n $NAMESPACE_NAME
-                  kubectl create secret docker-registry $DOCKER_SECRET_NAME \
-                  --docker-server=https://${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com \
-                  --docker-username=AWS \
-                  --docker-password="${ECR_TOKEN}" \
-                  --namespace=$NAMESPACE_NAME
-                  echo "Secret was successfully updated at $(date)"
+                  
+                  if kubectl get secret $DOCKER_SECRET_NAME -n $NAMESPACE_NAME; then
+                    kubectl patch secret $DOCKER_SECRET_NAME \
+                    -n $NAMESPACE_NAME \
+                    --type='json' \
+                    -p='[{ "op": "replace", "path": "/data/.dockerconfigjson",
+                    "value": "'$(base64 -w 0 <<< "{\"auths\": {\"https://${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com\":
+                    {\"username\": \"AWS\", \"password\": \"$ECR_TOKEN\", \"email\": \"none\"}}}")'" }]'
+                  else
+                    kubectl create secret docker-registry $DOCKER_SECRET_NAME \
+                    --docker-server=https://${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com \
+                    --docker-username=AWS \
+                    --docker-password="${ECR_TOKEN}" \
+                    --namespace=$NAMESPACE_NAME
+                  fi
           restartPolicy: OnFailure
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
