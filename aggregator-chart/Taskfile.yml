@@ -1,3 +1,4 @@
+
 version: '3'
 
 vars:
@@ -6,14 +7,26 @@ vars:
   release_aggregator_chart_name: "news-aggregator"
   aggregator_chart_version: "0.2.0"
 
+includes:
+  aws_chart:
+    taskfile: ../dmytro-aws-auth-chart/Taskfile.yml
+
 tasks:
+  install_cert_manager_crds:
+    desc: "Install cert-manager CRDs"
+    cmd: kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.crds.yaml
+
   aggregator_chart_deploy:
     desc: "Installs or Upgrades the news-aggregator Helm chart on the Kubernetes cluster"
-    cmd: helm install {{.release_aggregator_chart_name}} ./{{.aggregator_chart_name}} -n {{.namespace_name}} --create-namespace --upgrade
+    deps:
+      - install_cert_manager_crds
+    cmd: helm upgrade --install {{.release_aggregator_chart_name}} . -n {{.namespace_name}} --create-namespace
 
   aggregator_chart_uninstall:
     desc: "Remove news-aggregator app from Kubernetes cluster"
-    cmd: helm uninstall {{.release_aggregator_chart_name}} -n {{.namespace_name}}
+    cmds:
+      - helm uninstall {{.release_aggregator_chart_name}} -n {{.namespace_name}}
+      - kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.crds.yaml || true
 
   aggregator_chart_package:
     desc: "Generate the news-aggregator Helm chart with all required resources for the news aggregator"

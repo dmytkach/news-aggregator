@@ -1,12 +1,16 @@
 version: '3'
 
 vars:
-  operator_image_tag: "v3"
+  operator_image_tag: "1.1.2"
   KUBECTL: "kubectl"
   ignore_not_found: "false"
   LOCALBIN: "$(pwd)/bin"
   CONTROLLER_GEN: "{{.LOCALBIN}}/controller-gen"
   operator_ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-operator-controller-manager"
+
+includes:
+  aws_auth_chart:
+    taskfile: ../dmytro-aws-auth-chart/Taskfile.yml
 
 tasks:
   help:
@@ -51,7 +55,9 @@ tasks:
 
   deploy:
     desc: "Deploy controller to the K8s cluster specified in ~/.kube/config."
-    deps: [ manifests ]
+    deps:
+       - manifests
+       - task aws_auth_chart:aws_auth_chart_push
     cmd: |
       cd config/manager && kustomize edit set image controller={{.operator_ecr_repository}}:{{.operator_image_tag}}
       cd - 
