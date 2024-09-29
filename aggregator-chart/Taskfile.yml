@@ -7,10 +7,6 @@ vars:
   release_aggregator_chart_name: "news-aggregator"
   aggregator_chart_version: "0.2.0"
 
-includes:
-  aws_chart:
-    taskfile: ../dmytro-aws-auth-chart/Taskfile.yml
-
 tasks:
   install_cert_manager_crds:
     desc: "Install cert-manager CRDs"
