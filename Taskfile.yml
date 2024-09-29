@@ -88,10 +88,5 @@ tasks:
   push_to_ecr:
     desc: "Push the Docker image and Helm charts to the ECR registry"
     cmds:
-      - task docker_login
-      - task authenticate_helm
-      - task docker_push
-      - task cronjob:docker_push
-      - task operator:docker_push
-      - task aws_auth_chart:aws_auth_chart_push
-      - task aggregator_chart:aggregator_chart_push
+      - for: [docker_login, authenticate_helm, docker_push, cronjob:docker_push, operator:docker_push, aws_auth_chart:aws_auth_chart_push, aggregator_chart:aggregator_chart_push]
+        task: '{{.ITEM}}'
