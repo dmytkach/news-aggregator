@@ -1,0 +1,292 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create VPC, security group, node group, and EKS cluster with addons.'
+
+Parameters:
+  Ec2SshKey:
+    Type: String
+    Default: 'dmytro-kp'
+    Description: 'Name of the EC2 SSH Key Pair for Remote Access'
+
+  MinNodeSize:
+    Type: Number
+    Default: 1
+    Description: "The minimum number of nodes in the EKS node group"
+
+  MaxNodeSize:
+    Type: Number
+    Default: 10
+    Description: "The maximum number of nodes in the EKS node group"
+
+  DesiredSize:
+    Type: Number
+    Default: 1
+    Description: "Desired number of nodes in the EKS node group"
+
+  AmiType:
+    Type: String
+    Default: 'AL2_x86_64'
+    Description: 'AMI type for the EKS worker nodes'
+
+  VPCBlock:
+    Type: String
+    Default: 10.0.0.0/20
+    Description: "CIDR block for the VPC"
+
+  PublicSubnetBlock1:
+    Type: String
+    Default: 10.0.1.0/24
+    Description: "CIDR block for the first public subnet"
+
+  PublicSubnetBlock2:
+    Type: String
+    Default: 10.0.2.0/24
+    Description: "CIDR block for the second public subnet"
+
+  InstanceType:
+    Description: "Instance type for the EKS nodes"
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t3.medium
+    ConstraintDescription: Must be a valid instance type
+
+  KubernetesVersion:
+    Type: String
+    Default: '1.30'
+    AllowedValues:
+      - '1.28'
+      - '1.29'
+      - '1.30'
+    Description: 'Version of Kubernetes to deploy'
+
+Mappings:
+  KubernetesVersionMapping:
+    '1.28':
+      VpcCniVersion: 'v1.18.3-eksbuild.3'
+      KubeProxyVersion: 'v1.28.12-eksbuild.5'
+      CoreDnsVersion: 'v1.10.1-eksbuild.13'
+      PodIdentityVersion: 'v1.2.0-eksbuild.1'
+    '1.29':
+      VpcCniVersion: 'v1.18.3-eksbuild.3'
+      KubeProxyVersion: 'v1.29.7-eksbuild.5'
+      CoreDnsVersion: 'v1.11.3-eksbuild.1'
+      PodIdentityVersion: 'v1.3.2-eksbuild.2'
+    '1.30':
+      VpcCniVersion: 'v1.18.3-eksbuild.3'
+      KubeProxyVersion: 'v1.30.3-eksbuild.5'
+      CoreDnsVersion: 'v1.11.3-eksbuild.1'
+      PodIdentityVersion: 'v1.3.2-eksbuild.2'
+
+Resources:
+  # Create VPC
+  dmytrovpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCBlock
+      Tags:
+        - Key: Name
+          Value: dmytrovpc
+
+  # Create Internet Gateway
+  dmytroig:
+    Type: AWS::EC2::InternetGateway
+
+  dmytrovpciga:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref dmytrovpc
+      InternetGatewayId: !Ref dmytroig
+
+  # Create Public Subnets
+  dmytrosubneta:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref dmytrovpc
+      CidrBlock: !Ref PublicSubnetBlock1
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+        - Key: Name
+          Value: dmytrosubneta
+
+  dmytrosubnetc:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref dmytrovpc
+      CidrBlock: !Ref PublicSubnetBlock2
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      Tags:
+        - Key: Name
+          Value: dmytrosubnetc
+
+  # Create Route Table for Public Subnet
+  dmytroroutetable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref dmytrovpc
+      Tags:
+        - Key: Name
+          Value: dmytroroutetable
+
+  dmytroroute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref dmytroroutetable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref dmytroig
+
+  # Associate Public Subnets with Route Table
+  dmytrosubnetrta:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref dmytrosubneta
+      RouteTableId: !Ref dmytroroutetable
+
+  dmytrosubnetrtc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref dmytrosubnetc
+      RouteTableId: !Ref dmytroroutetable
+
+  # Create Security Group for EKS
+  dmytroekssg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow access to EKS Cluster
+      VpcId: !Ref dmytrovpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: dmytroekssg
+
+  # IAM Role for EKS Cluster
+  dmytroeksrole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: eks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+
+  # EKS Cluster
+  dmytroekscluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Sub "${AWS::StackName}-eks-cluster"
+      Version: !Ref KubernetesVersion
+      RoleArn: !GetAtt dmytroeksrole.Arn
+      ResourcesVpcConfig:
+        SubnetIds:
+          - !Ref dmytrosubneta
+          - !Ref dmytrosubnetc
+        SecurityGroupIds:
+          - !Ref dmytroekssg
+
+  # Node Group IAM Role
+  dmytroeksngrole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+      Tags:
+        - Key: Name
+          Value: dmytroeksngrole
+  # EKS Node Group
+  dmytroeksng:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref dmytroekscluster
+      NodeRole: !GetAtt dmytroeksngrole.Arn
+      Subnets:
+        - !Ref dmytrosubneta
+        - !Ref dmytrosubnetc
+      ScalingConfig:
+        MinSize: !Ref MinNodeSize
+        MaxSize: !Ref MaxNodeSize
+        DesiredSize: !Ref DesiredSize
+      InstanceTypes:
+        - !Ref InstanceType
+      AmiType: !Ref AmiType
+      RemoteAccess:
+          Ec2SshKey: !Ref Ec2SshKey
+
+  # Add-ons
+  VPCCNIAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref dmytroekscluster
+      AddonName: vpc-cni
+      AddonVersion: !FindInMap [KubernetesVersionMapping, !Ref KubernetesVersion, VpcCniVersion]
+      ResolveConflicts: OVERWRITE
+
+  CoreDNSAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref dmytroekscluster
+      AddonName: coredns
+      AddonVersion: !FindInMap [KubernetesVersionMapping, !Ref KubernetesVersion, CoreDnsVersion]
+      ResolveConflicts: OVERWRITE
+
+  KubeProxyAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref dmytroekscluster
+      AddonName: kube-proxy
+      AddonVersion: !FindInMap [KubernetesVersionMapping, !Ref KubernetesVersion, KubeProxyVersion]
+      ResolveConflicts: OVERWRITE
+
+  PodIdentityAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref dmytroekscluster
+      AddonName: eks-pod-identity-agent
+      AddonVersion: !FindInMap [KubernetesVersionMapping, !Ref KubernetesVersion, PodIdentityVersion]
+      ResolveConflicts: OVERWRITE
+
+Outputs:
+  VPCId:
+    Description: "VPC Id"
+    Value: !Ref dmytrovpc
+
+  PublicSubnet1Id:
+    Description: "Public Subnet 1 Id"
+    Value: !Ref dmytrosubneta
+
+  PublicSubnet2Id:
+    Description: "Public Subnet 2 Id"
+    Value: !Ref dmytrosubnetc
+
+  EKSClusterName:
+    Description: "EKS Cluster Name"
+    Value: !Ref dmytroekscluster
