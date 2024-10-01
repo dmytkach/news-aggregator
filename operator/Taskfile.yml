@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  operator_image_tag: "v3"
+  operator_image_tag: "1.1.3"
   KUBECTL: "kubectl"
   ignore_not_found: "false"
   LOCALBIN: "$(pwd)/bin"
@@ -47,6 +47,7 @@ tasks:
 
   docker_push:
     desc: "Push the Docker image to ECR"
+    deps: [docker_build]
     cmd: docker push {{.operator_ecr_repository}}:{{.operator_image_tag}}
 
   deploy:

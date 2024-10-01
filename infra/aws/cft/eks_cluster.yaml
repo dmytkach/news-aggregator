@@ -19,16 +19,12 @@ Parameters:
 
   DesiredSize:
     Type: Number
-    Default: 2
+    Default: 1
     Description: "Desired number of nodes in the EKS node group"
 
   AmiType:
     Type: String
     Default: 'AL2_x86_64'
-    AllowedValues:
-      - AL2_x86_64
-      - AL2_x86_64_GPU
-      - AL2_ARM_64
     Description: 'AMI type for the EKS worker nodes'
 
   VPCBlock:
