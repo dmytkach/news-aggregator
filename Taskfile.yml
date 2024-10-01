@@ -3,16 +3,26 @@ version: '3'
 vars:
   cli_aggregator: ./cli/main.go
   server_aggregator: ./server/main.go
-  docker_image_name: "dmytkach/news-aggregator"
-  docker_image_tag: "1.1.0"
+  server_docker_image_name: "dmytkach/news-aggregator"
+  server_docker_image_tag: "1.1.0"
   dockerfile_path: ".Dockerfile"
   docker_port: "8443"
   server_expose_port: "8443"
-  namespace_name: "news-aggregator"
-  k8s_folder: "templates"
-  chart_name: "aggregator-chart"
-  release_name: "news-aggregator"
+  region: "us-west-1"
+  account_id: "406477933661"
+  repository_name: "dmytro-news-aggregator"
 
+includes:
+  cronjob:
+    taskfile: ./cronjob/Taskfile.yml
+    dir: ./cronjob
+  operator:
+    taskfile: ./operator/Taskfile.yml
+    dir: ./operator
+  aggregator_chart:
+    taskfile: ./aggregator-chart/Taskfile.yml
+  aws_auth_chart:
+    taskfile: ./dmytro-aws-auth-chart/Taskfile.yml
 
 tasks:
   test:
@@ -52,42 +62,33 @@ tasks:
     deps: [ fmt, vet, test, mod_tidy ]
 
   docker_build:
-    cmd: docker build -t {{.docker_image_name}}:{{.docker_image_tag}} .
+    cmd: docker build -t {{.server_docker_image_name}}:{{.server_docker_image_tag}} .
     desc: "Build Docker image"
 
   docker_run:
-    cmd: docker run --rm -p {{.docker_port}}:{{.server_expose_port}} {{.docker_image_name}}:{{.docker_image_tag}} {{.CLI_ARGS}}
+    cmd: docker run --rm -p {{.docker_port}}:{{.server_expose_port}} {{.server_docker_image_name}}:{{.server_docker_image_tag}} {{.CLI_ARGS}}
     desc: "Run Docker container locally"
 
+  docker_tag:
+    cmd: docker tag {{.server_docker_image_name}}:{{.server_docker_image_tag}} {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.server_docker_image_tag}}
+    desc: "Tag Docker image with ECR repository URI"
+
+  docker_login:
+    desc: "Login to the ECR registry"
+    cmd: aws ecr get-login-password --region {{.region}} | docker login --username AWS --password-stdin {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
+
   docker_push:
-    desc: "Push the Docker image to the registry"
-    cmd: docker push {{.docker_image_name}}:{{.docker_image_tag}}
+    desc: "Push the Docker image to the ECR registry"
+    deps: [ docker_build, docker_tag]
+    cmd: docker push {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.server_docker_image_tag}}
 
-  createChart:
-    desc: "Creates a Helm chart for news-aggregator"
-    cmd: helm create {{.chart_name}}
+  authenticate_helm:
+    desc: "Authenticate Helm with AWS ECR"
+    cmds:
+      - aws ecr get-login-password --region {{.region}} | helm registry login --username AWS --password-stdin {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com
 
-  chart_install:
-    desc: "Installs the Helm chart on the Kubernetes cluster"
-    cmd: helm install {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}} --create-namespace
-
-  chart_upgrade:
-    desc: "Upgrades the Helm chart on the Kubernetes cluster"
-    cmd: helm upgrade {{.release_name}} ./{{.chart_name}} -n {{.namespace_name}} --create-namespace
-
-  chart_uninstall:
-    desc: "Remove news-aggregator app from Kubernetes cluster"
-    cmd: helm uninstall {{.release_name}} -n {{.namespace_name}}
-
-  create_ns:
-    cmd: |
-      if ! kubectl get namespace {{.namespace_name}} >/dev/null 2>&1; then
-        kubectl create namespace {{.namespace_name}}
-      else
-        echo "Namespace {{.namespace_name}} already exists"
-      fi
-    desc: "Create a Kubernetes namespace if it does not exist"
-
-  delete_ns:
-    cmd: kubectl delete namespace {{.namespace_name}}
-    desc: "Delete a Kubernetes namespace"
+  push_to_ecr:
+    desc: "Push the Docker image and Helm charts to the ECR registry"
+    cmds:
+      - for: [docker_login, authenticate_helm, docker_push, cronjob:docker_push, operator:docker_push, aws_auth_chart:aws_auth_chart_push, aggregator_chart:aggregator_chart_push]
+        task: '{{.ITEM}}'

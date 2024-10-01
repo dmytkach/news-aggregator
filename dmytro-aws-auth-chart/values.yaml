@@ -1,0 +1,9 @@
+namespace: "default"
+
+docker_secret_name: "regcred"
+
+aws_region: "us-west-1"
+aws_account_id: "406477933661"
+
+accessKey: ""
+privateAccessKey: ""

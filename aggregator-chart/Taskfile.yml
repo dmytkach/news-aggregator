@@ -1,0 +1,40 @@
+
+version: '3'
+
+vars:
+  namespace_name: "news-aggregator"
+  aggregator_chart_name: "aggregator-chart"
+  release_aggregator_chart_name: "news-aggregator"
+  aggregator_chart_version: "0.2.0"
+
+tasks:
+  install_cert_manager_crds:
+    desc: "Install cert-manager CRDs"
+    cmd: kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.crds.yaml
+
+  aggregator_chart_deploy:
+    desc: "Installs or Upgrades the news-aggregator Helm chart on the Kubernetes cluster"
+    deps:
+      - install_cert_manager_crds
+    cmd: helm upgrade --install {{.release_aggregator_chart_name}} . -n {{.namespace_name}} --create-namespace
+
+  aggregator_chart_uninstall:
+    desc: "Remove news-aggregator app from Kubernetes cluster"
+    cmds:
+      - helm uninstall {{.release_aggregator_chart_name}} -n {{.namespace_name}}
+      - kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.crds.yaml || true
+
+  aggregator_chart_package:
+    desc: "Generate the news-aggregator Helm chart with all required resources for the news aggregator"
+    cmds:
+      - helm lint ./{{.aggregator_chart_name}}
+      - helm package ./{{.aggregator_chart_name}}
+      - mkdir -p ./charts
+      - mv *.tgz ./charts/
+
+  aggregator_chart_push:
+    desc: "Uploads the news-aggregator chart to the Helm repository"
+    deps:
+      - aggregator_chart_package
+    cmds:
+      - helm push charts/aggregator-chart-{{.aggregator_chart_version}}.tgz oci://{{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com

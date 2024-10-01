@@ -2,11 +2,10 @@ version: '3'
 
 vars:
   cronjob_aggregator: ./main.go
-  docker_image_name: "dmytkach/news-fetcher"
+  cronjob_image_name: "dmytkach/news-fetcher"
   cronjob_image_tag: "1.0.2"
-  dockerfile_path: "cronjob/Dockerfile"
-  namespace_name: "news-aggregator"
-  cronjob_path: "cronjob.yaml"
+  cronjob_dockerfile_path: "cronjob/Dockerfile"
+  cronjob_ecr_repository: "406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-news-fetcher"
 
 tasks:
   build:
@@ -18,13 +17,19 @@ tasks:
     desc: "Run the News Fetcher app locally"
 
   docker_build:
-    cmd: cd .. && docker build -t {{.docker_image_name}}:{{.cronjob_image_tag}} -f {{.dockerfile_path}} .
+    cmd: cd .. && docker build -t {{.cronjob_image_name}}:{{.cronjob_image_tag}} -f {{.cronjob_dockerfile_path}} .
     desc: "Build Docker image for the CronJob"
 
   docker_run:
-    cmd: docker run --rm {{.docker_image_name}}:{{.cronjob_image_tag}}
+    cmd: docker run --rm {{.cronjob_image_name}}:{{.cronjob_image_tag}}
     desc: "Run Docker container for the CronJob locally"
 
+  docker_tag:
+    cmd: docker tag {{.cronjob_image_name}}:{{.cronjob_image_tag}} {{.cronjob_ecr_repository}}:{{.cronjob_image_tag}}
+    desc: "Tag Docker image with ECR repository URI"
+
   docker_push:
-    desc: "Push the Docker image to the registry"
-    cmd: docker push {{.docker_image_name}}:{{.cronjob_image_tag}}
+    desc: "Push the Docker image to ECR"
+    deps: [docker_build,docker_tag]
+    cmd: docker push {{.cronjob_ecr_repository}}:{{.cronjob_image_tag}}
+
