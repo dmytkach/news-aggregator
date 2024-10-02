@@ -29,7 +29,7 @@ func TestCdkStack(t *testing.T) {
 		"ScalingConfig": map[string]interface{}{
 			"MinSize":     jsii.Number(1),
 			"MaxSize":     jsii.Number(10),
-			"DesiredSize": jsii.Number(2),
+			"DesiredSize": jsii.Number(1),
 		},
 	})
 

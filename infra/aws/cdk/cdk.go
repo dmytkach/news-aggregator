@@ -5,13 +5,12 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awseks"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
-
 	// "github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
 
-const (
+var (
 	vpcCIDR                    = "10.0.0.0/16"
 	publicSubnetName           = "PublicSubnet"
 	privateSubnetName          = "PrivateSubnet"
@@ -25,6 +24,10 @@ const (
 	eksAddonPodIdentityVersion = "v1.3.2-eksbuild.2"
 	accountID                  = "406477933661"
 	region                     = "us-west-1"
+	minSizeNG                  = 1
+	maxSizeNG                  = 10
+	desiredSizeNG              = 1
+	AMIType                    = awseks.NodegroupAmiType_AL2_X86_64
 )
 
 type CdkStackProps struct {
@@ -37,6 +40,8 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
+
+	getStringContextValues(stack)
 
 	vpc := awsec2.NewVpc(stack, jsii.String("DmytroVpc"), &awsec2.VpcProps{
 		IpAddresses: awsec2.IpAddresses_Cidr(jsii.String(vpcCIDR)),
@@ -105,10 +110,10 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 		Cluster:       eksCluster,
 		NodeRole:      nodeRole,
 		InstanceTypes: &[]awsec2.InstanceType{awsec2.NewInstanceType(jsii.String(nodeInstanceType))},
-		MinSize:       jsii.Number(1),
-		MaxSize:       jsii.Number(10),
-		DesiredSize:   jsii.Number(2),
-		AmiType:       awseks.NodegroupAmiType_AL2_X86_64,
+		MinSize:       jsii.Number(minSizeNG),
+		MaxSize:       jsii.Number(maxSizeNG),
+		DesiredSize:   jsii.Number(desiredSizeNG),
+		AmiType:       AMIType,
 	})
 
 	awseks.NewCfnAddon(stack, jsii.String("VPCCNIAddon"), &awseks.CfnAddonProps{
@@ -140,6 +145,44 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 	})
 
 	return stack
+}
+
+// contextParameter is used to store configuration parameters and their default values.
+type contextParameter struct {
+	defaultValue interface{}
+	target       interface{}
+}
+
+// getStringContextValues retrieves parameter values from the AWS CDK context if they are set
+// or uses default values.
+func getStringContextValues(stack awscdk.Stack) {
+	parameters := map[string]*contextParameter{
+		"vpcCIDR":                    {jsii.String(vpcCIDR), &vpcCIDR},
+		"publicSubnetName":           {jsii.String(publicSubnetName), &publicSubnetName},
+		"privateSubnetName":          {jsii.String(privateSubnetName), &privateSubnetName},
+		"clusterName":                {jsii.String(clusterName), &clusterName},
+		"eksClusterSGName":           {jsii.String(eksClusterSGName), &eksClusterSGName},
+		"iamUserArn":                 {jsii.String(iamUserArn), &iamUserArn},
+		"nodeInstanceType":           {jsii.String(nodeInstanceType), &nodeInstanceType},
+		"eksAddonVPCVersion":         {jsii.String(eksAddonVPCVersion), &eksAddonVPCVersion},
+		"eksAddonCoreDNSVersion":     {jsii.String(eksAddonCoreDNSVersion), &eksAddonCoreDNSVersion},
+		"eksAddonKubeProxyVersion":   {jsii.String(eksAddonKubeProxyVersion), &eksAddonKubeProxyVersion},
+		"eksAddonPodIdentityVersion": {jsii.String(eksAddonPodIdentityVersion), &eksAddonPodIdentityVersion},
+		"accountID":                  {jsii.String(accountID), &accountID},
+		"region":                     {jsii.String(region), &region},
+		"minSizeNG":                  {jsii.Number(minSizeNG), &minSizeNG},
+		"maxSizeNG":                  {jsii.Number(maxSizeNG), &maxSizeNG},
+		"desiredSizeNG":              {jsii.Number(desiredSizeNG), &desiredSizeNG},
+		"AMIType":                    {jsii.String(string(AMIType)), &AMIType},
+	}
+
+	for paramName, param := range parameters {
+		if ctxValue := stack.Node().TryGetContext(jsii.String(paramName)); ctxValue != nil {
+			param.target = ctxValue
+		} else {
+			param.target = param.defaultValue
+		}
+	}
 }
 
 func main() {
