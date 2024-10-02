@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: operator-system-day0
+  namespace: argocd
+spec:
+  destination:
+    name: ''
+    namespace: operator-system
+    server: https://kubernetes.default.svc
+  source:
+    path: dmytro-aws-auth-chart
+    repoURL: https://github.com/dmytkach/news-aggregator
+    targetRevision: feature/aws-cdk
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: namespace
+          value: operator-system
+        - name: privateAccessKey
+          value:
+        - name: accessKey
+          value:
+  sources: []
+  project: default
+  syncPolicy:
+    automated: null
+    syncOptions:
+      - CreateNamespace=true
