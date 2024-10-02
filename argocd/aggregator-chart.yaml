@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aggregator-chart
+  namespace: argocd
+spec:
+  destination:
+    name: ''
+    namespace: news-aggregator
+    server: https://kubernetes.default.svc
+  source:
+    path: aggregator-chart
+    repoURL: https://github.com/dmytkach/news-aggregator
+    targetRevision: feature/aws-cdk
+    helm:
+      valueFiles:
+        - values.yaml
+  sources: []
+  project: default
+  syncPolicy:
+    automated: null
