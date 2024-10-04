@@ -11,7 +11,7 @@ spec:
   source:
     path: operator/config/default
     repoURL: https://github.com/dmytkach/news-aggregator
-    targetRevision: feature/aws-cdk
+    targetRevision: master
     kustomize:
       images:
         - >-

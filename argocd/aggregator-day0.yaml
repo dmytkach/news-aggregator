@@ -11,7 +11,7 @@ spec:
   source:
     path: dmytro-aws-auth-chart
     repoURL: https://github.com/dmytkach/news-aggregator
-    targetRevision: feature/aws-cdk
+    targetRevision: master
     helm:
       parameters:
         - name: namespace

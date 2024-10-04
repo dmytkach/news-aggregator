@@ -11,7 +11,7 @@ spec:
   source:
     path: aggregator-chart
     repoURL: https://github.com/dmytkach/news-aggregator
-    targetRevision: feature/aws-cdk
+    targetRevision: master
     helm:
       valueFiles:
         - values.yaml
