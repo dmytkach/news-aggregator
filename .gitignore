@@ -3,3 +3,4 @@
 /server/service/test-resources.json
 /charts/*
 /aggregator-chart/charts/*
+/aggregator-chart/Chart.lock

@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  namespace_name: "news-aggregator"
+  namespace_name: "operator-manager"
   auth_chart_name: "dmytro-aws-auth-chart"
   release_auth_chart_name: "dmytro-aws-auth"
   auth_chart_version: "0.2.0"
@@ -9,11 +9,11 @@ vars:
 tasks:
   aws_auth_chart_deploy:
     desc: "Installs aws auth Helm chart on the Kubernetes cluster"
-    cmd: helm install {{.release_auth_chart_name}} ./{{.auth_chart_name}} -n {{.namespace_name}} {{.CLI_ARGS}} --create-namespace --upgrade
+    cmd: helm upgrade --install {{.release_auth_chart_name}} . -n {{.namespace}}  --set accessKey={{.accessKey}} --set privateAccessKey={{.privateAccessKey}} --set namespace={{.namespace}} --create-namespace
 
   aws_auth_chart_uninstall:
     desc: "Remove aws auth Helm chart from Kubernetes cluster"
-    cmd: helm uninstall {{.release_auth_chart_name}} -n {{.namespace_name}}
+    cmd: helm uninstall {{.release_auth_chart_name}} --namespace {{.namespace}}
 
   aws_auth_chart_package:
     desc: "Generate a aws auth chart with all required resources from helm chart"

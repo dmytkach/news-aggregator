@@ -49,6 +49,7 @@ type NewsResponse []NewsTitle
 // +kubebuilder:rbac:groups=aggregator.com.teamdev,resources=hotnews/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=aggregator.com.teamdev,resources=hotnews/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+// +kubebuilder:rbac:groups=news-aggregator.com.teamdev,resources=feeds,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile performs the reconciliation logic for HotNews resources.
 // It manages the lifecycle of the HotNews resource,
