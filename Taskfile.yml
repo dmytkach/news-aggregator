@@ -80,8 +80,8 @@ tasks:
   docker_push:
     desc: "Push the Docker image to the ECR registry"
     deps:
-      - task docker_build
-      - task docker_tag
+      - docker_build
+      - docker_tag
     cmd: docker push {{.account_id}}.dkr.ecr.{{.region}}.amazonaws.com/{{.repository_name}}:{{.server_docker_image_tag}}
 
   authenticate_helm:
