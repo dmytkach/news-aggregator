@@ -20,9 +20,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install Taskfile
-        run: |
-          sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin -v v3.18.0
+      - name: Install task
+        if: ${{ steps.release.outputs.release_created }}
+        uses: arduino/setup-task@v2
 
 
       - name: Check for Uncommitted Changes
