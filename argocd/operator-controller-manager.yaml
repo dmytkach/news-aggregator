@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: operator-manager
+  namespace: argocd
+spec:
+  destination:
+    name: ''
+    namespace: operator-system
+    server: https://kubernetes.default.svc
+  source:
+    path: operator/config/default
+    repoURL: https://github.com/dmytkach/news-aggregator
+    targetRevision: master
+    kustomize:
+      images:
+        - >-
+          406477933661.dkr.ecr.us-west-1.amazonaws.com/dmytro-operator-controller-manager:1.1.2
+      namespace: operator-system
+  sources: []
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aggregator-day0
+  namespace: argocd
+spec:
+  destination:
+    name: ''
+    namespace: news-aggregator
+    server: https://kubernetes.default.svc
+  source:
+    path: dmytro-aws-auth-chart
+    repoURL: https://github.com/dmytkach/news-aggregator
+    targetRevision: master
+    helm:
+      parameters:
+        - name: namespace
+          value: news-aggregator
+        - name: privateAccessKey
+          value:
+        - name: accessKey
+          value:
+      valueFiles:
+        - values.yaml
+  sources: []
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
